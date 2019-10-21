@@ -1,0 +1,8 @@
+#include "rcstuff.h"
+
+#define APPNAME "tgputtylib"
+#define APPDESC "SFTP client DLL by Tobias Giesen"
+
+200 ICON "pscp.ico"
+
+#include "version.rc2"

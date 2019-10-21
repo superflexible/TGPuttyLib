@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="11"/>
+    <BuildModes Active="Default"/>
+    <Units Count="3">
+      <Unit0>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="45"/>
+        <CursorPos Y="62"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="..\tgputtysftp.pas"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="516"/>
+        <CursorPos X="5" Y="549"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="..\tgputtylib.pas"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="120"/>
+        <CursorPos Y="213"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit2>
+    </Units>
+    <JumpHistory Count="19" HistoryIndex="18">
+      <Position1>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <Caret Line="80" Column="37" TopLine="74"/>
+      </Position1>
+      <Position2>
+        <Filename Value="..\tgputtysftp.pas"/>
+        <Caret Line="297" Column="54" TopLine="280"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\tgputtysftp.pas"/>
+        <Caret Line="2"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\tgputtysftp.pas"/>
+        <Caret Line="304" Column="62" TopLine="288"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\tgputtysftp.pas"/>
+        <Caret Line="297" Column="54" TopLine="280"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\tgputtylib.pas"/>
+        <Caret Line="43" TopLine="10"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\tgputtylib.pas"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\tgputtylib.pas"/>
+        <Caret Line="71" TopLine="42"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\tgputtylib.pas"/>
+        <Caret Line="21" Column="6" TopLine="18"/>
+      </Position9>
+      <Position10>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <Caret Line="68" Column="27" TopLine="52"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\tgputtysftp.pas"/>
+        <Caret Line="9" Column="8"/>
+      </Position11>
+      <Position12>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <Caret Line="4" Column="15"/>
+      </Position12>
+      <Position13>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <Caret Line="256" Column="3" TopLine="224"/>
+      </Position13>
+      <Position14>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <Caret Line="62" Column="26" TopLine="55"/>
+      </Position14>
+      <Position15>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <Caret Line="234" Column="29" TopLine="222"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\tgputtysftp.pas"/>
+        <Caret Line="4"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\tgputtylib.pas"/>
+        <Caret Line="21" Column="6" TopLine="18"/>
+      </Position17>
+      <Position18>
+        <Filename Value="..\tgputtylib.pas"/>
+        <Caret Line="213" TopLine="120"/>
+      </Position18>
+      <Position19>
+        <Filename Value="fpcsftpclasstest.lpr"/>
+        <Caret Line="246" Column="65" TopLine="222"/>
+      </Position19>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="0" ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>
