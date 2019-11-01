@@ -22,8 +22,12 @@ tgputtysftp.pas        -   Delphi SFTP Client Class (using 8-bit strings)
 
 tgputtysftpclient.pas  -   Delphi SFTP Client Component (using UnicodeStrings)
 
+---------------------
+
 TGPuttyLib.dpk etc.    -   Delphi Package for SFTP Client Component
- 
+
+---------------------
+
 DelphiSimpleDemos      -   Delphi Command Line Demos
 
 DelphiVCLComponentDemo -   Fully working SFTP client application using the SFTP Client Component
@@ -32,7 +36,11 @@ DelphiVCLDemo          -   Fully working SFTP client application using the SFTP 
 
 FPCSimpleDemos         -   FPC Command Line Demos
 
+---------------------
+
 tgputtylib             -   DLL source code based on PuTTY
+
+---------------------
 
 bpl                    -   compiled Delphi Package for XE 10.3
 
