@@ -84,18 +84,10 @@ static const SeatVtable psftp_seat_vt = {
 };
 static Seat psftp_seat[1] = {{ &psftp_seat_vt }};
 
-/* ----------------------------------------------------------------------
- * A nasty loop macro that lets me get an escape-sequence sanitised
- * version of a string for display, and free it automatically
- * afterwards.
- */
-// TG 2019: cannot put this in the libctx because freeing would
-// cause crashes, because stripctrl_free uses container_of and zeroes the container
-// but making this threadsafe should be good enough
-TGDLLCODE(__declspec(thread)) static StripCtrlChars *string_scc;
-#define with_stripctrl(varname, input)                                  \
-    for (char *varname = stripctrl_string(string_scc, input); varname;  \
-         sfree(varname), varname = NULL)
+// TG 2019: we do not want any strip ctrl stuff, it can break UTF-8 encodings
+#define with_stripctrl(varname, input)  \
+    for (char *varname = input; varname;  \
+         varname = NULL)
 
 /* ----------------------------------------------------------------------
  * Manage sending requests and waiting for replies.
@@ -492,12 +484,10 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
     if (outfname)
        with_stripctrl(san, fname) {
           with_stripctrl(sano, outfname)
-            printf("remote:%s => local:%s\n", san, sano);
+            printf("remote: %s => local:%s\n", san, sano);
        }
     else
-       with_stripctrl(san, fname) {
-            printf("remote:%s => stream \n", san);
-       }
+       printf("remote: %s => stream \n", fname);
 
     /*
      * FIXME: we can use FXP_FSTAT here to get the file size, and
@@ -780,9 +770,9 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
     }
 
     if (fname!=NULL)
-       printf("local:%s => remote:%s\n", fname, outfname);
+       printf("local: %s => remote: %s\n", fname, outfname);
     else
-       printf("stream => remote:%s\n", outfname);
+       printf("stream => remote: %s\n", outfname);
 
     /*
      * FIXME: we can use FXP_FSTAT here to get the file size, and
@@ -2976,8 +2966,6 @@ static void init_thread_vars()
       stdio_sink_init(&stderr_ss, stderr);
       stderr_bs = BinarySink_UPCAST(&stderr_ss);
 
-      string_scc = stripctrl_new(NULL, false, L'\0');
-
       thread_vars_initialized=true;
    }
    //else
@@ -2988,8 +2976,6 @@ static void free_thread_vars()
 {
    if (thread_vars_initialized)
    {
-   	  //printf("calling stripctrl_free(string_scc)\n");
-   	  stripctrl_free(string_scc);
    	  //printf("calling stripctrl_free(stderr_scc)\n");
 	  stripctrl_free(stderr_scc);
       thread_vars_initialized=false;
@@ -3083,8 +3069,6 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
         stderr_bs = BinarySink_UPCAST(stderr_scc);
     }
 
-    string_scc = stripctrl_new(NULL, false, L'\0');
-
     /*
      * If the loaded session provides a hostname, and a hostname has not
      * otherwise been specified, pop it in `userhost' so that
@@ -3124,7 +3108,6 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
     cmdline_cleanup();
     sk_cleanup(true);
 
-    stripctrl_free(string_scc);
     stripctrl_free(stderr_scc);
 
     if (psftp_logctx)

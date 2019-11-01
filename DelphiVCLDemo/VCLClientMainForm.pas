@@ -321,7 +321,8 @@ begin
   sgRemoteFiles.Cells[1,0]:='Timestamp';
   sgRemoteFiles.Cells[2,0]:='Size';
   PSFTP.ListDir('');
-  sgRemoteFiles.FixedRows:=1;
+  if sgRemoteFiles.RowCount>1 then
+     sgRemoteFiles.FixedRows:=1;
   sgRemoteFiles.FixedCols:=0;
   end;
 

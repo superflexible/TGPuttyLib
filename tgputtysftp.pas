@@ -62,7 +62,7 @@ type TGPuttySFTPException=class(Exception);
          procedure ListDir(const ADirectory:AnsiString);
 
          procedure GetStat(const AFileName:AnsiString;var Attrs:fxp_attrs);
-         procedure SetStat(const AFileName:AnsiString;var Attrs:fxp_attrs);
+         procedure SetStat(const AFileName:AnsiString;const Attrs:fxp_attrs);
          procedure SetModifiedDate(const AFileName:AnsiString;const ATimestamp:TDateTime; const isUTC:Boolean);
          procedure SetFileSize(const AFileName:AnsiString;const ASize:Int64);
          procedure Move(const AFromName,AToName:AnsiString);
@@ -480,7 +480,7 @@ begin
   SetStat(AFileName,Attrs);
   end;
 
-procedure TTGPuttySFTP.SetStat(const AFileName: AnsiString; var Attrs: fxp_attrs);
+procedure TTGPuttySFTP.SetStat(const AFileName: AnsiString;const Attrs: fxp_attrs);
 begin
   FLastMessages:='';
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field

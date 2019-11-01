@@ -254,9 +254,10 @@ static NORETURN void bump(const char *fmt, ...)
  * afterwards.
  */
 static StripCtrlChars *string_scc;
-#define with_stripctrl(varname, input)                                  \
-    for (char *varname = stripctrl_string(string_scc, input); varname;  \
-         sfree(varname), varname = NULL)
+// TG 2019: we do not want any strip ctrl stuff, it can break UTF-8 encodings
+#define with_stripctrl(varname, input)  \
+    for (char *varname = input; varname;  \
+         varname = NULL)
 
 /*
  * Wait for the reply to a single SFTP request. Parallels the same

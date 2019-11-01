@@ -108,7 +108,7 @@ function tggetlibrarycontextsize:Integer; cdecl; external tgputtydll;
 function tgputty_initwithcmdline(argcparam: Longint; argvparam: ppchar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
 function tgputty_initcontext(const verbose:Boolean;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
 procedure tgputtysetappname(const newappname,appversion:PAnsiChar); cdecl; external tgputtydll;
-procedure tgputty_setverbose(const averbose:Boolean); external tgputtydll;
+procedure tgputty_setverbose(const averbose:Boolean); cdecl; external tgputtydll;
 procedure tgputtyfree(const libctx:PTGLibraryContext); cdecl; external tgputtydll;
 procedure tgputtygetversions(puttyrelease:PDouble; tgputtylibbuild:PInteger); cdecl; external tgputtydll; // TG 2019
 

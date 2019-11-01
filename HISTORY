@@ -1,0 +1,19 @@
+TGPutty Release History
+---------------------
+
+Build 2 - 1 Nov 2019
+
+Adds true Delphi Component in tgputtysftpclient.pas, which is fully Unicode. Assumes UTF-8 Encoding is used.
+Adds VCL demo based on the new component.
+Fixes procedure tgputty_setverbose declaration.
+Fixes some UTF-8 problems in messages from the DLL.
+Minor Demo improvements, including Unicode support for local filenames when downloading.
+
+---------------------
+
+Build 1 - 20 Oct 2019
+
+Initial Release. Stable but more features will be added
+Known Issue: procedure tgputty_setverbose does not work due to missing cdecl;
+
+---------------------
