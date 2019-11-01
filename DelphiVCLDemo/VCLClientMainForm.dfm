@@ -138,7 +138,7 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   end
   object edFolderPath: TEdit
     Left = 473
-    Top = 168
+    Top = 166
     Width = 383
     Height = 21
     TabOrder = 7

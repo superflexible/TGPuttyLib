@@ -27,6 +27,7 @@ type TGPuttySFTPException=class(Exception);
      TTGPuttySFTP=class(TObject)
        private
          Fcontext:TTGLibraryContext;
+         FVerbose:Boolean;
          FHostName,FUserName,FPassword,FKeyPassword:AnsiString;
          FPort:Integer;
          FOnMessage: TOnMessage;
@@ -97,7 +98,7 @@ type TGPuttySFTPException=class(Exception);
          property LibVersion:AnsiString read GetLibVersion;
 
          property Connected:Boolean read FConnected;
-         property Verbose:Boolean write SetVerbose;
+         property Verbose:Boolean read FVerbose write SetVerbose;
          property Keyfile:AnsiString write SetKeyfile;
          property LastMessages:AnsiString read FLastMessages write FLastMessages;
          property ErrorCode:Integer read GetErrorCode;
@@ -288,6 +289,7 @@ begin
                             ', but we need a minimum of '+IntToStr(MinimumLibraryBuildNum));
 
   Fcontext.Init;
+  FVerbose:=verbose;
 
   Fcontext.structsize:=sizeof(Fcontext);
   if Fcontext.structsize<tggetlibrarycontextsize then
@@ -489,6 +491,7 @@ begin
 procedure TTGPuttySFTP.SetVerbose(const Value: Boolean);
 begin
   tgputty_setverbose(Value);
+  FVerbose:=Value;
   end;
 
 procedure TTGPuttySFTP.UploadFile(const ALocalFilename, ARemoteFilename: AnsiString; const anAppend: Boolean);

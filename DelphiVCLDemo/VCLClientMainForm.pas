@@ -94,9 +94,9 @@ begin
     Connect;
 
     if edFolderPath.Text<>'' then
-       ChangeDir(edFolderPath.Text);
+       ChangeDir(Utf8Encode(edFolderPath.Text));
 
-    edFolderPath.Text:=WorkDir;
+    edFolderPath.Text:=Utf8ToString(WorkDir);
     end;
 
   GetListing;
@@ -135,20 +135,27 @@ begin
 
 procedure TVCLSFTPClientDemoForm.btDownloadClick(Sender: TObject);
 var i:Integer;
+    DownloadStream:TStream;
+    APath:UnicodeString;
 begin
   for i:=sgRemoteFiles.Selection.Top to sgRemoteFiles.Selection.Bottom do begin
      if sgRemoteFiles.Cells[2,i]<>'<dir>' then begin
-        FTotalToCopy:=StrToInt64Def(sgRemoteFiles.Cells[2,i],0);
-        ProgressBar1.Min:=0;
-        ProgressBar1.Max:=FTotalToCopy div 1024;
-        ProgressBar1.Position:=0;
-        ProgressBar1.Visible:=true;
+        APath:=DirectoryListBox1.Directory+PathDelim+sgRemoteFiles.Cells[0,i];
+        DownloadStream:=TFileStream.Create(APath,fmCreate);
         try
+          FTotalToCopy:=StrToInt64Def(sgRemoteFiles.Cells[2,i],0);
+          ProgressBar1.Min:=0;
+          ProgressBar1.Max:=FTotalToCopy div 1024;
+          ProgressBar1.Position:=0;
+          ProgressBar1.Visible:=true;
           Application.ProcessMessages;
-          PSFTP.DownloadFile(Utf8Encode(sgRemoteFiles.Cells[0,i]),DirectoryListBox1.Directory+PathDelim+sgRemoteFiles.Cells[0,i],false);
+          PSFTP.DownloadStream(Utf8Encode(sgRemoteFiles.Cells[0,i]),
+                               DownloadStream,
+                               false);
           FileListBox1.Update;
           finally
             ProgressBar1.Visible:=false;
+            FreeAndNil(DownloadStream);
           end;
         end;
      end;
@@ -187,7 +194,6 @@ begin
 
 procedure TVCLSFTPClientDemoForm.btUploadClick(Sender: TObject);
 var i:Integer;
-    ASize:Int64;
     APath:string;
     UploadStream:TStream;
     LDateTime:TDateTimeInfoRec;
@@ -261,11 +267,18 @@ begin
 
 procedure TVCLSFTPClientDemoForm.edFolderPathExit(Sender: TObject);
 begin
-  if edFolderPath.Text<>'' then
-     PSFTP.ChangeDir(Utf8Encode(edFolderPath.Text));
+  if PSFTP.Connected then begin
+     try
+       if edFolderPath.Text<>'' then
+          PSFTP.ChangeDir(Utf8Encode(edFolderPath.Text));
 
-  edFolderPath.Text:=Utf8ToString(PSFTP.WorkDir);
-  GetListing;
+       edFolderPath.Text:=Utf8ToString(PSFTP.WorkDir);
+       GetListing;
+       except
+         on E:Exception do
+            Application.MessageBox(PWideChar(E.Message),'Error');
+       end;
+     end;
   end;
 
 procedure TVCLSFTPClientDemoForm.FormCreate(Sender: TObject);
@@ -325,6 +338,7 @@ begin
     else
        sgRemoteFiles.Cells[2,StartRow+i]:=IntToStr(names.names[i].attrs.size);
     end;
+  Result:=true;
   end;
 
 procedure TVCLSFTPClientDemoForm.LoadSettings;
@@ -357,13 +371,14 @@ begin
 
 procedure TVCLSFTPClientDemoForm.MessageCallback(const Msg: AnsiString;const isstderr: Boolean);
 begin
-  memLog.Lines.Add(Msg);
+  memLog.Lines.Add(Utf8ToString(Msg));
   end;
 
 function TVCLSFTPClientDemoForm.ProgressCallback(const bytescopied: Int64;const isupload: Boolean): Boolean;
 begin
   ProgressBar1.Position:=bytescopied div 1024;
   Application.ProcessMessages;
+  Result:=true;
   end;
 
 procedure TVCLSFTPClientDemoForm.SaveSettings;
@@ -394,8 +409,8 @@ procedure TVCLSFTPClientDemoForm.sgRemoteFilesDblClick(Sender: TObject);
 begin
   if sgRemoteFiles.Selection.Top=sgRemoteFiles.Selection.Bottom then begin
      if sgRemoteFiles.Cells[2,sgRemoteFiles.Selection.Top]='<dir>' then begin
-        PSFTP.ChangeDir(sgRemoteFiles.Cells[0,sgRemoteFiles.Selection.Top]);
-        edFolderPath.Text:=PSFTP.WorkDir;
+        PSFTP.ChangeDir(Utf8Encode(sgRemoteFiles.Cells[0,sgRemoteFiles.Selection.Top]));
+        edFolderPath.Text:=Utf8ToString(PSFTP.WorkDir);
         SaveSettings;
         GetListing;
         end;
