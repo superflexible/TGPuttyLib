@@ -66,6 +66,7 @@ type TGPuttySFTPException=class(Exception);
          procedure SetModifiedDate(const AFileName:AnsiString;const ATimestamp:TDateTime; const isUTC:Boolean);
          procedure SetFileSize(const AFileName:AnsiString;const ASize:Int64);
          procedure Move(const AFromName,AToName:AnsiString);
+         procedure MoveEx(const AFromName,AToName:AnsiString;const MoveFlags:Integer);
          procedure DeleteFile(const AName:AnsiString);
 
          procedure UploadFile(const ALocalFilename,ARemoteFilename:AnsiString;const anAppend:Boolean);
@@ -433,6 +434,16 @@ begin
   res:=tgsftp_mv(PAnsiChar(AFromName),PAnsiChar(AToName),@Fcontext);
   if res<>1 then // 1 = success
      raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_mv'));
+  end;
+
+procedure TTGPuttySFTP.MoveEx(const AFromName, AToName: AnsiString; const MoveFlags: Integer);
+var res:Integer;
+begin
+  FLastMessages:='';
+  Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
+  res:=tgsftp_mvex(PAnsiChar(AFromName),PAnsiChar(AToName),MoveFlags,@Fcontext);
+  if res<>1 then // 1 = success
+     raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_mvex'));
   end;
 
 function TTGPuttySFTP.OpenFile(const apathname: AnsiString; const anopenflags: Integer; const attrs: Pfxp_attrs): TSFTPFileHandle;

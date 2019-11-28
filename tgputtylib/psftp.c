@@ -1050,11 +1050,18 @@ void sftp_finish_wildcard_matching(SftpWildcardMatcher *swcm)
  */
 bool wildcard_iterate(char *filename, bool (*func)(void *, char *), void *ctx)
 {
-    char *unwcfname, *newname, *cname;
-    bool is_wc, toret;
+	char *unwcfname, *newname, *cname;
+	bool is_wc, toret;
 
-    unwcfname = snewn(strlen(filename)+1, char);
-    is_wc = !wc_unescape(unwcfname, filename);
+	unwcfname = snewn(strlen(filename)+1, char);
+
+#ifdef TGDLL
+	// no wildcard support in DLL!
+	// causes big problems, for example filenames with brackets are considered
+	// to contain wildcards
+	strcpy(unwcfname,filename);
+#else
+	is_wc = !wc_unescape(unwcfname, filename);
 
     if (is_wc) {
         SftpWildcardMatcher *swcm = sftp_begin_wildcard_matching(filename);
@@ -1081,14 +1088,17 @@ bool wildcard_iterate(char *filename, bool (*func)(void *, char *), void *ctx)
         }
 
         sftp_finish_wildcard_matching(swcm);
-    } else {
-        cname = canonify(unwcfname);
-        toret = func(ctx, cname);
-        sfree(cname);
-        sfree(unwcfname);
-    }
+	}
+	else
+#endif
+	{
+		cname = canonify(unwcfname);
+		toret = func(ctx, cname);
+		sfree(cname);
+		sfree(unwcfname);
+	}
 
-    return toret;
+	return toret;
 }
 
 /*
@@ -1096,10 +1106,14 @@ bool wildcard_iterate(char *filename, bool (*func)(void *, char *), void *ctx)
  */
 bool is_wildcard(char *name)
 {
-    char *unwcfname = snewn(strlen(name)+1, char);
-    bool is_wc = !wc_unescape(unwcfname, name);
-    sfree(unwcfname);
-    return is_wc;
+#ifdef TGDLL
+	return false; // no wildcard support
+#else
+	char *unwcfname = snewn(strlen(name)+1, char);
+	bool is_wc = !wc_unescape(unwcfname, name);
+	sfree(unwcfname);
+	return is_wc;
+#endif
 }
 
 /* ----------------------------------------------------------------------
@@ -1761,7 +1775,7 @@ static bool sftp_action_mv(void *vctx, char *srcfname)
     return toret;
 }
 
-int sftp_cmd_mv(struct sftp_command *cmd)
+int sftp_cmd_mvex(struct sftp_command *cmd,const int moveflags) // TG 2019
 {
     struct sftp_context_mv actx, *ctx = &actx;
     int i, ret;
@@ -1778,18 +1792,30 @@ int sftp_cmd_mv(struct sftp_command *cmd)
 
     ctx->dstfname = canonify(cmd->words[cmd->nwords-1]);
 
+    if ((moveflags & cMoveFlag_DestinationPathIncludesItemName) != 0)
+       ctx->dest_is_dir = false;
+    else
+       if ((moveflags & cMoveFlag_AddSourceItemNameToDestinationPath) != 0)
+          ctx->dest_is_dir = true;
+       else
+          ctx->dest_is_dir = check_is_dir(ctx->dstfname);
+
+	#ifndef TGDLL
+    // BIG PROBLEM! is_wildcard could return true if filename contains brackets
+    // this check is not needed for a DLL
     /*
      * If there's more than one source argument, or one source
      * argument which is a wildcard, we _require_ that the
      * destination is a directory.
      */
-    ctx->dest_is_dir = check_is_dir(ctx->dstfname);
-    if ((cmd->nwords > 3 || is_wildcard(cmd->words[1])) && !ctx->dest_is_dir) {
-        printf("mv: multiple or wildcard arguments require the destination"
-               " to be a directory\n");
-        sfree(ctx->dstfname);
-        return 0;
-    }
+
+	if ((cmd->nwords > 3 || is_wildcard(cmd->words[1])) && !ctx->dest_is_dir) {
+		printf("mv: multiple or wildcard arguments require the destination"
+			   " to be a directory\n");
+		sfree(ctx->dstfname);
+		return 0;
+	}
+	#endif
 
     /*
      * Now iterate over the source arguments.
@@ -1800,6 +1826,11 @@ int sftp_cmd_mv(struct sftp_command *cmd)
 
     sfree(ctx->dstfname);
     return ret;
+}
+
+int sftp_cmd_mv(struct sftp_command *cmd) // TG 2019
+{
+  return sftp_cmd_mvex(cmd,0);
 }
 
 struct sftp_context_chmod {
@@ -3441,6 +3472,22 @@ __declspec(dllexport) int tgsftp_mv(const char *afrom,const char *ato,TTGLibrary
   cmd->words[2] = dupstr(ato);
 
   return sftp_cmd_mv(cmd);
+}
+
+__declspec(dllexport) int tgsftp_mvex(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx) // TG 2019
+{
+  curlibctx=libctx;
+  struct sftp_command *cmd = snew(struct sftp_command);
+  cmd->words = NULL;
+  cmd->nwords = 3;
+  cmd->wordssize = 0;
+
+  sgrowarrayn(cmd->words, cmd->wordssize, cmd->nwords, 0);
+  cmd->words[0] = dupstr("mv");
+  cmd->words[1] = dupstr(afrom);
+  cmd->words[2] = dupstr(ato);
+
+  return sftp_cmd_mvex(cmd,moveflags);
 }
 
 __declspec(dllexport) int tgsftp_getstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019

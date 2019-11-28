@@ -25,6 +25,12 @@
 
 // #define DEBUG_UPLOAD
 
+#define cBufferMaxFillSizeThresholdToAcceptMoreUploadData 1024*1024
+
+// with these flags, tgsftp_mvex can skip checking whether the destination is an existing folder
+#define cMoveFlag_DestinationPathIncludesItemName 1
+#define cMoveFlag_AddSourceItemNameToDestinationPath 2
+
 /*
  * We express various time intervals in unsigned long minutes, but may need to
  * clip some values so that the resulting number of ticks does not overflow an

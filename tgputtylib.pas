@@ -38,6 +38,9 @@ const
    SSH_FXF_TRUNC                =$00000010;
    SSH_FXF_EXCL                 =$00000020;
 
+   // with these flags, tgsftp_mvex can skip checking whether the destination is an existing folder
+   cMoveFlag_DestinationPathIncludesItemName =1;
+   cMoveFlag_AddSourceItemNameToDestinationPath =2;
 
 type fxp_attrs=record
        flags:UInt32;
@@ -133,6 +136,7 @@ function tgsftp_rm(const afile:PAnsiChar; const libctx:PTGLibraryContext):Intege
 function tgsftp_rmdir(const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
 function tgsftp_mkdir(const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
 function tgsftp_mv(const afrom,ato:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
+function tgsftp_mvex(const afrom,ato:PAnsiChar; const moveflags:Integer; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
 
 function tgsftp_putfile(const afromfile,atofile:PAnsiChar; const anAppend:Boolean; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
 function tgsftp_getfile(const afromfile,atofile:PAnsiChar; const anAppend:Boolean; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll;
