@@ -33,7 +33,7 @@ int _tmain(int argc, _TCHAR* argv[])
        return 1;
     }
 
-    res = tgsftp_connect("192.168.12.45","admin",22,"Fitzyger8",&Ctx);
+    res = tgsftp_connect("192.168.12.45","admin",22,"password",&Ctx);
     if (res==0)
        printf("Connected successfully!\n");
     else
