@@ -59,7 +59,7 @@ bool LoadTGPuttyLib()
   if (hPuttyLib)
      return true;
 
-  hPuttyLib = LoadLibrary("tgputtylib.dll");
+  hPuttyLib = LoadLibraryA("tgputtylib.dll");
 
   if (!hPuttyLib)
      return false;
