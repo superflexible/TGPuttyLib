@@ -2,7 +2,7 @@
 #define tgputtylibcbclassH
 
 #include <string>
-#include <tgputtylib.hpp>
+#include "tgputtylib.hpp"
 
 
 typedef void (__closure *TOnMessage)(const char *Msg, const bool isstderr);
@@ -16,13 +16,11 @@ typedef bool (__closure *TOnVerifyHostKey)
 static const int MinimumLibraryBuildNum = 0x1;
 static const short cDummyClearedErrorCode = short(-1000);  // this error code means there was no real error code
 
-struct TTGPuttySFTPException : public std::exception
-{
-   std::string s;
-   TTGPuttySFTPException(std::string ans) : s(ans) {}
-   ~TTGPuttySFTPException() throw () {}
-   const char* what() const throw() { return s.c_str(); }
-};
+class TTGPuttySFTPException : public std::runtime_error 
+      { 
+	  public:
+	     explicit TTGPuttySFTPException(const std::string what_arg) : std::runtime_error(what_arg) {  };
+      };
 
 class TTGPuttySFTP
 {
@@ -50,10 +48,6 @@ class TTGPuttySFTP
 	char *GetWorkDir();
 	void SetVerbose(const bool Value);
 	void SetKeyfile(const char *Value);
-	void SetHostName(const char *Value);
-	void SetPassword(const char *Value);
-	void SetUserName(const char *Value);
-	void SetKeyPassword(const char *Value);
 	char *GetLibVersion();
 	int GetErrorCode();
 	const char *GetErrorMessage();
@@ -70,7 +64,7 @@ class TTGPuttySFTP
 	void ListDir(const char *ADirectory);
 	void GetStat(const char *AFileName, Tfxp_attrs *Attrs);
 	void SetStat(const char *AFileName, struct fxp_attrs *Attrs);
-	void SetModifiedDate(const char *AFileName, const __int64 unixtime);
+	void SetModifiedDate(const char *AFileName, const unsigned long unixtime);
 	void SetFileSize(const char *AFileName, const __int64 ASize);
 	void Move(const char *AFromName, const char *AToName);
 	void DeleteFile(const char *AName);
@@ -90,11 +84,11 @@ class TTGPuttySFTP
 	bool xfer_done(struct fxp_xfer *xfer);
 	void xfer_cleanup(struct fxp_xfer *xfer);
 
-	__property char *HostName = {read=FHostName, write=SetHostName};
-	__property char *UserName = {read=FUserName, write=SetUserName};
+	__property std::string HostName = {read=FHostName, write=FHostName};
+	__property std::string UserName = {read=FUserName, write=FUserName};
 	__property int Port = {read=FPort, write=FPort};
-	__property char *Password = {read=FPassword, write=SetPassword};
-	__property char *KeyPassword = {read=FKeyPassword, write=SetKeyPassword};
+	__property std::string Password = {read=FPassword, write=FPassword};
+	__property std::string KeyPassword = {read=FKeyPassword, write=FKeyPassword};
 	__property char *HomeDir = {read=GetHomeDir};
 	__property char *WorkDir = {read=GetWorkDir};
 	__property char *LibVersion = {read=GetLibVersion};

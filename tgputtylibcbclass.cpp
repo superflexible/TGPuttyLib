@@ -125,6 +125,7 @@ TTGPuttySFTP::TTGPuttySFTP(const bool verbose)
   FVerbose=verbose;
   FPort = 22;
 
+  memset(&Fcontext, 0, sizeof(Fcontext));
   Fcontext.structsize=sizeof(Fcontext);
   if (Fcontext.structsize<tggetlibrarycontextsize())
      throw TTGPuttySFTPException("Incorrect TTGLibraryContext record size");
@@ -175,26 +176,6 @@ void TTGPuttySFTP::SetVerbose(const bool Value)
 void TTGPuttySFTP::SetKeyfile(const char *Value)
 {
   tgputty_setkeyfile(Value,&Fcontext);
-}
-
-void TTGPuttySFTP::SetHostName(const char *Value)
-{
-  FHostName = Value;
-}
-
-void TTGPuttySFTP::SetPassword(const char *Value)
-{
-  FPassword = Value;
-}
-
-void TTGPuttySFTP::SetUserName(const char *Value)
-{
-  FUserName = Value;
-}
-
-void TTGPuttySFTP::SetKeyPassword(const char *Value)
-{
-  FKeyPassword = Value;
 }
 
 #define cMaxVersionLen 100
@@ -301,7 +282,7 @@ void TTGPuttySFTP::SetStat(const char *AFileName, struct fxp_attrs *Attrs)
      throw TTGPuttySFTPException(MakePSFTPErrorMsg("tgsftp_setstat"));
 }
 
-void TTGPuttySFTP::SetModifiedDate(const char *AFileName, const __int64 unixtime)
+void TTGPuttySFTP::SetModifiedDate(const char *AFileName, const unsigned long unixtime)
 {
   ClearStatus();
   struct fxp_attrs attrs;

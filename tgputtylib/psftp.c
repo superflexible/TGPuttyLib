@@ -476,7 +476,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
         }
 
         offset = get_file_posn(file);
-        printf("reget: restarting at file position %"PRIu64"\n", offset);
+        printf("reget: restarting at file position %I64u\n", offset);
     } else {
         offset = 0;
     }
@@ -3729,7 +3729,7 @@ static int tg_get_userpass_input(Seat *seat, prompts_t *p, bufchain *input)
 		  {
 			 prompt_t *pr = p->prompts[curr_prompt];
 			 bool cancel=false;
-			 char *thepwd = curlibctx->getpassword_callback(pr->prompt,pr->echo,&cancel,curlibctx);
+			 const char *thepwd = curlibctx->getpassword_callback(pr->prompt,pr->echo,&cancel,curlibctx);
 
 			 if (cancel)
 				return 0;

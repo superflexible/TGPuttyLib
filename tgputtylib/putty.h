@@ -2273,7 +2273,7 @@ typedef struct
   __int64 tag;
 
   bool (*ls_callback)(const struct fxp_names *names,const void *libctx);
-  char* (*getpassword_callback)(const char *prompt, const bool echo, const bool *cancel, const void *libctx);
+  const char* (*getpassword_callback)(const char *prompt, const bool echo, bool *cancel, const void *libctx);
   void (*printmessage_callback)(const char *msg, const bool isstderr, const void *libctx);
   bool (*progress_callback)(const uint64_t bytescopied, const bool isupload, const void *libctx);
   int (*read_from_stream)(const uint64_t offset,void *buffer,const int bufsize, const void *libctx);
