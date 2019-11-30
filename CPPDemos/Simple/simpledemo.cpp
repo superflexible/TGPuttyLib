@@ -59,7 +59,7 @@ int _tmain(int argc, _TCHAR* argv[])
     tgsftp_close(&Ctx);
     printf("Disconnected successfully!\n");
 
-    printf("Press Any Key to Continue\n");
+    printf("Press Enter to Continue\n");
     getchar();
 	return 0;
 }
