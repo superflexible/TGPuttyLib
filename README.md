@@ -7,10 +7,6 @@ It allows developers to transfer files with the highest possible transfer rates.
 
 TGPuttyLib Build 3 is based on PuTTY Release 0.73. Ready-to-use classes are currently available for C++, Delphi and Free Pascal.
 
-C++ bindings are provided in the files . There's a small C++ demo in CPPDemos/Simple.
-
-
-
 The library is currently available for Windows. MacOS and Linux adaptations will follow around the end of 2019.
 
 For more information, please visit the project web site: 
