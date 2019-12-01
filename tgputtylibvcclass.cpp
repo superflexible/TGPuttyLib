@@ -313,7 +313,7 @@ void TTGPuttySFTP::Move(const char* AFromName, const char* AToName)
 		throw TTGPuttySFTPException(MakePSFTPErrorMsg("tgsftp_mv"));
 }
 
-void TTGPuttySFTP::DeleteFile(const char* AName)
+void TTGPuttySFTP::Delete_File(const char* AName)
 {
 	ClearStatus();
 	int res = tgsftp_rm(AName, &Fcontext);

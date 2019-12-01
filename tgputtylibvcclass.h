@@ -91,7 +91,7 @@ public:
 	void SetModifiedDate(const char* AFileName, const unsigned long unixtime);
 	void SetFileSize(const char* AFileName, const __int64 ASize);
 	void Move(const char* AFromName, const char* AToName);
-	void DeleteFile(const char* AName);
+	void Delete_File(const char *AName);
 
 	void UploadFile(const char* ALocalFilename, const char* ARemoteFilename, const bool anAppend);
 	void DownloadFile(const char* ARemoteFilename, const char* ALocalFilename, const bool anAppend);
