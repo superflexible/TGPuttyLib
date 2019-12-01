@@ -79,8 +79,7 @@ bool TTGPuttyCBSFTPClient::DoProgress(const __int64 bytescopied, const bool isup
        delete ProgressInfo;
      }
   }
-  else
-     return true;
+  return true;
 }
 
 bool TTGPuttyCBSFTPClient::DoListing(const struct fxp_names* names)
@@ -104,8 +103,7 @@ bool TTGPuttyCBSFTPClient::DoListing(const struct fxp_names* names)
         delete Unames;
       }
    }
-   else
-     return true;
+   return true;
 }
 
 bool TTGPuttyCBSFTPClient::DoGetInput(char* linebuf, const int maxchars)
@@ -147,37 +145,37 @@ int __fastcall TTGPuttyCBSFTPClient::GetErrorCode()
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetErrorMessage()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->ErrorMessage) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->ErrorMessage : "");
 }
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetHomeDir()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->HomeDir) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->HomeDir : "");
 }
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetHostName()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->HostName.c_str()) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->HostName.c_str() : "");
 }
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetKeyPassword()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->KeyPassword.c_str()) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->KeyPassword.c_str() : "");
 }
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetLastMessages()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->LastMessages.c_str()) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->LastMessages.c_str() : "");
 }
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetLibVersion()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->LibVersion) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->LibVersion : "");
 }
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetPassword()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->Password.c_str()) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->Password.c_str() : "");
 }
 
 int __fastcall TTGPuttyCBSFTPClient::GetPort()
@@ -187,7 +185,7 @@ int __fastcall TTGPuttyCBSFTPClient::GetPort()
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetUserName()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->UserName.c_str()) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->UserName.c_str() : "");
 }
 
 bool __fastcall TTGPuttyCBSFTPClient::GetVerbose()
@@ -197,7 +195,7 @@ bool __fastcall TTGPuttyCBSFTPClient::GetVerbose()
 
 System::UnicodeString __fastcall TTGPuttyCBSFTPClient::GetWorkDir()
 {
-  return (FTGPuttySFTP) ? UTF8ToString(FTGPuttySFTP->WorkDir) : "";
+  return UTF8ToString((FTGPuttySFTP) ? FTGPuttySFTP->WorkDir : "");
 }
 
 void __fastcall TTGPuttyCBSFTPClient::SetHostName(const System::UnicodeString Value)

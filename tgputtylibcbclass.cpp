@@ -116,8 +116,8 @@ void raise_exception_callback(const char *msg,const char *srcfile,const int line
   TTGPuttySFTP *TGPSFTP = (TTGPuttySFTP*)((TTGLibraryContext *)libctx)->tag;
   throw TTGPuttySFTPException((std::string("TTGPuttySFTP exception ")+
                        std::string(msg)+
-                       std::string(" at line ")+
-                       std::to_string(line)+
+					   std::string(" at line ")+
+					   std::string(UTF8Encode(IntToStr(line)).c_str())+
                        std::string(" in ")+
                        std::string(srcfile)).c_str());
 
@@ -221,8 +221,8 @@ std::string TTGPuttySFTP::MakePSFTPErrorMsg(const char *where)
 {
   if (Fcontext.fxp_errtype>=0)
      return std::string(where)+
-            std::string(": Error ")+
-            std::to_string(Fcontext.fxp_errtype)+
+			std::string(": Error ")+
+			std::string(UTF8Encode(IntToStr(Fcontext.fxp_errtype)).c_str())+
             std::string(", ")+
             std::string(Fcontext.fxp_error_message);
   else

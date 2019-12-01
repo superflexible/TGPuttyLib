@@ -272,7 +272,6 @@ object FVCLAppMain: TFVCLAppMain
   end
   object TGPuttySFTPClient1: TTGPuttyCBSFTPClient
     Port = 22
-    Verbose = False
     OnSFTPMessage = TGPuttySFTPClient1SFTPMessage
     OnSFTPProgress = TGPuttySFTPClient1SFTPProgress
     OnSFTPListing = TGPuttySFTPClient1SFTPListing
