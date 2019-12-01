@@ -3,7 +3,7 @@
 #include <string>
 #include <stdexcept>
 #include <functional>
-#include "tgputtylib.hpp"
+#include "ctgputtylib.h"
 
 
 typedef std::function<void(const char* Msg, const bool isstderr)> TOnMessage;

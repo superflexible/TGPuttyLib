@@ -155,7 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\tgputtylib.cpp" />
+    <ClCompile Include="..\..\ctgputtylib.cpp" />
     <ClCompile Include="..\..\tgputtylibvcclass.cpp" />
     <ClCompile Include="VCSFTPClassTest.cpp" />
   </ItemGroup>

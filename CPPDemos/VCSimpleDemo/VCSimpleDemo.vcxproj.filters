@@ -18,7 +18,7 @@
     <ClCompile Include="VCSimpleDemo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\tgputtylib.cpp">
+    <ClCompile Include="..\..\ctgputtylib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -158,7 +158,7 @@
             <BuildOrder>0</BuildOrder>
             <PCH>true</PCH>
         </PCHCompile>
-        <CppCompile Include="..\..\tgputtylib.cpp">
+        <CppCompile Include="..\..\ctgputtylib.cpp">
             <BuildOrder>2</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Release">
@@ -249,13 +249,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName=".\Win32\Debug\simpledemo.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="..\..\Win32\Debug\simpledemo.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>simpledemo.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName=".\Win32\Debug\simpledemo.tds" Configuration="Debug" Class="DebugSymbols">
+                <DeployFile LocalName="..\..\Win32\Debug\simpledemo.tds" Configuration="Debug" Class="DebugSymbols">
                     <Platform Name="Win32">
                         <RemoteName>simpledemo.tds</RemoteName>
                         <Overwrite>true</Overwrite>

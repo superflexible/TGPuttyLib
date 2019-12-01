@@ -2,7 +2,7 @@
 #define tgputtylibcbclassH
 
 #include <string>
-#include "tgputtylib.hpp"
+#include "ctgputtylib.h"
 
 
 typedef void (__closure *TOnMessage)(const char *Msg, const bool isstderr);

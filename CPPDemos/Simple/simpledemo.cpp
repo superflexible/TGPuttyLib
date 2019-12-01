@@ -1,7 +1,7 @@
 #pragma hdrstop
 #pragma argsused
 
-#include "tgputtylib.hpp"
+#include "ctgputtylib.h"
 
 #ifdef _WIN32
 #include <tchar.h>

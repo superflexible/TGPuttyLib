@@ -1,10 +1,6 @@
-#pragma hdrstop
-
 #include <stdio.h>
 #include <windows.h>
-#include "tgputtylib.hpp"
-
-#pragma package(smart_init)
+#include "ctgputtylib.h"
 
 HINSTANCE hPuttyLib = NULL;
 

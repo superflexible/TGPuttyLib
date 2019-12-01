@@ -2,7 +2,7 @@
 //
 
 #include <iostream>
-#include "../../tgputtylib.hpp"
+#include "../../ctgputtylib.h"
 
 int main()
 {
