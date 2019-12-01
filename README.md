@@ -33,6 +33,7 @@ tgputtylibvcclass.cpp,h   -  Visual C++ SFTP Client Class (using 8-bit strings)
 ---------------------
 
 TGPuttyLib.dpk etc.    -   Delphi Package for SFTP Client Component
+TGPuttyLibCPP.cbproj etc.  -  C++ Builder Package for SFTP Client Component
 
 ---------------------
 
