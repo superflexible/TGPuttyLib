@@ -177,13 +177,13 @@ procedure TVCLSFTPClientComponentDemoForm.btMoveClick(Sender: TObject);
 var count,i:Integer;
     AName:string;
 begin
-  AName:=InputBox('Renaem / Move','Enter new name and/or destination directory:','');
+  AName:=InputBox('Rename / Move','Enter new name and/or destination directory:','');
   if AName<>'' then begin
      count:=sgRemoteFiles.Selection.Bottom-sgRemoteFiles.Selection.Top+1;
      if count=0 then
         Exit;
 
-     if Application.MessageBox(PWideChar('Please confirm moving '+IntToStr(count)+' item(s) remotely (right side)'),
+     if Application.MessageBox(PWideChar('Please confirm moving '+IntToStr(count)+' file(s) remotely (right side)'),
                                'Confirm Moving',
                                MB_YESNO or MB_ICONQUESTION)=IDYES then begin
         for i:=sgRemoteFiles.Selection.Top to sgRemoteFiles.Selection.Bottom do
@@ -234,7 +234,7 @@ begin
   if count=0 then
      Exit;
 
-  if Application.MessageBox(PWideChar('Please confirm deleting '+IntToStr(count)+' directory remotely (right side)'),
+  if Application.MessageBox(PWideChar('Please confirm deleting '+IntToStr(count)+' directory/ies remotely (right side)'),
                             'Confirm Deletion',
                             MB_YESNO or MB_ICONQUESTION)=IDYES then begin
      for i:=sgRemoteFiles.Selection.Top to sgRemoteFiles.Selection.Bottom do

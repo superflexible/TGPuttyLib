@@ -60,16 +60,30 @@ bool progress_callback(const uint64_t bytescopied, const bool isupload, const vo
 
 int read_from_stream(const uint64_t offset,void *buffer,const int bufsize, const void *libctx)
 {
+#ifdef SUPPORTDELPHISTREAMS
   TTGPuttySFTP *TGPSFTP = (TTGPuttySFTP*)((TTGLibraryContext *)libctx)->tag;
-  // TO DO
-  return 0;
+  if (TGPSFTP->FUploadStream)
+  {
+     TGPSFTP->FUploadStream->Position=offset;
+     return TGPSFTP->FUploadStream->Read(buffer,bufsize);
+  }
+  else
+#endif
+     return 0;
 }
 
 int write_to_stream(const uint64_t offset,void *buffer,const int bufsize, const void *libctx)
 {
+#ifdef SUPPORTDELPHISTREAMS
   TTGPuttySFTP *TGPSFTP = (TTGPuttySFTP*)((TTGLibraryContext *)libctx)->tag;
-  // TO DO
-  return 0;
+  if (TGPSFTP->FDownloadStream)
+  {
+     TGPSFTP->FDownloadStream->Position=offset;
+     return TGPSFTP->FDownloadStream->Write(buffer,bufsize);
+  }
+  else
+#endif
+     return 0;
 }
 
 bool get_input_callback(char *linebuf,const int maxchars, const void *libctx)
@@ -313,7 +327,7 @@ void TTGPuttySFTP::Move(const char *AFromName, const char *AToName)
      throw TTGPuttySFTPException(MakePSFTPErrorMsg("tgsftp_mv"));
 }
 
-void TTGPuttySFTP::DeleteFile(const char *AName)
+void TTGPuttySFTP::Delete_File(const char *AName)
 {
   ClearStatus();
   int res=tgsftp_rm(AName,&Fcontext);
@@ -337,8 +351,39 @@ void TTGPuttySFTP::DownloadFile(const char *ARemoteFilename, const char *ALocalF
      throw TTGPuttySFTPException(MakePSFTPErrorMsg("tgsftp_getfile"));
 }
 
-// void TTGPuttySFTP::UploadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend);
-// void TTGPuttySFTP::DownloadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend);
+#ifdef SUPPORTDELPHISTREAMS
+void TTGPuttySFTP::UploadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend)
+{
+  ClearStatus();
+  FUploadStream=AStream;
+  try
+  {
+    int res=tgsftp_putfile(NULL,ARemoteFilename,anAppend,&Fcontext);
+    if (res!=1)
+       throw TTGPuttySFTPException(MakePSFTPErrorMsg("tgsftp_putfile"));
+  }
+  __finally
+  {
+      FUploadStream=NULL;
+  }
+}
+
+void TTGPuttySFTP::DownloadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend)
+{
+  ClearStatus();
+  FDownloadStream=AStream;
+  try
+  {
+    int res=tgsftp_getfile(ARemoteFilename,NULL,anAppend,&Fcontext);
+    if (res!=1)
+       throw TTGPuttySFTPException(MakePSFTPErrorMsg("tgsftp_getfile"));
+  }
+  __finally
+  {
+      FDownloadStream=NULL;
+  }
+}
+#endif
 
 void *TTGPuttySFTP::OpenFile(const char *apathname, const int anopenflags, const Pfxp_attrs attrs)
 {

@@ -1,7 +1,14 @@
 #ifndef tgputtylibcbclassH
 #define tgputtylibcbclassH
 
+#define SUPPORTDELPHISTREAMS
+
 #include <string>
+
+#ifdef SUPPORTDELPHISTREAMS
+#include <System.Classes.hpp>
+#endif
+
 #include "ctgputtylib.h"
 
 
@@ -37,8 +44,10 @@ class TTGPuttySFTP
 	TOnListing FOnListing;
 	TOnGetInput FOnGetInput;
 	TOnVerifyHostKey FOnVerifyHostKey;
-	//System::Classes::TStream* FUploadStream;
-	//System::Classes::TStream* FDownloadStream;
+#ifdef SUPPORTDELPHISTREAMS
+	System::Classes::TStream* FUploadStream;
+	System::Classes::TStream* FDownloadStream;
+#endif
 	bool FConnected;
 	int FPasswordAttempts;
 
@@ -67,13 +76,15 @@ class TTGPuttySFTP
 	void SetModifiedDate(const char *AFileName, const unsigned long unixtime);
 	void SetFileSize(const char *AFileName, const __int64 ASize);
 	void Move(const char *AFromName, const char *AToName);
-	void DeleteFile(const char *AName);
+	void Delete_File(const char *AName);
 
 	void UploadFile(const char *ALocalFilename, const char *ARemoteFilename, const bool anAppend);
 	void DownloadFile(const char *ARemoteFilename, const char *ALocalFilename, const bool anAppend);
 
-	//void UploadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend);
-	//void DownloadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend);
+#ifdef SUPPORTDELPHISTREAMS
+	void UploadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend);
+	void DownloadStream(const char *ARemoteFilename, System::Classes::TStream* const AStream, const bool anAppend);
+#endif
 
 	void * OpenFile(const char *apathname, const int anopenflags, const Pfxp_attrs attrs);
 	int CloseFile(struct fxp_handle * &fh);

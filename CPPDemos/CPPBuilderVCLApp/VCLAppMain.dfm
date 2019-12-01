@@ -1,8 +1,8 @@
-object VCLSFTPClientComponentDemoForm: TVCLSFTPClientComponentDemoForm
+object FVCLAppMain: TFVCLAppMain
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  Caption = 'TGPuttyLib VCL SFTP Client Component Demo'
+  Caption = 'TGPuttyLib VCL C++ SFTP Client Component Demo'
   ClientHeight = 646
   ClientWidth = 864
   Color = clBtnFace
@@ -13,8 +13,6 @@ object VCLSFTPClientComponentDemoForm: TVCLSFTPClientComponentDemoForm
   Font.Style = []
   OldCreateOrder = False
   Position = poDesktopCenter
-  OnCreate = FormCreate
-  OnDestroy = FormDestroy
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
@@ -272,7 +270,7 @@ object VCLSFTPClientComponentDemoForm: TVCLSFTPClientComponentDemoForm
     TabOrder = 21
     OnClick = btMoveClick
   end
-  object TGPuttySFTPClient1: TTGPuttySFTPClient
+  object TGPuttySFTPClient1: TTGPuttyCBSFTPClient
     Port = 22
     Verbose = False
     OnSFTPMessage = TGPuttySFTPClient1SFTPMessage
