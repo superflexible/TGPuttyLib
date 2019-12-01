@@ -24,9 +24,11 @@ tgputtysftpclient.pas  -   Delphi SFTP Client Component (using UnicodeStrings)
 
 ctgputtylib.cpp,h      -   C++ DLL bindings
 
-tgputtylibcbclass.cpp,hpp  -  C++ Builder SFTP Client Class
+tgputtylibcbclass.cpp,hpp  -  C++ Builder SFTP Client Class (using 8-bit strings)
 
-tgputtylibvcclass.cpp,h   -  Visual C++ SFTP Client Class
+tgputtycbsftpclient.cpp,h   -  C++ Builder Component (using UnicodeStrings)
+
+tgputtylibvcclass.cpp,h   -  Visual C++ SFTP Client Class (using 8-bit strings)
 
 ---------------------
 
