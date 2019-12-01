@@ -88,44 +88,77 @@ typedef struct
 } TTGLibraryContext;
 
 
-extern int (*psftp_main)(int argc, char *argv[]);
-extern int (*tggetlibrarycontextsize)();
-extern int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
-extern int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx);
-extern int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
-extern void (*tgputtysetappname)(const char *newappname,const char *appversion);
-extern int (*tgputtysftpcommand)(const char *line, TTGLibraryContext *libctx);
-extern int (*tgsftp_connect)(const char *ahost,const char *auser,const int aport,const char *apassword,
-										 TTGLibraryContext *libctx);
+
+extern int (*psftp_main)(int argc, char *argv[]);
+
+extern int (*tggetlibrarycontextsize)();
+
+extern int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
+
+extern int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx);
+
+extern int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
+
+extern void (*tgputtysetappname)(const char *newappname,const char *appversion);
+
+extern int (*tgputtysftpcommand)(const char *line, TTGLibraryContext *libctx);
+
+extern int (*tgsftp_connect)(const char *ahost,const char *auser,const int aport,const char *apassword,
+
+										 TTGLibraryContext *libctx);
 extern int (*tgsftp_cd)(const char *adir,TTGLibraryContext *libctx);
-extern int (*tgsftp_rm)(const char *afile,TTGLibraryContext *libctx);
-extern int (*tgsftp_rmdir)(const char *adir,TTGLibraryContext *libctx);
-extern int (*tgsftp_ls)(const char *adir,TTGLibraryContext *libctx);
-extern int (*tgsftp_mkdir)(const char *adir,TTGLibraryContext *libctx);
-extern int (*tgsftp_mv)(const char *afrom,const char *ato,TTGLibraryContext *libctx);
-extern int (*tgsftp_mvex)(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx);
-extern int (*tgsftp_getstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
-extern int (*tgsftp_setstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
-extern int (*tgsftp_putfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
-extern int (*tgsftp_getfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
-extern void (*tgsftp_close)(TTGLibraryContext *libctx);
-extern void (*tgputty_setverbose)(const bool averbose);
-extern void (*tgputty_setkeyfile)(const char *apathname,TTGLibraryContext *libctx);
-extern struct fxp_handle *(*tgputty_openfile)(const char *apathname,
-                                                          const int anopenflags,
+
+extern int (*tgsftp_rm)(const char *afile,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_rmdir)(const char *adir,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_ls)(const char *adir,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_mkdir)(const char *adir,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_mv)(const char *afrom,const char *ato,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_mvex)(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_getstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_setstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_putfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
+
+extern int (*tgsftp_getfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
+
+extern void (*tgsftp_close)(TTGLibraryContext *libctx);
+
+extern void (*tgputty_setverbose)(const bool averbose);
+
+extern void (*tgputty_setkeyfile)(const char *apathname,TTGLibraryContext *libctx);
+
+extern struct fxp_handle *(*tgputty_openfile)(const char *apathname,
+
+                                                          const int anopenflags,
                                                           const struct fxp_attrs *attrs,
                                                           TTGLibraryContext *libctx);
 extern int (*tgputty_closefile)(struct fxp_handle **fh,TTGLibraryContext *libctx);
-extern void *(*tgputty_xfer_upload_init)(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx);
-extern bool (*tgputty_xfer_upload_ready)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-extern void (*tgputty_xfer_upload_data)(struct fxp_xfer *xfer, char *buffer, int len, uint64_t anoffset,TTGLibraryContext *libctx);
-extern bool (*tgputty_xfer_ensuredone)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-extern bool (*tgputty_xfer_done)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-extern void (*tgputty_xfer_cleanup)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-extern void (*tgputtygetversions)(double *puttyrelease,int *tgputtylibbuild);
-extern void (*tgputtyfree)(TTGLibraryContext *libctx);
 
-bool LoadTGPuttyLib();
+extern void *(*tgputty_xfer_upload_init)(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx);
+
+extern bool (*tgputty_xfer_upload_ready)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+extern void (*tgputty_xfer_upload_data)(struct fxp_xfer *xfer, char *buffer, int len, uint64_t anoffset,TTGLibraryContext *libctx);
+
+extern bool (*tgputty_xfer_ensuredone)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+extern bool (*tgputty_xfer_done)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+extern void (*tgputty_xfer_cleanup)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+extern void (*tgputtygetversions)(double *puttyrelease,int *tgputtylibbuild);
+
+extern void (*tgputtyfree)(TTGLibraryContext *libctx);
+
+
+bool LoadTGPuttyLib();
 
 
 #endif

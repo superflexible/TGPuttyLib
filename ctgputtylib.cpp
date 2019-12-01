@@ -6,41 +6,71 @@ HINSTANCE hPuttyLib = NULL;
 
 int (*psftp_main)(int argc, char *argv[]);
 int (*tggetlibrarycontextsize)();
-int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
+
+int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
 int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx);
-int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
-void (*tgputtysetappname)(const char *newappname,const char *appversion);
-int (*tgputtysftpcommand)(const char *line, TTGLibraryContext *libctx);
-int (*tgsftp_connect)(const char *ahost,const char *auser,const int aport,const char *apassword,
-					  TTGLibraryContext *libctx);
+
+int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
+
+void (*tgputtysetappname)(const char *newappname,const char *appversion);
+
+int (*tgputtysftpcommand)(const char *line, TTGLibraryContext *libctx);
+
+int (*tgsftp_connect)(const char *ahost,const char *auser,const int aport,const char *apassword,
+
+					  TTGLibraryContext *libctx);
 int (*tgsftp_cd)(const char *adir,TTGLibraryContext *libctx);
-int (*tgsftp_rm)(const char *afile,TTGLibraryContext *libctx);
-int (*tgsftp_rmdir)(const char *adir,TTGLibraryContext *libctx);
-int (*tgsftp_ls)(const char *adir,TTGLibraryContext *libctx);
-int (*tgsftp_mkdir)(const char *adir,TTGLibraryContext *libctx);
-int (*tgsftp_mv)(const char *afrom,const char *ato,TTGLibraryContext *libctx);
-int (*tgsftp_mvex)(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx);
-int (*tgsftp_getstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
-int (*tgsftp_setstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
-int (*tgsftp_putfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
-int (*tgsftp_getfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
-void (*tgsftp_close)(TTGLibraryContext *libctx);
-void (*tgputty_setverbose)(const bool averbose);
-void (*tgputty_setkeyfile)(const char *apathname,TTGLibraryContext *libctx);
-struct fxp_handle *(*tgputty_openfile)(const char *apathname,
-                                                          const int anopenflags,
+
+int (*tgsftp_rm)(const char *afile,TTGLibraryContext *libctx);
+
+int (*tgsftp_rmdir)(const char *adir,TTGLibraryContext *libctx);
+
+int (*tgsftp_ls)(const char *adir,TTGLibraryContext *libctx);
+
+int (*tgsftp_mkdir)(const char *adir,TTGLibraryContext *libctx);
+
+int (*tgsftp_mv)(const char *afrom,const char *ato,TTGLibraryContext *libctx);
+
+int (*tgsftp_mvex)(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx);
+
+int (*tgsftp_getstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
+
+int (*tgsftp_setstat)(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx);
+
+int (*tgsftp_putfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
+
+int (*tgsftp_getfile)(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx);
+
+void (*tgsftp_close)(TTGLibraryContext *libctx);
+
+void (*tgputty_setverbose)(const bool averbose);
+
+void (*tgputty_setkeyfile)(const char *apathname,TTGLibraryContext *libctx);
+
+struct fxp_handle *(*tgputty_openfile)(const char *apathname,
+
+                                                          const int anopenflags,
                                                           const struct fxp_attrs *attrs,
                                                           TTGLibraryContext *libctx);
 int (*tgputty_closefile)(struct fxp_handle **fh,TTGLibraryContext *libctx);
-void *(*tgputty_xfer_upload_init)(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx);
-bool (*tgputty_xfer_upload_ready)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-void (*tgputty_xfer_upload_data)(struct fxp_xfer *xfer, char *buffer, int len, uint64_t anoffset,TTGLibraryContext *libctx);
-bool (*tgputty_xfer_ensuredone)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-bool (*tgputty_xfer_done)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-void (*tgputty_xfer_cleanup)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
-void (*tgputtygetversions)(double *puttyrelease,int *tgputtylibbuild);
-void (*tgputtyfree)(TTGLibraryContext *libctx);
-
+
+void *(*tgputty_xfer_upload_init)(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx);
+
+bool (*tgputty_xfer_upload_ready)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+void (*tgputty_xfer_upload_data)(struct fxp_xfer *xfer, char *buffer, int len, uint64_t anoffset,TTGLibraryContext *libctx);
+
+bool (*tgputty_xfer_ensuredone)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+bool (*tgputty_xfer_done)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+void (*tgputty_xfer_cleanup)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
+
+void (*tgputtygetversions)(double *puttyrelease,int *tgputtylibbuild);
+
+void (*tgputtyfree)(TTGLibraryContext *libctx);
+
+
 bool GetProc(const LPCSTR lpProcName,void *p)
 {
   *(FARPROC*)p = GetProcAddress(hPuttyLib,lpProcName);
