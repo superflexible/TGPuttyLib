@@ -61,7 +61,7 @@ type TGPuttySFTPException=class(Exception);
          procedure RemoveDir(const ADirectory:AnsiString);
          procedure ListDir(const ADirectory:AnsiString);
 
-         procedure GetStat(const AFileName:AnsiString;var Attrs:fxp_attrs);
+         procedure GetStat(const AFileName:AnsiString;out Attrs:fxp_attrs);
          procedure SetStat(const AFileName:AnsiString;const Attrs:fxp_attrs);
          procedure SetModifiedDate(const AFileName:AnsiString;const ATimestamp:TDateTime; const isUTC:Boolean);
          procedure SetFileSize(const AFileName:AnsiString;const ASize:Int64);
@@ -127,15 +127,16 @@ begin
 function getpassword_callback(const prompt:PAnsiChar;const echo:Boolean;const cancel:PBoolean;const libctx:PTGLibraryContext):PAnsiChar; cdecl;
 var TGPSFTP:TTGPuttySFTP;
 begin
+  Result:=nil;
   TGPSFTP:=TTGPuttySFTP(libctx.Tag);
   Inc(TGPSFTP.FPasswordAttempts);
   if TGPSFTP.FPasswordAttempts>3 then begin
      cancel^:=true;
      if Assigned(TGPSFTP.OnMessage) then
-        TGPSFTP.OnMessage('Password was rejected, or no password given for '+prompt+'.'+sLineBreak,true);
+        TGPSFTP.OnMessage(AnsiString('Password was rejected, or no password given for ')+prompt+AnsiString('.')+sLineBreak,true);
      end
   else begin
-    if System.Pos('Passphrase for key',prompt)>0 then
+    if System.Pos(AnsiString('Passphrase for key'),AnsiString(prompt))>0 then
        Result:=PAnsiChar(TGPSFTP.KeyPassword)
     else
        Result:=PAnsiChar(TGPSFTP.Password);
@@ -168,6 +169,7 @@ var line:AnsiString;
     cancel:Boolean;
 begin
   TGPSFTP:=TTGPuttySFTP(libctx.Tag);
+  cancel:=false;
 
   if Assigned(TGPSFTP.OnGetInput) then begin
      line:=TGPSFTP.OnGetInput(cancel);
@@ -193,8 +195,6 @@ begin
         linebuf^:=#0;
      end;
   end;
-
-var FS:TFileStream;
 
 function read_from_stream(const offset:UInt64;const buffer:Pointer;const bufsize:Integer;const libctx:PTGLibraryContext):Integer; cdecl;
 var TGPSFTP:TTGPuttySFTP;
@@ -234,7 +234,12 @@ begin
         end;
      end;
 {$endif}
-  raise TGPuttySFTPException.Create('TTGPuttySFTP exception '+AnsiString(msg)+' at line '+IntToStr(line)+' in '+AnsiString(srcfile));
+  raise TGPuttySFTPException.Create('TTGPuttySFTP exception '+
+                                    {$ifdef UNICODE}Utf8ToString{$endif}(AnsiString(msg))+
+                                    ' at line '+
+                                    IntToStr(line)+
+                                    ' in '+
+                                    {$ifdef UNICODE}Utf8ToString{$endif}(AnsiString(srcfile)));
   end;
 
 function verify_host_key_callback(const host:PAnsiChar;const port:Integer;const keytype:PAnsiChar;
@@ -378,14 +383,14 @@ begin
 function TTGPuttySFTP.GetLibVersion: AnsiString;
 var puttyversion:Double;
     tgputtylibbuild:Integer;
-    strpv:string;
+    strpv:AnsiString;
 begin
   tgputtygetversions(@puttyversion,@tgputtylibbuild);
   Str(puttyversion:0:2,strpv);
-  Result:='tgputtylib build '+IntToStr(tgputtylibbuild)+' based on PuTTY Release '+strpv;
+  Result:=AnsiString('tgputtylib build ')+AnsiString(IntToStr(tgputtylibbuild))+AnsiString(' based on PuTTY Release ')+strpv;
   end;
 
-procedure TTGPuttySFTP.GetStat(const AFileName: AnsiString; var Attrs: fxp_attrs);
+procedure TTGPuttySFTP.GetStat(const AFileName: AnsiString;out Attrs: fxp_attrs);
 begin
   FLastMessages:='';
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
@@ -421,9 +426,9 @@ begin
 function TTGPuttySFTP.MakePSFTPErrorMsg(const where: string): string;
 begin
   if Fcontext.fxp_errtype>=0 then
-     Result:=where+': Error '+IntToStr(Fcontext.fxp_errtype)+', '+Fcontext.fxp_error_message
+     Result:=where+': Error '+IntToStr(Fcontext.fxp_errtype)+', '+{$ifdef UNICODE}Utf8ToString{$endif}(Fcontext.fxp_error_message)
   else
-     Result:=where+': Unknown Error.'+sLineBreak+LastMessages;
+     Result:=where+': Unknown Error.'+sLineBreak+{$ifdef UNICODE}Utf8ToString{$endif}(LastMessages);
   end;
 
 procedure TTGPuttySFTP.Move(const AFromName, AToName: AnsiString);
@@ -561,3 +566,4 @@ begin
   end;
 
 end.
+

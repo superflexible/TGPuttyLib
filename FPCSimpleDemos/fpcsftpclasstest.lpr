@@ -57,7 +57,6 @@ begin
 
 procedure TTester.Go;
 var attrs:fxp_attrs;
-    FS:TSTream;
 begin
   tgputtysetappname('tgdelphisftp','0.10');
 

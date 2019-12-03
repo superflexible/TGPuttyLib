@@ -87,9 +87,9 @@ procedure TVCLSFTPClientDemoForm.btConnectClick(Sender: TObject);
 begin
   SaveSettings;
   with PSFTP do begin
-    HostName:=edURL.Text;
-    UserName:=edUserName.Text;
-    Password:=edPassword.Text;
+    HostName:=Utf8Encode(edURL.Text);
+    UserName:=Utf8Encode(edUserName.Text);
+    Password:=Utf8Encode(edPassword.Text);
     Port:=StrToIntDef(edPort.Text,22);
     Connect;
 
@@ -300,7 +300,7 @@ procedure TVCLSFTPClientDemoForm.FormShow(Sender: TObject);
 begin
   LoadSettings;
   ProgressBar1.Visible:=false;
-  memLog.Lines.Add('Library version: '+PSFTP.LibVersion);
+  memLog.Lines.Add('Library version: '+string(PSFTP.LibVersion));
   end;
 
 function TVCLSFTPClientDemoForm.GetInputCallback(var cancel: Boolean): AnsiString;
@@ -429,9 +429,9 @@ begin
      end;
 
   Result:=Application.MessageBox(PWideChar(WideString(
-                'Please confirm the SSH host key fingerprint for '+AnsiString(host)+
+                'Please confirm the SSH host key fingerprint for '+Utf8ToString(AnsiString(host))+
                 ', port '+IntToStr(port)+':'+sLineBreak+
-                AnsiString(fingerprint))),
+                Utf8ToString(AnsiString(fingerprint)))),
                 'Server Verification',
                 MB_YESNO or MB_ICONQUESTION) = IDYES;
   storehostkey:=Result;
