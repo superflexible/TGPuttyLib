@@ -720,7 +720,10 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
        }
     }
     else
+    {
        file=NULL; // if null, we will use a callback to read from stream
+       permissions=-1; // use default permissions
+    }
 
     attrs.flags = 0;
     PUT_PERMISSIONS(attrs, permissions);
