@@ -1,6 +1,24 @@
 TGPutty Release History
 ---------------------
 
+Build 4 - 3 Dec 2019
+
+This update fixes incorrect random permissions on uploaded files, which could happen when 
+files were uploaded from a Delphi stream (like the Delphi component does it). 
+The bug itself was in the DLL.
+
+Also includes minor improvements in some of the Pascal source code files.
+
+---------------------
+Build 3 - 1 Dec 2019
+
+Added C++ Support, including binding and classes for C++ Builder and Visual C++, as well as 
+a native C++ Builder SFTP Client component that does not use any Delphi code. 
+
+No import library is needed for C++.
+
+---------------------
+
 Build 2 - 1 Nov 2019
 
 Adds true Delphi Component in tgputtysftpclient.pas, which is fully Unicode. Assumes UTF-8 Encoding is used.
