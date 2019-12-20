@@ -2579,6 +2579,22 @@ static void do_sftp_cleanup(void)
     }
 }
 
+void free_sftp_command(struct sftp_command **acmd) // TG
+{
+  struct sftp_command *cmd = (*acmd);
+
+  if (cmd->words)
+  {
+     int i;
+     for (i = 0; i < cmd->nwords; i++)
+        sfree(cmd->words[i]);
+     sfree(cmd->words);
+  }
+  sfree(cmd);
+
+  *acmd = NULL;
+}
+
 int do_sftp(int mode, int modeflags, char *batchfile)
 {
     FILE *fp;
@@ -2598,13 +2614,7 @@ int do_sftp(int mode, int modeflags, char *batchfile)
             if (!cmd)
                 break;
             ret = cmd->obey(cmd);
-            if (cmd->words) {
-                int i;
-                for(i = 0; i < cmd->nwords; i++)
-                    sfree(cmd->words[i]);
-                sfree(cmd->words);
-            }
-            sfree(cmd);
+            free_sftp_command(&cmd); // TG
             if (ret < 0)
                 break;
         }
@@ -2621,7 +2631,7 @@ int do_sftp(int mode, int modeflags, char *batchfile)
             if (!cmd)
                 break;
 			ret = cmd->obey(cmd);
-            // TG 2019: memory leak here? not relevant for our DLL really
+            free_sftp_command(&cmd); // TG 2019
             if (ret < 0)
                 break;
             if (ret == 0) {
@@ -3195,8 +3205,6 @@ __declspec(dllexport) int tgputty_initcontext(const bool averbose,TTGLibraryCont
 	conf = conf_new();
 	do_defaults(NULL, conf);
 	loaded_session = false;
-    libctx->sftp_ssh_socket = INVALID_SOCKET;
-    libctx->netevent = INVALID_HANDLE_VALUE;
 
     // initial values taken from sshcommon.c
     libctx->pktin_freeq_head.next = &libctx->pktin_freeq_head;
@@ -3346,14 +3354,8 @@ __declspec(dllexport) int tgputtysftpcommand(const char *line, TTGLibraryContext
   if (!cmd)
 	 return 2;
   int ret = cmd->obey(cmd);
-  if (cmd->words)
-  {
-	 int i;
-	 for(i = 0; i < cmd->nwords; i++)
-	   sfree(cmd->words[i]);
-	 sfree(cmd->words);
-  }
-  sfree(cmd);
+
+  free_sftp_command(&cmd);
   return ret;
 }
 
@@ -3405,7 +3407,11 @@ __declspec(dllexport) int tgsftp_cd(const char *adir,TTGLibraryContext *libctx) 
   cmd->words[0] = dupstr("cd");
   cmd->words[1] = dupstr(adir);
 
-  return sftp_cmd_cd(cmd);
+  int result=sftp_cmd_cd(cmd);
+
+  free_sftp_command(&cmd);
+
+  return result;
 }
 
 __declspec(dllexport) int tgsftp_rm(const char *afile,TTGLibraryContext *libctx) // TG 2019
@@ -3442,7 +3448,9 @@ __declspec(dllexport) int tgsftp_ls(const char *adir,TTGLibraryContext *libctx) 
   else
 	 cmd->nwords = 0;
 
-  return sftp_cmd_ls(cmd);
+  int result=sftp_cmd_ls(cmd);
+  free_sftp_command(&cmd);
+  return result;
 }
 
 __declspec(dllexport) int tgsftp_mkdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
@@ -3457,7 +3465,9 @@ __declspec(dllexport) int tgsftp_mkdir(const char *adir,TTGLibraryContext *libct
   cmd->words[0] = dupstr("mkdir");
   cmd->words[1] = dupstr(adir);
 
-  return sftp_cmd_mkdir(cmd);
+  int result=sftp_cmd_mkdir(cmd);
+  free_sftp_command(&cmd);
+  return result;
 }
 
 
@@ -3474,7 +3484,9 @@ __declspec(dllexport) int tgsftp_mv(const char *afrom,const char *ato,TTGLibrary
   cmd->words[1] = dupstr(afrom);
   cmd->words[2] = dupstr(ato);
 
-  return sftp_cmd_mv(cmd);
+  int result=sftp_cmd_mv(cmd);
+  free_sftp_command(&cmd);
+  return result;
 }
 
 __declspec(dllexport) int tgsftp_mvex(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx) // TG 2019
@@ -3490,7 +3502,9 @@ __declspec(dllexport) int tgsftp_mvex(const char *afrom,const char *ato,const in
   cmd->words[1] = dupstr(afrom);
   cmd->words[2] = dupstr(ato);
 
-  return sftp_cmd_mvex(cmd,moveflags);
+  int result=sftp_cmd_mvex(cmd,moveflags);
+  free_sftp_command(&cmd);
+  return result;
 }
 
 __declspec(dllexport) int tgsftp_getstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019
@@ -3705,6 +3719,9 @@ __declspec(dllexport) void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
 
   if (psftp_logctx)
      log_free(psftp_logctx);
+
+  if ((libctx->netevent!=0) && (libctx->netevent!=INVALID_HANDLE_VALUE))
+     CloseHandle(libctx->netevent);
 
   ContextCounter--;
   ThreadContextCounter--;

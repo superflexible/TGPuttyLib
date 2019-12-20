@@ -1,6 +1,13 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 5 - 21 Dec 2019
+
+This update fixes memory and event handle leaks. The event handle leak in winsftp.c is actually
+still in the original PuTTY 0.73. I will try to submit the fix to them. The memory leaks were
+in DLL exclusive code (well except for one that doesn't affect us anyway).
+
+---------------------
 Build 4 - 3 Dec 2019
 
 This update fixes incorrect random permissions on uploaded files, which could happen when 
