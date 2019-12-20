@@ -11,7 +11,8 @@ in DLL exclusive code (well except for one that doesn't affect us anyway).
 Build 4 - 3 Dec 2019
 
 This update fixes incorrect random permissions on uploaded files, which could happen when 
-files were uploaded from a Delphi stream (like the Delphi component does it). 
+files were uploaded from a Delphi stream (like the Delphi component does it, even if you 
+use the UploadFile method with a file path). 
 The bug itself was in the DLL.
 
 Also includes minor improvements in some of the Pascal source code files.
