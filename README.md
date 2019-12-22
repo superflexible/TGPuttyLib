@@ -5,7 +5,7 @@ The new TGPuttyLib SFTP Library is a DLL conversion of the psftp program from th
 
 It allows developers to transfer files with the highest possible transfer rates (over 100MB/sec). The rates are higher than with any other known library.
 
-TGPuttyLib Build 3 is based on PuTTY Release 0.73. Ready-to-use classes are currently available for C++, Delphi and Free Pascal.
+TGPuttyLib is based on PuTTY Release 0.73. Ready-to-use classes are currently available for C++, Delphi and Free Pascal.
 
 The library is currently available for Windows. MacOS and Linux adaptations will follow around the end of 2019.
 
