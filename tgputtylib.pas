@@ -86,8 +86,8 @@ type fxp_attrs=record
                                          const verificationstatus:Integer;const storehostkey:PBoolean;
                                          const libctx:PTGLibraryContext):Boolean; cdecl;
        raise_exception_callback:procedure(const msg:PAnsiChar;const srcfile:PAnsiChar;const line:Integer;const libctx:PTGLibraryContext); cdecl;
-       entercriticalsection_callback:procedure(const Num:Integer);
-       leavecriticalsection_callback:procedure(const Num:Integer);
+       entercriticalsection_callback:procedure(const Num:Integer); cdecl;
+       leavecriticalsection_callback:procedure(const Num:Integer); cdecl;
 
        // these aren't really good for much ...
        mode:Integer;
@@ -100,6 +100,16 @@ type fxp_attrs=record
        // static items from sftp.c
        fxp_error_message:PAnsiChar;
        fxp_errtype:Integer;
+
+       malloc_callback:function(size:NativeUInt):Pointer;  cdecl;
+       free_callback:procedure(ptr:Pointer);  cdecl;
+       realloc_callback:function(ptr:Pointer; newsize:NativeUInt):Pointer;  cdecl;
+
+       debug_malloc_callback:function(size:NativeUInt;const srcfile:PAnsiChar;const line:Integer):Pointer;  cdecl;
+       debug_free_callback:procedure(ptr:Pointer;const srcfile:PAnsiChar;const line:Integer);  cdecl;
+       debug_realloc_callback:function(ptr:Pointer; newsize:NativeUInt;const srcfile:PAnsiChar;const line:Integer):Pointer;  cdecl;
+
+       usememorycallbacks: Boolean;
 
        reserved:array[0..300] of Byte;
 
@@ -171,14 +181,14 @@ const MaxCritSect=0; // not currently used
 
 var CritSects:array[1..MaxCritSect] of TCriticalSection;
 
-procedure TGPuttyDLLEnterCriticalSection(const Num:Integer);
+procedure TGPuttyDLLEnterCriticalSection(const Num:Integer); cdecl;
 begin
   if (Num<1) or (Num>MaxCritSect) then
      raise Exception.Create('Invalid tgputtydll critical section number '+IntToStr(Num));
   CritSects[Num].Enter;
   end;
 
-procedure TGPuttyDLLLeaveCriticalSection(const Num:Integer);
+procedure TGPuttyDLLLeaveCriticalSection(const Num:Integer); cdecl;
 begin
   if (Num<1) or (Num>MaxCritSect) then
      raise Exception.Create('Invalid tgputtydll critical section number '+IntToStr(Num));

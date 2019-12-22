@@ -322,7 +322,11 @@ char *fxp_realpath_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     sfree(req);
 
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_realpath_recv: no pktin, possibly not connected\n");
+      return NULL;
+    }
 
     if (pktin->type == SSH_FXP_NAME) {
         unsigned long count;
@@ -392,7 +396,11 @@ struct fxp_handle *fxp_open_recv(struct sftp_packet *pktin,
                                  struct sftp_request *req)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_open_recv: no pktin, possibly not connected\n");
+      return NULL;
+    }
 
     if (pktin->type == SSH_FXP_HANDLE) {
         return fxp_got_handle(pktin);
@@ -425,7 +433,12 @@ struct fxp_handle *fxp_opendir_recv(struct sftp_packet *pktin,
                                     struct sftp_request *req)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_opendir_recv: no pktin, possibly not connected\n");
+      return NULL;
+    }
+
 
     if (pktin->type == SSH_FXP_HANDLE) {
         return fxp_got_handle(pktin);
@@ -462,7 +475,11 @@ struct sftp_request *fxp_close_send(struct fxp_handle *handle)
 bool fxp_close_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_close_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -488,7 +505,11 @@ bool fxp_mkdir_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     int id;
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_mkdir_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     id = fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -512,7 +533,11 @@ bool fxp_rmdir_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     int id;
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_rmdir_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     id = fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -536,7 +561,11 @@ bool fxp_remove_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     int id;
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_remove_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     id = fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -562,7 +591,11 @@ bool fxp_rename_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     int id;
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_rename_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     id = fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -602,7 +635,11 @@ bool fxp_stat_recv(struct sftp_packet *pktin, struct sftp_request *req,
                   struct fxp_attrs *attrs)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_stat_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     if (pktin->type == SSH_FXP_ATTRS) {
         return fxp_got_attrs(pktin, attrs);
@@ -630,7 +667,11 @@ bool fxp_fstat_recv(struct sftp_packet *pktin, struct sftp_request *req,
                     struct fxp_attrs *attrs)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_fstat_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     if (pktin->type == SSH_FXP_ATTRS) {
         return fxp_got_attrs(pktin, attrs);
@@ -663,7 +704,11 @@ bool fxp_setstat_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     int id;
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_setstat_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     id = fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -689,7 +734,11 @@ bool fxp_fsetstat_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     int id;
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_fsetstat_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     id = fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -722,7 +771,11 @@ int fxp_read_recv(struct sftp_packet *pktin, struct sftp_request *req,
                   char *buffer, int len)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_read_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     if (pktin->type == SSH_FXP_DATA) {
         ptrlen data;
@@ -770,7 +823,11 @@ struct fxp_names *fxp_readdir_recv(struct sftp_packet *pktin,
                                    struct sftp_request *req)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_readdir_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     if (pktin->type == SSH_FXP_NAME) {
         struct fxp_names *ret;
@@ -854,7 +911,11 @@ struct sftp_request *fxp_write_send(struct fxp_handle *handle,
 bool fxp_write_recv(struct sftp_packet *pktin, struct sftp_request *req)
 {
     sfree(req);
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("fxp_write_recv: no pktin, possibly not connected\n");
+      return false;
+    }
 
     fxp_got_status(pktin);
     sftp_pkt_free(pktin);
@@ -1019,7 +1080,11 @@ int xfer_download_gotpkt(struct fxp_xfer *xfer, struct sftp_packet *pktin)
     struct sftp_request *rreq;
     struct req *rr;
 
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("xfer_download_gotpkt: no pktin, possibly not connected\n");
+      return INT_MIN;
+    }
 
     rreq = sftp_find_request(pktin);
     if (!rreq)
@@ -1216,7 +1281,11 @@ int xfer_upload_gotpkt(struct fxp_xfer *xfer, struct sftp_packet *pktin)
     struct req *rr, *prev, *next;
     bool ret;
 
-    assert(pktin!=NULL); // TG: prevent AV when there is no connection
+    if (pktin==NULL) // TG: prevent AV when there is no connection
+    {
+      fxp_internal_error("xfer_upload_gotpkt: no pktin, possibly not connected\n");
+      return INT_MIN;
+    }
 
     rreq = sftp_find_request(pktin);
     if (!rreq)

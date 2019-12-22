@@ -2299,6 +2299,16 @@ typedef struct
   const char *fxp_error_message; // accessed by host application too
   int fxp_errtype; // accessed by host application too
 
+  void* (*malloc_callback) (size_t size);
+  void (*free_callback) (void* ptr);
+  void* (*realloc_callback)(void *ptr, size_t new_size);
+
+  void* (*debug_malloc_callback) (size_t size,const char *filename,const int line);
+  void (*debug_free_callback) (void* ptr,const char *filename,const int line);
+  void* (*debug_realloc_callback)(void *ptr, size_t new_size,const char *filename,const int line);
+
+  bool usememorycallbacks;
+
   // STRICTLY LIBRARY PRIVATE FIELDS FOLLOW
   tree234 *sftp_requests;
 
@@ -2351,14 +2361,19 @@ typedef struct
 
 extern __declspec(thread) TTGLibraryContext *curlibctx;
 
-#define printf(...) tgdll_print(dupprintf(__VA_ARGS__))
-#define fprintf(fp,...) tgdll_fprint(fp,dupprintf(__VA_ARGS__))
+#define printf(...) tgdll_printfree(dupprintf(__VA_ARGS__))
+#define fprintf(fp,...) tgdll_fprintfree(fp,dupprintf(__VA_ARGS__))
 #define fflush tgdll_fflush
 #define fwrite tgdll_fwrite
 #define fputs(msg,fp) fprintf(fp,"%s",msg)
 #define fputc(c,fp) fprintf(fp,"%c",c)
+
 int tgdll_print(const char *msg);
+int tgdll_printfree(char *msg);
+
 int tgdll_fprint(FILE *stream,const char *msg);
+int tgdll_fprintfree(FILE *stream,char *msg);
+
 int tgdll_fflush(FILE *stream);
 size_t tgdll_fwrite(const void *ptr,size_t size,size_t count,FILE *stream);
 void tgdll_assert(const char *msg,const char *filename,const int line);

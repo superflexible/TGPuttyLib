@@ -499,7 +499,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
 	uint64_t lastprogresstick=starttick;
     bool canceled=false;
     xfer = xfer_download_init(fh, offset);
-    while (!xfer_done(xfer)) {
+    while (!xfer_done(xfer) && !canceled) {
         void *vbuf;
         int retd, len;
         int wpos, wlen;
@@ -763,7 +763,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
             goto cleanup;
         }
         offset = attrs.size;
-        printf("reput: restarting at file position %"PRIu64"\n", offset);
+        printf("reput: restarting at file position %I64u\n", offset);
 
         if (file) // TG 2019
            if (seek_file((WFile *)file, offset, FROM_START) != 0)
@@ -2560,11 +2560,15 @@ static int do_sftp_init(void)
 
 static void do_sftp_cleanup(void)
 {
-    char ch;
-    if (backend) {
-        backend_special(backend, SS_EOF, 0);
-        sent_eof = true;
-        sftp_recvdata(&ch, 1);
+    if (backend)
+    {
+        if (!sent_eof && backend_connected(backend))
+        {
+           char ch;
+           backend_special(backend, SS_EOF, 0);
+           sent_eof = true;
+           sftp_recvdata(&ch, 1);
+        }
         backend_free(backend);
         sftp_cleanup_request();
         backend = NULL;
@@ -2954,7 +2958,10 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
                  "exec sftp-server");
     conf_set_bool(conf, CONF_ssh_subsys2, false);
 
-    psftp_logctx = log_init(default_logpolicy, conf);
+    if (psftp_logctx=NULL) // TG - might connect again after disconnecting
+    {
+       psftp_logctx = log_init(default_logpolicy, conf);
+    }
 
     platform_psftp_pre_conn_setup();
 
@@ -2963,15 +2970,25 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
                        conf_get_int(conf, CONF_port),
                        &realhost, 0,
                        conf_get_bool(conf, CONF_tcp_keepalives));
-    if (err != NULL) {
+    if (err != NULL)
+    {
         fprintf(stderr, "ssh_init: %s\n", err);
+        if (realhost != NULL)
+           sfree(realhost);
         return 1;
     }
     while (!backend_sendok(backend)) {
         if (backend_exitcode(backend) >= 0)
+        {
+            if (realhost != NULL)
+               sfree(realhost);
             return 1;
-        if (ssh_sftp_loop_iteration() < 0) {
+        }
+        if (ssh_sftp_loop_iteration() < 0)
+        {
             fprintf(stderr, "ssh_init: error during SSH connection setup\n");
+            if (realhost != NULL)
+               sfree(realhost);
             return 1;
         }
     }
@@ -3155,7 +3172,10 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
     stripctrl_free(stderr_scc);
 
     if (psftp_logctx)
+    {
         log_free(psftp_logctx);
+        psftp_logctx = NULL;
+    }
 
     return ret;
 }
@@ -3388,6 +3408,10 @@ __declspec(dllexport) int tgsftp_connect(const char *ahost,const char *auser,con
   {
 	 result=do_sftp_init();
 	 printf("do_sftp_init result is %d\n",result);
+  }
+  else
+  {
+    do_sftp_cleanup();
   }
 
   printf("tgsftp_connect final result is %d\n",result);
@@ -3718,10 +3742,25 @@ __declspec(dllexport) void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
   printf("almost done\n");
 
   if (psftp_logctx)
+  {
      log_free(psftp_logctx);
+     psftp_logctx = NULL;
+  }
 
   if ((libctx->netevent!=0) && (libctx->netevent!=INVALID_HANDLE_VALUE))
      CloseHandle(libctx->netevent);
+
+  conf_free(conf);
+  if (libctx->timers)
+  {
+     freetree234(libctx->timers);
+     libctx->timers = NULL;
+  }
+  if (libctx->timer_contexts)
+  {
+     freetree234(libctx->timer_contexts);
+     libctx->timer_contexts = NULL;
+  }
 
   ContextCounter--;
   ThreadContextCounter--;
@@ -3838,6 +3877,14 @@ int tgdll_print(const char *msg)
 	  return (int)strlen(msg);
    }
 }
+
+int tgdll_printfree(char *msg)
+{
+  int res=tgdll_print(msg);
+  sfree(msg);
+  return res;
+}
+
 int tgdll_fprint(FILE *stream,const char *msg)
 {
    if (!curlibctx->printmessage_callback || ((stream!=stdout) && (stream!=stderr)))
@@ -3855,6 +3902,14 @@ int tgdll_fprint(FILE *stream,const char *msg)
 	  return (int)strlen(msg);
    }
 }
+
+int tgdll_fprintfree(FILE *stream,char *msg)
+{
+  int res=tgdll_fprint(stream,msg);
+  sfree(msg);
+  return res;
+}
+
 int tgdll_fflush(FILE *stream)
 {
   if ((stream!=stdout) && (stream!=stdin) && (stream!=stderr))

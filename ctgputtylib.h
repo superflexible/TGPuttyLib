@@ -82,6 +82,16 @@ typedef struct
   const char *fxp_error_message; // accessed by host application too
   int fxp_errtype; // accessed by host application too
 
+  void* (*malloc_callback) (size_t size);
+  void (*free_callback) (void* ptr);
+  void* (*realloc_callback)(void* ptr, size_t new_size);
+
+  void* (*debug_malloc_callback) (size_t size, const char* filename, const int line);
+  void (*debug_free_callback) (void* ptr, const char* filename, const int line);
+  void* (*debug_realloc_callback)(void* ptr, size_t new_size, const char* filename, const int line);
+
+  bool usememorycallbacks;
+
   // STRICTLY LIBRARY PRIVATE FIELDS FOLLOW
   char reservedbytes[301];
 

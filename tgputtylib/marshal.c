@@ -2,12 +2,13 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "marshal.h"
-#include "misc.h"
-
 #ifdef TGDLL
 #include "putty.h" // need our defines to replace fwrite etc.
 #endif
+
+#include "marshal.h"
+#include "misc.h"
+
 
 void BinarySink_put_data(BinarySink *bs, const void *data, size_t len)
 {

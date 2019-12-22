@@ -222,8 +222,8 @@ HMODULE load_system32_dll(const char *libname)
      * attack is possible by placing a substitute DLL earlier on that
      * path.)
      */
-    static char *sysdir = NULL;
-    static size_t sysdirsize = 0;
+    char *sysdir = NULL; // TG: prefer local, or we can't free it
+    size_t sysdirsize = 0; // TG: and unfreed variables make it hard to fix memory leaks
     char *fullpath;
     HMODULE ret;
 
@@ -236,6 +236,7 @@ HMODULE load_system32_dll(const char *libname)
     fullpath = dupcat(sysdir, "\\", libname, NULL);
     ret = LoadLibrary(fullpath);
     sfree(fullpath);
+    sfree(sysdir); // avoid memory leak
     return ret;
 }
 

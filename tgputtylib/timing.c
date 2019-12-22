@@ -211,12 +211,38 @@ bool run_timers(unsigned long anow, unsigned long *next)
     }
 }
 
+void free_timerwithctx(void *ctx)
+{
+    struct timer *t;
+    for (int i = 0;
+         (t = index234(timers, i)) != NULL;
+         )
+    {
+      if (t->ctx == ctx)
+      {
+        delpos234(timers, i);
+        sfree(t);
+        printf("free_timerwithctx: freed timer %p\n",t);
+      }
+      else
+         i++;
+    }
+}
 /*
  * Call to expire all timers associated with a given context.
  */
 void expire_timer_context(void *ctx)
 {
     init_timers();
+
+    // TG 2019
+    // free the timer structs
+    void *p;
+    for (int i = 0; (p = index234(timer_contexts, i)) != NULL; i++)
+    {
+      printf("expire_timer_context: freeing timer with ctx %p\n",p);
+      free_timerwithctx(p);
+    }
 
     /*
      * We don't bother to check the return value; if the context

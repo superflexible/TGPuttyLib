@@ -481,7 +481,8 @@ char *do_select(SOCKET skt, bool startup)
         sftp_ssh_socket = INVALID_SOCKET;
 
     if (p_WSAEventSelect) {
-        if (startup) {
+        if (startup)
+        {
             events = (FD_CONNECT | FD_READ | FD_WRITE |
                       FD_OOB | FD_CLOSE | FD_ACCEPT);
 
@@ -491,7 +492,11 @@ char *do_select(SOCKET skt, bool startup)
                // but it's freed in tgputtyfree when a TGPuttyLib context is freed
                netevent = CreateEvent(NULL, false, false, NULL);
             }
-        } else {
+            else
+               ResetEvent(netevent);
+        }
+        else
+        {
             events = 0;
         }
         if (p_WSAEventSelect(skt, netevent, events) == SOCKET_ERROR) {
