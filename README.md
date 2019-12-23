@@ -7,7 +7,11 @@ It allows developers to transfer files with the highest possible transfer rates 
 
 TGPuttyLib is based on PuTTY Release 0.73. Ready-to-use classes are currently available for C++, Delphi and Free Pascal.
 
-The library is currently available for Windows. MacOS and Linux adaptations will follow around the end of 2019.
+The library is currently available for Windows. MacOS and Linux adaptations will follow in Q1/2020.
+
+The compiled DLL can be found in the Win32/Win64 folders. There is no difference between a Debug and Release version.
+
+Compiled demos can be found in the Releases section, and on the project web site.
 
 For more information, please visit the project web site: 
 https://www.syncovery.com/tgputtylib
