@@ -2313,6 +2313,7 @@ typedef struct
   const char *fxp_error_message; // accessed by host application too
   int fxp_errtype; // accessed by host application too
 
+#if defined(CALLBACK_MALLOC) || defined(DEBUG_MALLOC)
   void* (*malloc_callback) (size_t size);
   void (*free_callback) (void* ptr);
   void* (*realloc_callback)(void *ptr, size_t new_size);
@@ -2322,6 +2323,7 @@ typedef struct
   void* (*debug_realloc_callback)(void *ptr, size_t new_size,const char *filename,const int line);
 
   bool usememorycallbacks;
+#endif
 
   // STRICTLY LIBRARY PRIVATE FIELDS FOLLOW
   tree234 *sftp_requests;

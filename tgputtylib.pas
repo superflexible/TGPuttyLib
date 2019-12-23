@@ -24,10 +24,14 @@ interface
 
 uses Classes, SysUtils, SyncObjs;
 
+{.$define USEMEMORYCALLBACKS}
+
 const tgputtydll='tgputtylib.dll';
 
+{$ifdef USEMEMORYCALLBACKS}
       UseMemoryAllocationCallbacks=false;
       DebugMemory=false;
+{$endif}
 
 {$A8}
 
@@ -104,6 +108,7 @@ type fxp_attrs=record
        fxp_error_message:PAnsiChar;
        fxp_errtype:Integer;
 
+{$ifdef USEMEMORYCALLBACKS}
        malloc_callback:function(size:NativeUInt):Pointer;  cdecl;
        free_callback:procedure(ptr:Pointer);  cdecl;
        realloc_callback:function(ptr:Pointer; newsize:NativeUInt):Pointer;  cdecl;
@@ -113,6 +118,7 @@ type fxp_attrs=record
        debug_realloc_callback:function(ptr:Pointer; newsize:NativeUInt;const srcfile:PAnsiChar;const line:Integer):Pointer;  cdecl;
 
        usememorycallbacks: Boolean;
+{$endif}
 
        reserved:array[0..300] of Byte;
 
@@ -199,6 +205,7 @@ begin
   end;
 }
 
+{$ifdef USEMEMORYCALLBACKS}
 function tgputtylib_malloc_callback(size:NativeUInt):Pointer; cdecl;
 begin
   Result:=AllocMem(size);
@@ -335,6 +342,7 @@ begin
     end;
   CloseFile(T);
   end;
+{$endif}
 
 { TTGLibraryContext }
 
@@ -343,6 +351,7 @@ begin
   //entercriticalsection_callback:=TGPuttyDLLEnterCriticalSection;
   //leavecriticalsection_callback:=TGPuttyDLLLeaveCriticalSection;
 
+{$ifdef USEMEMORYCALLBACKS}
   if UseMemoryAllocationCallbacks then begin
      malloc_callback:=tgputtylib_malloc_callback;
      free_callback:=tgputtylib_free_callback;
@@ -353,6 +362,7 @@ begin
      end;
 
   usememorycallbacks:=UseMemoryAllocationCallbacks;
+{$endif}
   end;
 
 {
@@ -377,6 +387,7 @@ finalization
   FreeCritSects;
 }
 
+{$ifdef USEMEMORYCALLBACKS}
 initialization
 
   if DebugMemory then begin
@@ -396,6 +407,7 @@ finalization
      FreeAndNil(MallocLinesList);
      FreeAndNil(MallocCS);
      end;
+{$endif}
 
 end.
 

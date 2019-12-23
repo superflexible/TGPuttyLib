@@ -1,6 +1,18 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 7 - 23 Dec 2019
+
+Uses #ifdefs to remove the memory allocation callback features, which are only used for debugging.
+This reinstates binary compatibility with older builds.
+
+---------------------
+Build 6 - 23 Dec 2019
+
+This update fixes more memory leaks and rare AVs. It also adds the optional memory checking code
+used to detect any leaks. This code is not active by default and removed by the linker.
+
+---------------------
 Build 5 - 21 Dec 2019
 
 This update fixes memory and event handle leaks. The event handle leak in winsftp.c is actually

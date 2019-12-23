@@ -143,152 +143,152 @@ begin
     res:=tgputty_initcontext(true, @context1); // TO DO: 1. the param does not work, 2. init with only context1 parameter
     res:=tgputty_initcontext(true, @context2);
 
-    if RunInteractiveMode then begin
-       tgputtyrunpsftp(@context1);
-       end
-    else begin
-      Write('Enter Hostname or IP of SFTP Server: ');
-      ReadLn(HostName);
-      Write('Enter Username: ');
-      ReadLn(UserName);
-      Write('Enter Password: ');
-      ReadLn(Password);
-      if UseCmdLines then begin
-         tgputtysftpcommand(PAnsiChar(AnsiString('open '+UserName+'@'+HostName)),@context1);
-         Write('Enter Folder Path to CD into: ');
-         ReadLn(Folder);
-         tgputtysftpcommand(PAnsiChar(AnsiString(AnsiString('cd ')+Utf8Encode(Folder))),@context1);
-         Write('Enter local File Path to upload: ');
-         ReadLn(FileToUpload);
-         tgputtysftpcommand(PAnsiChar(AnsiString(AnsiString('put ')+Utf8Encode(FileToUpload))),@context1);
-         tgputtysftpcommand('quit',@context1);
+    try
+      if RunInteractiveMode then begin
+         tgputtyrunpsftp(@context1);
          end
       else begin
-        try
-          res:=tgsftp_connect(PAnsiChar(HostName),PAnsiChar(UserName),22,PAnsiChar(Password),@context1);
-          except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
-        end;
-
-        if res<>0 then begin
-           WriteLn('Connection failed, Exiting. Press ENTER.');
-           ReadLn;
-           Halt(1);
-           end;
-
-        WriteLn('Home Directory: ',context1.homedir);
-        WriteLn('Current Directory: ',context1.pwd);
-
-        Write('Enter Folder Path to CD into: ');
-        ReadLn(Folder);
-
-        try
-          tgsftp_cd(PAnsiChar(Utf8Encode(Folder)),@context1);
-          except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
-          end;
-
-        try
-          tgsftp_ls('.',@context1);
+        Write('Enter Hostname or IP of SFTP Server: ');
+        ReadLn(HostName);
+        Write('Enter Username: ');
+        ReadLn(UserName);
+        Write('Enter Password: ');
+        ReadLn(Password);
+        if UseCmdLines then begin
+           tgputtysftpcommand(PAnsiChar(AnsiString('open '+UserName+'@'+HostName)),@context1);
+           Write('Enter Folder Path to CD into: ');
+           ReadLn(Folder);
+           tgputtysftpcommand(PAnsiChar(AnsiString(AnsiString('cd ')+Utf8Encode(Folder))),@context1);
+           Write('Enter local File Path to upload: ');
+           ReadLn(FileToUpload);
+           tgputtysftpcommand(PAnsiChar(AnsiString(AnsiString('put ')+Utf8Encode(FileToUpload))),@context1);
+           tgputtysftpcommand('quit',@context1);
+           end
+        else begin
+          try
+            res:=tgsftp_connect(PAnsiChar(HostName),PAnsiChar(UserName),22,PAnsiChar(Password),@context1);
             except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
           end;
 
-        Write('Enter local File Path to upload: ');
-        ReadLn(FileToUpload);
+          if res<>0 then begin
+             WriteLn('Connection failed, Exiting. Press ENTER.');
+             ReadLn;
+             Halt(1);
+             end;
 
-        try
-          tgsftp_putfile(PAnsiChar(Utf8Encode(FileToUpload)), PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),false,@context1);
-          except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
+          WriteLn('Home Directory: ',context1.homedir);
+          WriteLn('Current Directory: ',context1.pwd);
+
+          Write('Enter Folder Path to CD into: ');
+          ReadLn(Folder);
+
+          try
+            tgsftp_cd(PAnsiChar(Utf8Encode(Folder)),@context1);
+            except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
+            end;
+
+          try
+            tgsftp_ls('.',@context1);
+              except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
+            end;
+
+          Write('Enter local File Path to upload: ');
+          ReadLn(FileToUpload);
+
+          try
+            tgsftp_putfile(PAnsiChar(Utf8Encode(FileToUpload)), PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),false,@context1);
+            except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
+            end;
+
+          try
+            tgsftp_ls('.',@context1);
+            except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
+            end;
+
+          if tgsftp_getstat(PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),@attrs,@context1) then
+             WriteLn('Got Stat for '+ExtractFileName(FileToUpload)+': size ',attrs.size,
+                     ', mtime: ',DateTimeToStr(UnixToDateTime(attrs.mtime)),' UTC')
+          else
+             WriteLn('Failed to get stat');
+
+          WriteLn('Setting timestamp to 03.10.2019');
+          attrs.mtime := DateTimeToUnix(StrToDate('03.10.2019'));
+          attrs.flags := SSH_FILEXFER_ATTR_ACMODTIME; // set only this
+          if tgsftp_setstat(PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),@attrs,@context1) then
+             WriteLn('Set Stat OK.')
+          else
+             WriteLn('Failed to set stat.');
+
+          if tgsftp_getstat(PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),@attrs,@context1) then
+             WriteLn('Got Stat for '+ExtractFileName(FileToUpload)+': size ',attrs.size,
+                     ', mtime: ',DateTimeToStr(UnixToDateTime(attrs.mtime)),' UTC')
+          else
+             WriteLn('Failed to get stat.');
+
+          {
+          more examples:
+
+          WriteLn('About to download '+ExtractFileName(FileToUpload)+' ... press ENTER.');
+          ReadLn;
+          tgsftp_getfile(Utf8Encode(ExtractFileName(FileToUpload)),FileToUpload+'.downloaded',false,@context1);
+          tgsftp_mkdir('blabla',@context1);
+          tgsftp_ls('/share/CACHEDEV1_DATA/Public',@context1);
+
+          WriteLn('About to upload stream ... balenaEtcher-Setup-1.5.51.exe ... press ENTER.');
+          ReadLn;
+          FS:=TFileStream.Create('D:\Downloads\balenaEtcher-Setup-1.5.51.exe',fmOpenRead);
+          try
+            tgsftp_putfile(nil, 'etcher.exe',false,@context1);
+            finally
+              FreeAndNil(FS);
+            end;
+
+          WriteLn('About to download stream ... press ENTER.');
+          ReadLn;
+          FS:=TFileStream.Create('D:\Downloads\Stream.exe',fmCreate);
+          try
+            tgsftp_getfile('etcher.exe',nil,false,@context1);
+            finally
+              FreeAndNil(FS);
+            end;
+
+          WriteLn('Proceed? ... press ENTER.');
+          ReadLn;
+
+          tgsftp_mv('test.iso','blabla',@context1);
+          tgsftp_cd('/share/CACHEDEV1_DATA/Public/blabla',@context1);
+          WriteLn('Now removing uploaded test.iso file.');
+          tgsftp_rm('test.iso',@context1);
+          tgsftp_cd('/share/CACHEDEV1_DATA/Public',@context1);
+          tgsftp_rmdir('blabla',@context1);
+
+          WriteLn('Also connect to 192.168.178.40? ... press ENTER.');
+          ReadLn;
+
+          tgsftp_connect('192.168.178.40','admin',22,'',@context2);
+          tgsftp_cd('/share/CACHEDEV1_DATA/MainData',@context2);
+          tgsftp_ls('/share/CACHEDEV1_DATA/MainData',@context2);
+
+          tgsftp_cd('/share/CACHEDEV1_DATA/MainData',@context1);
+          tgsftp_ls('/share/CACHEDEV1_DATA/MainData',@context1);
+
+          tgsftp_putfile('D:\Downloads\CoreTemp64.zip','CoreTemp64.zip',false,@context1);
+          tgsftp_putfile('D:\Downloads\domainhostingview.zip','domainhostingview.zip',false,@context2);
+          tgsftp_getfile('CoreTemp64.zip','D:\Tests\CoreTemp64.zip',false,@context1);
+          }
+          tgsftp_close(@context1);
+          // tgsftp_close(@context2);
           end;
 
-        try
-          tgsftp_ls('.',@context1);
-          except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
-          end;
-
-        if tgsftp_getstat(PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),@attrs,@context1) then
-           WriteLn('Got Stat for '+ExtractFileName(FileToUpload)+': size ',attrs.size,
-                   ', mtime: ',DateTimeToStr(UnixToDateTime(attrs.mtime)),' UTC')
-        else
-           WriteLn('Failed to get stat');
-
-        WriteLn('Setting timestamp to 03.10.2019');
-        attrs.mtime := DateTimeToUnix(StrToDate('03.10.2019'));
-        attrs.flags := SSH_FILEXFER_ATTR_ACMODTIME; // set only this
-        if tgsftp_setstat(PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),@attrs,@context1) then
-           WriteLn('Set Stat OK.')
-        else
-           WriteLn('Failed to set stat.');
-
-        if tgsftp_getstat(PAnsiChar(Utf8Encode(ExtractFileName(FileToUpload))),@attrs,@context1) then
-           WriteLn('Got Stat for '+ExtractFileName(FileToUpload)+': size ',attrs.size,
-                   ', mtime: ',DateTimeToStr(UnixToDateTime(attrs.mtime)),' UTC')
-        else
-           WriteLn('Failed to get stat.');
-
-        {
-        more examples:
-
-        WriteLn('About to download '+ExtractFileName(FileToUpload)+' ... press ENTER.');
-        ReadLn;
-        tgsftp_getfile(Utf8Encode(ExtractFileName(FileToUpload)),FileToUpload+'.downloaded',false,@context1);
-        tgsftp_mkdir('blabla',@context1);
-        tgsftp_ls('/share/CACHEDEV1_DATA/Public',@context1);
-
-        WriteLn('About to upload stream ... balenaEtcher-Setup-1.5.51.exe ... press ENTER.');
-        ReadLn;
-        FS:=TFileStream.Create('D:\Downloads\balenaEtcher-Setup-1.5.51.exe',fmOpenRead);
-        try
-          tgsftp_putfile(nil, 'etcher.exe',false,@context1);
-          finally
-            FreeAndNil(FS);
-          end;
-
-        WriteLn('About to download stream ... press ENTER.');
-        ReadLn;
-        FS:=TFileStream.Create('D:\Downloads\Stream.exe',fmCreate);
-        try
-          tgsftp_getfile('etcher.exe',nil,false,@context1);
-          finally
-            FreeAndNil(FS);
-          end;
-
-        WriteLn('Proceed? ... press ENTER.');
-        ReadLn;
-
-        tgsftp_mv('test.iso','blabla',@context1);
-        tgsftp_cd('/share/CACHEDEV1_DATA/Public/blabla',@context1);
-        WriteLn('Now removing uploaded test.iso file.');
-        tgsftp_rm('test.iso',@context1);
-        tgsftp_cd('/share/CACHEDEV1_DATA/Public',@context1);
-        tgsftp_rmdir('blabla',@context1);
-
-        WriteLn('Also connect to 192.168.178.40? ... press ENTER.');
-        ReadLn;
-
-        tgsftp_connect('192.168.178.40','admin',22,'',@context2);
-        tgsftp_cd('/share/CACHEDEV1_DATA/MainData',@context2);
-        tgsftp_ls('/share/CACHEDEV1_DATA/MainData',@context2);
-
-        tgsftp_cd('/share/CACHEDEV1_DATA/MainData',@context1);
-        tgsftp_ls('/share/CACHEDEV1_DATA/MainData',@context1);
-
-        tgsftp_putfile('D:\Downloads\CoreTemp64.zip','CoreTemp64.zip',false,@context1);
-        tgsftp_putfile('D:\Downloads\domainhostingview.zip','domainhostingview.zip',false,@context2);
-        tgsftp_getfile('CoreTemp64.zip','D:\Tests\CoreTemp64.zip',false,@context1);
-        }
-        tgsftp_close(@context1);
-        {
-        tgsftp_close(@context2);
-        }
         end;
-
+      except
+        on E:Exception do
+           WriteLn('EXCEPTION: ',E.Message);
       end;
-    except
-      on E:Exception do
-         WriteLn('EXCEPTION: ',E.Message);
+    finally
+      tgputtyfree(@context1);
+      tgputtyfree(@context2);
     end;
-
-  tgputtyfree(@context1);
-  tgputtyfree(@context2);
 
   WriteLn('delphisftplowleveltests are done ... press ENTER.');
   ReadLn;
