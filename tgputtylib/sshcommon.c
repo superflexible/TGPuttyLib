@@ -783,7 +783,7 @@ void ssh_ppl_replace(PacketProtocolLayer *old, PacketProtocolLayer *new)
 void ssh_ppl_free(PacketProtocolLayer *ppl)
 {
     delete_callbacks_for_context(ppl);
-    ppl->vt->free(ppl);
+    ppl->vt->freefunc(ppl); // TG
 }
 
 static void ssh_ppl_ic_process_queue_callback(void *context)
@@ -852,7 +852,7 @@ void ssh_bpp_common_setup(BinaryPacketProtocol *bpp)
 void ssh_bpp_free(BinaryPacketProtocol *bpp)
 {
     delete_callbacks_for_context(bpp);
-    bpp->vt->free(bpp);
+    bpp->vt->freefunc(bpp); // TG
 }
 
 void ssh2_bpp_queue_disconnect(BinaryPacketProtocol *bpp,

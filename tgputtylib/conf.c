@@ -202,8 +202,16 @@ static void free_entry(struct conf_entry *entry)
     sfree(entry);
 }
 
+#ifdef DEBUG_MALLOC
+Conf *realconf_new(const char *filename,const int line)
+#else
 Conf *conf_new(void)
+#endif
 {
+#ifdef DEBUG_MALLOC
+    printf("conf_new: %s, %d\n",filename,line);
+#endif
+
     Conf *conf = snew(struct conf_tag);
 
     conf->tree = newtree234(conf_cmp);
@@ -219,8 +227,15 @@ static void conf_clear(Conf *conf)
         free_entry(entry);
 }
 
+#ifdef DEBUG_MALLOC
+void realconf_free(Conf *conf,const char *filename,const int line)
+#else
 void conf_free(Conf *conf)
+#endif
 {
+#ifdef DEBUG_MALLOC
+    printf("conf_free: %s, %d\n",filename,line);
+#endif
     conf_clear(conf);
     freetree234(conf->tree);
     sfree(conf);
@@ -237,8 +252,15 @@ static void conf_insert(Conf *conf, struct conf_entry *entry)
     }
 }
 
+#ifdef DEBUG_MALLOC
+void realconf_copy_into(Conf *newconf, Conf *oldconf,const char *filename,const int line)
+#else
 void conf_copy_into(Conf *newconf, Conf *oldconf)
+#endif
 {
+#ifdef DEBUG_MALLOC
+    printf("conf_copy_into: %s, %d\n",filename,line);
+#endif
     struct conf_entry *entry, *entry2;
     int i;
 
@@ -253,8 +275,15 @@ void conf_copy_into(Conf *newconf, Conf *oldconf)
     }
 }
 
+#ifdef DEBUG_MALLOC
+Conf *realconf_copy(Conf *oldconf,const char *filename,const int line)
+#else
 Conf *conf_copy(Conf *oldconf)
+#endif
 {
+#ifdef DEBUG_MALLOC
+    printf("conf_copy: %s, %d\n",filename,line);
+#endif
     Conf *newconf = conf_new();
 
     conf_copy_into(newconf, oldconf);

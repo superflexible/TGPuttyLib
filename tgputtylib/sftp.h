@@ -323,7 +323,7 @@ struct SftpServer {
 };
 struct SftpServerVtable {
     SftpServer *(*new)(const SftpServerVtable *vt);
-    void (*free)(SftpServer *srv);
+    void (*freefunc)(SftpServer *srv);
 
     /*
      * Handle actual filesystem requests.
@@ -393,7 +393,7 @@ struct SftpServerVtable {
 static inline SftpServer *sftpsrv_new(const SftpServerVtable *vt)
 { return vt->new(vt); }
 static inline void sftpsrv_free(SftpServer *srv)
-{ srv->vt->free(srv); }
+{ srv->vt->freefunc(srv); } // TG
 static inline void sftpsrv_realpath(SftpServer *srv, SftpReplyBuilder *reply,
                                     ptrlen path)
 { srv->vt->realpath(srv, reply, path); }
@@ -516,7 +516,7 @@ struct ScpServer {
     const struct ScpServerVtable *vt;
 };
 struct ScpServerVtable {
-    void (*free)(ScpServer *s);
+    void (*freefunc)(ScpServer *s);
 
     size_t (*send)(ScpServer *s, const void *data, size_t length);
     void (*throttle)(ScpServer *s, bool throttled);
@@ -524,7 +524,7 @@ struct ScpServerVtable {
 };
 
 static inline void scp_free(ScpServer *s)
-{ s->vt->free(s); }
+{ s->vt->freefunc(s); } // TG
 static inline size_t scp_send(ScpServer *s, const void *data, size_t length)
 { return s->vt->send(s, data, length); }
 static inline void scp_throttle(ScpServer *s, bool throttled)

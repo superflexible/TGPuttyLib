@@ -402,11 +402,18 @@ LogContext *log_init(LogPolicy *lp, Conf *conf)
     ctx->logtype = conf_get_int(ctx->conf, CONF_logtype);
     ctx->currlogfilename = NULL;
     bufchain_init(&ctx->queue);
+
+#ifdef DEBUG_MALLOC
+    printf("log_init: created log context %p\n", ctx);
+#endif
     return ctx;
 }
 
 void log_free(LogContext *ctx)
 {
+#ifdef DEBUG_MALLOC
+    printf("log_free: freeing log context %p\n", ctx);
+#endif
     logfclose(ctx);
     bufchain_clear(&ctx->queue);
     if (ctx->currlogfilename)

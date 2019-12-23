@@ -9,6 +9,21 @@
 #include <string.h>                    /* for memcpy() */
 
 #include "defs.h"
+#include "tgmem.h"
+
+#ifdef DEBUG_MALLOC
+
+#define smalloc(z) safemalloc(z,1,0,__FILE__,__LINE__)
+#define snmalloc(z,a,b) safemalloc(z,a,b,__FILE__,__LINE__)
+#define srealloc(y,z) saferealloc(y,z,1,__FILE__,__LINE__)
+#define snrealloc(y,z,a) saferealloc(y,z,a,__FILE__,__LINE__)
+#define sfree(x) safefree(x,__FILE__,__LINE__)
+
+void *safemalloc(size_t factor1, size_t factor2, size_t addend,const char *filename,const int line);
+void *saferealloc(void *ptr, size_t n, size_t size,const char *filename,const int line);
+void safefree(void *ptr,const char *filename,const int line);
+
+#else
 
 #define smalloc(z) safemalloc(z,1,0)
 #define snmalloc safemalloc
@@ -19,6 +34,8 @@
 void *safemalloc(size_t factor1, size_t factor2, size_t addend);
 void *saferealloc(void *, size_t, size_t);
 void safefree(void *);
+
+#endif
 
 /*
  * Direct use of smalloc within the code should be avoided where
@@ -92,12 +109,23 @@ void safefree(void *);
  * moves the memory block might leave a copy of the data visible in
  * the freed memory at the previous location.
  */
+
+#ifdef DEBUG_MALLOC
+void *safegrowarray(void *array, size_t *size, size_t eltsize,
+                    size_t oldlen, size_t extralen, bool private,
+                    const char *filename,const int line);
+
+/* The master macro wrapper, of which all others are special cases */
+#define sgrowarray_general(array, size, n, m, priv)                     \
+    ((array) = safegrowarray(array, &(size), sizeof(*array), n, m, priv, __FILE__, __LINE__))
+#else
 void *safegrowarray(void *array, size_t *size, size_t eltsize,
                     size_t oldlen, size_t extralen, bool private);
 
 /* The master macro wrapper, of which all others are special cases */
 #define sgrowarray_general(array, size, n, m, priv)                     \
     ((array) = safegrowarray(array, &(size), sizeof(*array), n, m, priv))
+#endif
 
 /* The special-case macros that are easier to use in most situations */
 #define sgrowarrayn(   a, s, n, m) sgrowarray_general(a, s, n, m, false)

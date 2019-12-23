@@ -243,7 +243,7 @@ static int bare_name_compare(const void *av, const void *bv)
 
 static void not_connected(void)
 {
-    printf("psftp: not connected to a host; use \"open host.name\"\n");
+    printf("psftp: not connected to a host\n");
 }
 
 /* ----------------------------------------------------------------------
@@ -2724,7 +2724,9 @@ static bool psftp_eof(Seat *seat)
 bool sftp_recvdata(char *buf, size_t len)
 {
     while (len > 0) {
+        assert(backend!=NULL);
         while (bufchain_size(&received_data) == 0) {
+            assert(backend!=NULL);
             if (backend_exitcode(backend) >= 0 ||
                 ssh_sftp_loop_iteration() < 0)
                 return false;          /* doom */
@@ -2739,12 +2741,26 @@ bool sftp_recvdata(char *buf, size_t len)
 }
 bool sftp_senddata(const char *buf, size_t len)
 {
-    backend_send(backend, buf, len);
-    return true;
+   if (backend) // fix AV on disconnection
+   {
+      backend_send(backend, buf, len);
+      return true;
+   }
+   else
+   {
+      printf("not connected error in sftp_senddata\n");
+      return false;
+   }
 }
 size_t sftp_sendbuffer(void)
 {
-    return backend_sendbuffer(backend);
+   if (backend) // fix AV on disconnection
+      return backend_sendbuffer(backend);
+   else
+   {
+      printf("not connected error in sftp_sendbuffer\n");
+      return 0;
+   }
 }
 
 /*
@@ -2961,7 +2977,14 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
     if (psftp_logctx=NULL) // TG - might connect again after disconnecting
     {
        psftp_logctx = log_init(default_logpolicy, conf);
+#ifdef DEBUG_MALLOC
+       printf("Created new logctx.\n");
+#endif
     }
+#ifdef DEBUG_MALLOC
+    else
+       printf("Reusing logctx.\n");
+#endif
 
     platform_psftp_pre_conn_setup();
 
@@ -3152,8 +3175,7 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
         if (do_sftp_init())
             return 1;
     } else {
-        printf("psftp: no hostname specified; use \"open host.name\""
-               " to connect\n");
+        printf("psftp: no hostname specified\n");
     }
 
     ret = do_sftp(mode, modeflags, batchfile);
@@ -3332,8 +3354,7 @@ __declspec(dllexport) int tgputty_initwithcmdline(int argc, char *argv[], TTGLib
 		if (do_sftp_init())
 			return 1;
 	} else {
-		printf("psftp: no hostname specified; use \"open host.name\""
-			   " to connect\n");
+		printf("psftp: no hostname specified\n");
 	}
     return 0;
 }
@@ -3411,6 +3432,11 @@ __declspec(dllexport) int tgsftp_connect(const char *ahost,const char *auser,con
   }
   else
   {
+#ifdef DEBUG_MALLOC
+    printf("connect failed, calling do_sftp_cleanup, backend=%p, connected=%d\n",
+           backend,
+           backend ? backend_connected(backend): false);
+#endif
     do_sftp_cleanup();
   }
 
@@ -3950,6 +3976,71 @@ void tgdll_assert(const char *msg,const char *filename,const int line)
   }
 }
 
+#ifdef DEBUG_MALLOC
+#undef malloc
+#undef free
+#undef realloc
+void *tgdllmalloc(size_t size)
+{
+  if ((curlibctx!=NULL) && (curlibctx->usememorycallbacks) && (curlibctx->malloc_callback != NULL))
+  {
+     void *result=curlibctx->malloc_callback(size);
+     return result;
+  }
+  else
+     return malloc(size);
+}
+
+void tgdllfree(void *ptr)
+{
+  if ((curlibctx!=NULL) && (curlibctx->usememorycallbacks) && (curlibctx->free_callback != NULL))
+     curlibctx->free_callback(ptr);
+  else
+     free(ptr);
+}
+
+void *tgdllrealloc(void *ptr, size_t new_size)
+{
+  if ((curlibctx!=NULL) && (curlibctx->usememorycallbacks) && (curlibctx->realloc_callback != NULL))
+  {
+     void *result=curlibctx->realloc_callback(ptr,new_size);
+     return result;
+  }
+  else
+     return realloc(ptr,new_size);
+}
+
+void *tgdlldebugmalloc(size_t size,const char *filename,const int line)
+{
+  if ((curlibctx!=NULL) && (curlibctx->usememorycallbacks) && (curlibctx->malloc_callback != NULL))
+  {
+     void *result=curlibctx->debug_malloc_callback(size,filename,line);
+     return result;
+  }
+  else
+     return malloc(size);
+}
+void tgdlldebugfree(void *ptr,const char *filename,const int line)
+{
+  if ((curlibctx!=NULL) && (curlibctx->usememorycallbacks) && (curlibctx->free_callback != NULL))
+     curlibctx->debug_free_callback(ptr,filename,line);
+  else
+     free(ptr);
+}
+
+void *tgdlldebugrealloc(void *ptr, size_t new_size,const char *filename,const int line)
+{
+  if ((curlibctx!=NULL) && (curlibctx->usememorycallbacks) && (curlibctx->realloc_callback != NULL))
+  {
+     void *result=curlibctx->debug_realloc_callback(ptr,new_size,filename,line);
+     return result;
+  }
+  else
+     return realloc(ptr,new_size);
+}
+
+
+#endif
 
 BOOL WINAPI DllMain( HMODULE hModule,
                      DWORD  fdwReason,

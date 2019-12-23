@@ -62,9 +62,15 @@ struct node234_Tag {
 /*
  * Create a 2-3-4 tree.
  */
+#ifdef DEBUG_MALLOC
+tree234 *realnewtree234(cmpfn234 cmp,const char *filename,const int line)
+{
+  tree234 *ret = safemalloc(sizeof(tree234),1,0,filename,line);
+#else
 tree234 *newtree234(cmpfn234 cmp)
 {
     tree234 *ret = snew(tree234);
+#endif
     LOG(("created tree %p\n", ret));
     ret->root = NULL;
     ret->cmp = cmp;

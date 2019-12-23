@@ -493,10 +493,14 @@ char *do_select(SOCKET skt, bool startup)
                netevent = CreateEvent(NULL, false, false, NULL);
             }
             else
+            {
+               // printf("INFO to developer: do_select called with startup=true but netevent already exists.\n");
                ResetEvent(netevent);
+            }
         }
         else
         {
+            assert((netevent!=NULL) && (netevent != INVALID_HANDLE_VALUE));
             events = 0;
         }
         if (p_WSAEventSelect(skt, netevent, events) == SOCKET_ERROR) {
@@ -514,27 +518,34 @@ char *do_select(SOCKET skt, bool startup)
 int do_eventsel_loop(HANDLE other_event)
 {
     int n, nhandles, nallhandles, netindex, otherindex;
-    unsigned long next, then;
     long ticks;
     HANDLE *handles;
     SOCKET *sklist;
     int skcount;
-    unsigned long now = GETTICKCOUNT();
 
-    if (toplevel_callback_pending()) {
+    if (toplevel_callback_pending())
+    {
         ticks = 0;
-        next = now;
-    } else if (run_timers(now, &next)) {
+    }
+    else
+    {
+      unsigned long next, then;
+      unsigned long now = GETTICKCOUNT();
+      if (run_timers(now, &next))
+      {
         then = now;
         now = GETTICKCOUNT();
         if (now - then > next - then)
             ticks = 0;
         else
             ticks = next - now;
-    } else {
-        ticks = INFINITE;
-        /* no need to initialise next here because we can never get
-         * WAIT_TIMEOUT */
+      }
+      else
+      {
+        // TG 2019: never hang for more than a second, need to be able to cancel job etc.
+        // we also observed rare infinite hangs here after an Internet disconnection
+        ticks = 1000;
+      }
     }
 
     handles = handle_get_events(&nhandles);
@@ -616,12 +627,6 @@ int do_eventsel_loop(HANDLE other_event)
     sfree(handles);
 
     run_toplevel_callbacks();
-
-    if (n == WAIT_TIMEOUT) {
-        now = next;
-    } else {
-        now = GETTICKCOUNT();
-    }
 
     if (otherindex >= 0 && n == WAIT_OBJECT_0 + otherindex)
         return 1;

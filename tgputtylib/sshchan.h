@@ -7,7 +7,7 @@
 #define PUTTY_SSHCHAN_H
 
 struct ChannelVtable {
-    void (*free)(Channel *);
+    void (*freefunc)(Channel *);
 
     /* Called for channel types that were created at the same time as
      * we sent an outgoing CHANNEL_OPEN, when the confirmation comes
@@ -63,7 +63,7 @@ struct Channel {
 };
 
 static inline void chan_free(Channel *ch)
-{ ch->vt->free(ch); }
+{ ch->vt->freefunc(ch); } // TG
 static inline void chan_open_confirmation(Channel *ch)
 { ch->vt->open_confirmation(ch); }
 static inline void chan_open_failed(Channel *ch, const char *err)

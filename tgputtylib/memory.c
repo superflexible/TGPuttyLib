@@ -10,7 +10,13 @@
 #include "puttymem.h"
 #include "misc.h"
 
+
+#ifdef DEBUG_MALLOC
+#undef malloc
+void *safemalloc(size_t factor1, size_t factor2, size_t addend,const char *filename,const int line)
+#else
 void *safemalloc(size_t factor1, size_t factor2, size_t addend)
+#endif
 {
     if (factor1 > SIZE_MAX / factor2)
         goto fail;
@@ -29,7 +35,11 @@ void *safemalloc(size_t factor1, size_t factor2, size_t addend)
 #ifdef MINEFIELD
     p = minefield_c_malloc(size);
 #else
+#ifdef DEBUG_MALLOC
+    p = tgdlldebugmalloc(size,filename,line);
+#else
     p = malloc(size);
+#endif
 #endif
 
     if (!p)
@@ -41,7 +51,12 @@ void *safemalloc(size_t factor1, size_t factor2, size_t addend)
     out_of_memory();
 }
 
+#ifdef DEBUG_MALLOC
+#undef realloc
+void *saferealloc(void *ptr, size_t n, size_t size,const char *filename,const int line)
+#else
 void *saferealloc(void *ptr, size_t n, size_t size)
+#endif
 {
     void *p;
 
@@ -53,13 +68,21 @@ void *saferealloc(void *ptr, size_t n, size_t size)
 #ifdef MINEFIELD
             p = minefield_c_malloc(size);
 #else
+#ifdef DEBUG_MALLOC
+            p = tgdlldebugmalloc(size,filename,line);
+#else
             p = malloc(size);
+#endif
 #endif
         } else {
 #ifdef MINEFIELD
             p = minefield_c_realloc(ptr, size);
 #else
+#ifdef DEBUG_MALLOC
+            p = tgdlldebugrealloc(ptr,size,filename,line);
+#else
             p = realloc(ptr, size);
+#endif
 #endif
         }
     }
@@ -70,19 +93,34 @@ void *saferealloc(void *ptr, size_t n, size_t size)
     return p;
 }
 
+#ifdef DEBUG_MALLOC
+#undef free
+void safefree(void *ptr,const char *filename,const int line)
+#else
 void safefree(void *ptr)
+#endif
 {
     if (ptr) {
 #ifdef MINEFIELD
         minefield_c_free(ptr);
 #else
+#ifdef DEBUG_MALLOC
+        tgdlldebugfree(ptr,filename,line);
+#else
         free(ptr);
+#endif
 #endif
     }
 }
 
+#ifdef DEBUG_MALLOC
+void *safegrowarray(void *ptr, size_t *allocated, size_t eltsize,
+                    size_t oldlen, size_t extralen, bool secret,
+                    const char *filename,const int line)
+#else
 void *safegrowarray(void *ptr, size_t *allocated, size_t eltsize,
                     size_t oldlen, size_t extralen, bool secret)
+#endif
 {
     /* The largest value we can safely multiply by eltsize */
     assert(eltsize > 0);
@@ -120,12 +158,20 @@ void *safegrowarray(void *ptr, size_t *allocated, size_t eltsize,
     size_t newsize = oldsize + increment;
     void *toret;
     if (secret) {
-        toret = safemalloc(newsize, eltsize, 0);
+        toret = safemalloc(newsize, eltsize, 0
+#ifdef DEBUG_MALLOC
+        , filename, line
+#endif
+        );
         memcpy(toret, ptr, oldsize * eltsize);
         smemclr(ptr, oldsize * eltsize);
         sfree(ptr);
     } else {
-        toret = saferealloc(ptr, newsize, eltsize);
+        toret = saferealloc(ptr, newsize, eltsize
+#ifdef DEBUG_MALLOC
+          , filename, line
+#endif
+          );
     }
     *allocated = newsize;
     return toret;

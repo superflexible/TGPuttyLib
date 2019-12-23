@@ -28,6 +28,10 @@
 #ifndef TREE234_H
 #define TREE234_H
 
+//#ifndef DEBUG_MALLOC
+//#define DEBUG_MALLOC 1
+//#endif
+
 /*
  * This typedef is opaque outside tree234.c itself.
  */
@@ -40,7 +44,12 @@ typedef int (*cmpfn234) (void *, void *);
  * lookups by key will fail: you can only look things up by numeric
  * index, and you have to use addpos234() and delpos234().
  */
+#ifdef DEBUG_MALLOC
+tree234 *realnewtree234(cmpfn234 cmp,const char *filename,const int line);
+#define newtree234(x) realnewtree234(x,__FILE__,__LINE__)
+#else
 tree234 *newtree234(cmpfn234 cmp);
+#endif
 
 /*
  * Free a 2-3-4 tree (not including freeing the elements).

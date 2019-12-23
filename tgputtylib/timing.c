@@ -135,9 +135,16 @@ unsigned long schedule_timer(int ticks, timer_fn_t fn, void *ctx)
     t->ctx = ctx;
     t->now = when;
     t->when_set = snow;
+#ifdef DEBUG_MALLOC
+    printf("schedule_timer: created timer %p\n",t);
+#endif
 
-    if (t != add234(timers, t)) {
+    if (t != add234(timers, t))
+    {
         sfree(t);                      /* identical timer already exists */
+#ifdef DEBUG_MALLOC
+        printf("schedule_timer: freed timer %p\n",t);
+#endif
     } else {
         add234(timer_contexts, t->ctx);/* don't care if this fails */
     }
@@ -191,6 +198,9 @@ bool run_timers(unsigned long anow, unsigned long *next)
              */
             delpos234(timers, 0);
             sfree(first);
+#ifdef DEBUG_MALLOC
+            printf("schedule_timer: freed timer %p\n",first);
+#endif
         } else if (snow - (first->when_set - 10) >
                    first->now - (first->when_set - 10)) {
             /*
@@ -200,6 +210,9 @@ bool run_timers(unsigned long anow, unsigned long *next)
             delpos234(timers, 0);
             first->fn(first->ctx, first->now);
             sfree(first);
+#ifdef DEBUG_MALLOC
+            printf("schedule_timer: freed timer %p\n",first);
+#endif
         } else {
             /*
              * This is the first still-active timer that is in the
@@ -222,7 +235,9 @@ void free_timerwithctx(void *ctx)
       {
         delpos234(timers, i);
         sfree(t);
+#ifdef DEBUG_MALLOC
         printf("free_timerwithctx: freed timer %p\n",t);
+#endif
       }
       else
          i++;
@@ -240,7 +255,9 @@ void expire_timer_context(void *ctx)
     void *p;
     for (int i = 0; (p = index234(timer_contexts, i)) != NULL; i++)
     {
+#ifdef DEBUG_MALLOC
       printf("expire_timer_context: freeing timer with ctx %p\n",p);
+#endif
       free_timerwithctx(p);
     }
 

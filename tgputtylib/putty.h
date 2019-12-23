@@ -22,8 +22,9 @@
 #include "network.h"
 #include "misc.h"
 #include "marshal.h"
-
+#include "tgmem.h"
 // #define DEBUG_UPLOAD
+
 
 #define cBufferMaxFillSizeThresholdToAcceptMoreUploadData 1024*1024
 
@@ -507,7 +508,7 @@ struct BackendVtable {
                          const char *host, int port,
                          char **realhost, bool nodelay, bool keepalive);
 
-    void (*free) (Backend *be);
+    void (*freefunc) (Backend *be); // TG: allow to use #define free
     /* Pass in a replacement configuration. */
     void (*reconfig) (Backend *be, Conf *conf);
     /* send() returns the current amount of buffered data. */
@@ -543,7 +544,7 @@ static inline const char *backend_init(
     Conf *conf, const char *host, int port, char **rhost, bool nd, bool ka)
 { return vt->init(seat, out, logctx, conf, host, port, rhost, nd, ka); }
 static inline void backend_free(Backend *be)
-{ be->vt->free(be); }
+{ be->vt->freefunc(be); }
 static inline void backend_reconfig(Backend *be, Conf *conf)
 { be->vt->reconfig(be, conf); }
 static inline size_t backend_send(Backend *be, const char *buf, size_t len)
@@ -1502,10 +1503,23 @@ enum config_primary_key { CONFIG_OPTIONS(CONF_ENUM_DEF) N_CONFIG_OPTIONS };
 #define NCFGCOLOURS 22 /* number of colours in CONF_colours above */
 
 /* Functions handling configuration structures. */
+
+#ifdef DEBUG_MALLOC
+Conf *realconf_new(const char *filename,const int line);                  /* create an empty configuration */
+void realconf_free(Conf *conf,const char *filename,const int line);
+Conf *realconf_copy(Conf *oldconf,const char *filename,const int line);
+void realconf_copy_into(Conf *dest, Conf *src,const char *filename,const int line);
+#define conf_new() realconf_new(__FILE__,__LINE__)
+#define conf_free(x) realconf_free(x,__FILE__,__LINE__)
+#define conf_copy(x) realconf_copy(x,__FILE__,__LINE__)
+#define conf_copy_into(x,y) realconf_copy_into(x,y,__FILE__,__LINE__)
+#else
 Conf *conf_new(void);                  /* create an empty configuration */
 void conf_free(Conf *conf);
 Conf *conf_copy(Conf *oldconf);
 void conf_copy_into(Conf *dest, Conf *src);
+#endif
+
 /* Mandatory accessor functions: enforce by assertion that keys exist. */
 bool conf_get_bool(Conf *conf, int key);
 int conf_get_int(Conf *conf, int key);

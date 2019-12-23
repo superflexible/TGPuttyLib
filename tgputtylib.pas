@@ -22,9 +22,12 @@ interface
 // nmake -f Makefile64.vc tgputtylib.dll   (64 bit)
 // (using the Developer Command Prompt in the "windows" subfolder)
 
-uses SysUtils, SyncObjs;
+uses Classes, SysUtils, SyncObjs;
 
 const tgputtydll='tgputtylib.dll';
+
+      UseMemoryAllocationCallbacks=false;
+      DebugMemory=false;
 
 {$A8}
 
@@ -196,12 +199,160 @@ begin
   end;
 }
 
+function tgputtylib_malloc_callback(size:NativeUInt):Pointer; cdecl;
+begin
+  Result:=AllocMem(size);
+  end;
+
+procedure tgputtylib_free_callback(ptr:Pointer); cdecl;
+begin
+  FreeMem(ptr);
+  end;
+
+function tgputtylib_realloc_callback(ptr:Pointer; newsize:NativeUInt):Pointer; cdecl;
+begin
+  Result:=ptr;
+  ReallocMem(Result,newsize);
+  end;
+
+
+type TStringObject=class(TObject)
+       public
+         Data:string;
+         Tag:NativeUInt;
+         constructor Create(const s:string;const t:NativeUInt);
+       end;
+
+constructor TStringObject.Create(const s:string;const t:NativeUInt);
+begin
+  inherited Create;
+  Data:=s;
+  Tag:=t;
+  end;
+
+var MallocLinesList,
+    MallocPointerList:TStringList;
+    MallocCS:TCriticalSection;
+    ForgetPtrErrors:Integer;
+
+procedure RememberPtr(const ptr:Pointer;const size:NativeUInt;const srcfile:PAnsiChar;const line:Integer);
+var idx:NativeInt;
+    str:string;
+begin
+  str:=string(AnsiString(srcfile))+':'+IntToStr(line);
+  idx:=MallocLinesList.IndexOf(str);
+  if idx<0 then
+     idx:=MallocLinesList.Add(str);
+  // increase counter
+  MallocLinesList.Objects[idx]:=TObject(NativeUInt(MallocLinesList.Objects[idx])+1);
+
+  // save pointer with string
+  MallocPointerList.AddObject(IntToHex(NativeUInt(ptr)),TStringObject.Create(str,size));
+  end;
+
+procedure ForgetPtr(const ptr:Pointer);
+var idx,linesidx:NativeInt;
+    str:string;
+begin
+  idx:=MallocPointerList.IndexOf(IntToHex(NativeUInt(ptr)));
+  if idx>=0 then begin
+     str:=TStringObject(MallocPointerList.Objects[idx]).Data;
+     linesidx:=MallocLinesList.IndexOf(str);
+     // decreate counter
+     if (linesidx>=0) then
+        if NativeUInt(MallocLinesList.Objects[linesidx])>0 then
+           MallocLinesList.Objects[linesidx]:=TObject(NativeUInt(MallocLinesList.Objects[linesidx])-1)
+        else
+           Inc(ForgetPtrErrors)
+     else
+        Inc(ForgetPtrErrors);
+     MallocPointerList.Delete(idx);
+     end
+  else
+     Inc(ForgetPtrErrors);
+  end;
+
+function tgputtylib_debug_malloc_callback(size:NativeUInt;const srcfile:PAnsiChar;const line:Integer):Pointer; cdecl;
+begin
+  MallocCS.Enter;
+  try
+    Result:=AllocMem(size);
+    RememberPtr(Result,size,srcfile,line);
+    finally
+      MallocCS.Leave;
+    end;
+  end;
+
+procedure tgputtylib_debug_free_callback(ptr:Pointer;const srcfile:PAnsiChar;const line:Integer); cdecl;
+begin
+  MallocCS.Enter;
+  try
+    ForgetPtr(ptr);
+    FreeMem(ptr);
+    finally
+      MallocCS.Leave;
+    end;
+  end;
+
+function tgputtylib_debug_realloc_callback(ptr:Pointer; newsize:NativeUInt;const srcfile:PAnsiChar;const line:Integer):Pointer; cdecl;
+var idx:NativeInt;
+begin
+  MallocCS.Enter;
+  try
+    ForgetPtr(ptr);
+    Result:=ptr;
+    ReallocMem(Result,newsize);
+    RememberPtr(Result,newsize,srcfile,line);
+    finally
+      MallocCS.Leave;
+    end;
+  end;
+
+{$i-}
+procedure LogLeaks;
+var count,i,j:Integer;
+    total:NativeUInt;
+    T:Text;
+begin
+  IOResult;
+  Assign(T,ParamStr(0)+'.tgputtylib-memlog.txt');
+  Rewrite(T);
+  if IOResult<>0 then
+     Exit;
+
+  if ForgetPtrErrors>0 then
+     WriteLn(T,'ForgetPtrErrors: ',ForgetPtrErrors);
+
+  for i:=0 to MallocLinesList.Count-1 do begin
+    count:=NativeInt(MallocLinesList.Objects[i]);
+    if count>0 then begin
+       total:=0;
+       for j:=0 to MallocPointerList.Count-1 do
+         if TStringObject(MallocPointerList.Objects[j]).Data=MallocLinesList[i] then
+            Inc(total,TStringObject(MallocPointerList.Objects[j]).Tag);
+       WriteLn(T,count:5,'x ',total:10,' Bytes Total  ',MallocLinesList[i]);
+       end;
+    end;
+  CloseFile(T);
+  end;
+
 { TTGLibraryContext }
 
 procedure TTGLibraryContext.Init;
 begin
   //entercriticalsection_callback:=TGPuttyDLLEnterCriticalSection;
   //leavecriticalsection_callback:=TGPuttyDLLLeaveCriticalSection;
+
+  if UseMemoryAllocationCallbacks then begin
+     malloc_callback:=tgputtylib_malloc_callback;
+     free_callback:=tgputtylib_free_callback;
+     realloc_callback:=tgputtylib_realloc_callback;
+     debug_malloc_callback:=tgputtylib_debug_malloc_callback;
+     debug_free_callback:=tgputtylib_debug_free_callback;
+     debug_realloc_callback:=tgputtylib_debug_realloc_callback;
+     end;
+
+  usememorycallbacks:=UseMemoryAllocationCallbacks;
   end;
 
 {
@@ -225,6 +376,27 @@ initialization
 finalization
   FreeCritSects;
 }
+
+initialization
+
+  if DebugMemory then begin
+     MallocLinesList:=TStringList.Create;
+     MallocLinesList.Sorted:=true;
+     MallocPointerList:=TStringList.Create;
+     MallocPointerList.Sorted:=true;
+     MallocPointerList.OwnsObjects:=true;
+     MallocCS:=TCriticalSection.Create;
+     end;
+
+finalization
+
+  if DebugMemory then begin
+     LogLeaks;
+     FreeAndNil(MallocPointerList);
+     FreeAndNil(MallocLinesList);
+     FreeAndNil(MallocCS);
+     end;
+
 end.
 
 

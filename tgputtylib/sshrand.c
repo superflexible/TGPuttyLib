@@ -70,6 +70,9 @@ static void random_seed_callback(void *noise, int length)
 
 static void random_create(const ssh_hashalg *hashalg)
 {
+#ifdef DEBUG_MALLOC
+    printf("random_create\n");
+#endif
     assert(!global_prng);
     global_prng = prng_new(hashalg);
 
@@ -105,6 +108,9 @@ void random_ref(void)
 {
     if (!random_active++)
         random_create(&ssh_sha256);
+#ifdef DEBUG_MALLOC
+  printf("random_ref: random_active is now %d\n",random_active);
+#endif
 }
 
 void random_setup_special()
@@ -122,6 +128,9 @@ void random_reseed(ptrlen seed)
 
 void random_clear(void)
 {
+#ifdef DEBUG_MALLOC
+    printf("random_clear\n");
+#endif
     if (global_prng) {
         random_save_seed();
         expire_timer_context(&random_timer_ctx);
@@ -136,6 +145,9 @@ void random_unref(void)
     assert(random_active > 0);
     if (--random_active == 0)
         random_clear();
+#ifdef DEBUG_MALLOC
+    printf("random_unref: random_active is now %d\n",random_active);
+#endif
 }
 
 void random_read(void *buf, size_t size)

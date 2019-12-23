@@ -876,6 +876,10 @@ static const char *ssh_init(Seat *seat, Backend **backend_handle,
     ssh = snew(Ssh);
     memset(ssh, 0, sizeof(Ssh));
 
+#ifdef DEBUG_MALLOC
+    printf("Created new Ssh object %p\n",ssh);
+#endif
+
     ssh->conf = conf_copy(conf);
     ssh_cache_conf_values(ssh);
     ssh->exitcode = -1;
@@ -918,6 +922,10 @@ static void ssh_free(Backend *be)
     Ssh *ssh = container_of(be, Ssh, backend);
     bool need_random_unref;
 
+#ifdef DEBUG_MALLOC
+    printf("Freeing Ssh object %p\n",ssh);
+#endif
+
     ssh_shutdown(ssh);
 
     conf_free(ssh->conf);
@@ -947,6 +955,10 @@ static void ssh_free(Backend *be)
 
     if (need_random_unref)
         random_unref();
+
+#ifdef DEBUG_MALLOC
+    printf("Freed Ssh object OK: %p\n",ssh);
+#endif
 }
 
 /*
