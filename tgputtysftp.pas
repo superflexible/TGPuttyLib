@@ -5,10 +5,17 @@ unit tgputtysftp;
 interface
 
 uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
+     {$ifdef MSWINDOWS}Windows,{$endif}
      Classes, SysUtils, DateUtils,
      tgputtylib;
 
-{$POINTERMATH ON}
+{$ifndef FPC}
+{$ifdef CONDITIONALEXPRESSIONS}
+{$if CompilerVersion >= 27.0}
+{$define HASUTCPARAM}
+{$ifend}
+{$endif}
+{$endif}
 
 const MinimumLibraryBuildNum=1;
       cDummyClearedErrorCode=-1000; // this error code means there was no real error code
@@ -480,6 +487,26 @@ begin
   tgputty_setkeyfile(PAnsiChar(Value),@Fcontext);
   end;
 
+{$if defined(MSWINDOWS) and not defined(FPC) and not defined(HASUTCPARAM)}
+function GetBias:Integer;
+var Info: TTimeZoneInformation;
+begin
+  Case GetTimeZoneInformation(Info) of
+    TIME_ZONE_ID_UNKNOWN:
+       Result:=Info.Bias;
+    TIME_ZONE_ID_DAYLIGHT:
+       Result:=Info.Bias+Info.DaylightBias;
+    TIME_ZONE_ID_STANDARD:
+       Result:=Info.Bias+Info.StandardBias;
+    else begin
+      Result:=0;
+      Exit;
+      end;
+    end;
+  end;
+{$ifend}
+
+
 procedure TTGPuttySFTP.SetModifiedDate(const AFileName: AnsiString;const ATimestamp: TDateTime; const isUTC:Boolean);
 var Attrs:fxp_attrs;
 begin
@@ -491,7 +518,14 @@ begin
   else
      attrs.mtime:=DateTimeToUnix(LocalTimeToUniversal(ATimestamp));
   {$else}
+  {$ifdef HASUTCPARAM}
   attrs.mtime:=DateTimeToUnix(ATimestamp,isUTC);
+  {$else}
+  if isUTC then
+     attrs.mtime:=DateTimeToUnix(ATimestamp)
+  else
+     attrs.mtime:=DateTimeToUnix(ATimestamp+GetBias);
+  {$endif}
   {$endif}
   SetStat(AFileName,Attrs);
   end;

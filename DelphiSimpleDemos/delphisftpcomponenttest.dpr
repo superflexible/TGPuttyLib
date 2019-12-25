@@ -1,4 +1,4 @@
-program delphisftpclasstest;
+program delphisftpcomponenttest;
 
 {$APPTYPE CONSOLE}
 
@@ -12,7 +12,8 @@ uses
   SysUtils,
   DateUtils,
   tgputtylib in '..\tgputtylib.pas',
-  tgputtysftp in '..\tgputtysftp.pas';
+  tgputtysftp in '..\tgputtysftp.pas',
+  tgputtysftpclient in '..\tgputtysftpclient.pas';
 
 type TTester=class(TObject)
       TGPSFTP,TGPSFTP2:TTGPuttySFTP;

@@ -2,12 +2,14 @@ unit tgputtysftpclient;
 
 interface
 
-{$POINTERMATH ON}
-
 uses
-  System.SysUtils, System.Classes,
+  SysUtils, Classes,
   tgputtylib,tgputtysftp;
 
+{$if not defined(FPC) and not defined(UNICODE)}
+type UnicodeString=WideString;
+{$ifend}
+  
 type
   TSFTPItem=record
        filename,longname:UnicodeString;
@@ -124,6 +126,14 @@ procedure Register;
 begin
   RegisterComponents('TGPuttyLib', [TTGPuttySFTPClient]);
 end;
+
+{$if not defined(UNICODE)}
+function Utf8ToString(const utf:AnsiString):UnicodeString;
+begin
+  Result:=Utf8Decode(utf);
+  end;
+{$ifend}
+
 
 { TTGPuttySFTPClient }
 
@@ -277,11 +287,12 @@ var Unames:TSFTPItems;
 begin
   if Assigned(FOnSFTPListing) then begin
      SetLength(Unames,names.nnames);
-     for i:=0 to names.nnames-1 do begin
-       Unames[i].filename:=Utf8ToString(names.names[i].filename);
-       Unames[i].longname:=Utf8ToString(names.names[i].longname);
-       Unames[i].attrs:=names.names[i].attrs;
-       end;
+     for i:=0 to names.nnames-1 do
+       with Pfxp_name_array(names^.names)^[i] do begin
+         Unames[i].filename:=Utf8ToString(filename);
+         Unames[i].longname:=Utf8ToString(longname);
+         Unames[i].attrs:=attrs;
+         end;
      Result:=FOnSFTPListing(self,Unames);
      end
   else
@@ -403,3 +414,4 @@ begin
   end;
 
 end.
+
