@@ -55,7 +55,9 @@ void platform_psftp_pre_conn_setup(void);
  * The main program in psftp.c. Called from main() in the platform-
  * specific code, after doing any platform-specific initialisation.
  */
+#ifdef WITHCMDLINEXXXX
 TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]); // TG 2019
+#endif
 
 /*
  * These functions are used by PSCP to transmit progress updates

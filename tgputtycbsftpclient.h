@@ -76,6 +76,13 @@ private:
 	void __fastcall SetUserName(const System::UnicodeString Value);
 	void __fastcall SetVerbose(const bool Value);
 
+    int __fastcall GetTimeoutTicks() { return FTGPuttySFTP->TimeoutTicks; }
+    void __fastcall SetTimeoutTicks(const int Value) { FTGPuttySFTP->TimeoutTicks=Value; }
+    int __fastcall GetConnectionTimeoutTicks()  { return FTGPuttySFTP->ConnectionTimeoutTicks; }
+    void __fastcall SetConnectionTimeoutTicks(const int Value) { FTGPuttySFTP->ConnectionTimeoutTicks=Value; }
+    bool __fastcall GetAborted()  { return FTGPuttySFTP->Aborted; }
+    void __fastcall SetAborted(const bool Value) { FTGPuttySFTP->Aborted=Value; }
+
 protected:
 
 public:
@@ -108,6 +115,8 @@ public:
 	__property int ErrorCode = {read=GetErrorCode, nodefault};
 	__property System::UnicodeString ErrorMessage = {read=GetErrorMessage};
 
+    __property bool Aborted = {read=GetAborted, write=SetAborted};
+
 __published:
 	__property System::UnicodeString HostName = {read=GetHostName, write=SetHostName};
 	__property System::UnicodeString UserName = {read=GetUserName, write=SetUserName};
@@ -120,6 +129,8 @@ __published:
 	__property TOnSFTPListing OnSFTPListing = {read=FOnSFTPListing, write=FOnSFTPListing};
 	__property TOnSFTPGetInput OnSFTPGetInput = {read=FOnSFTPGetInput, write=FOnSFTPGetInput};
 	__property TOnSFTPVerifyHostKey OnSFTPVerifyHostKey = {read=FOnSFTPVerifyHostKey, write=FOnSFTPVerifyHostKey};
+    __property int TimeoutTicks = {read=GetTimeoutTicks, write=SetTimeoutTicks};
+    __property int ConnectionTimeoutTicks = {read=GetConnectionTimeoutTicks, write=SetConnectionTimeoutTicks};
 };
 //---------------------------------------------------------------------------
 #endif

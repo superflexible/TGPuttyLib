@@ -444,15 +444,14 @@ void init_ucs(Conf *conf, struct unicode_data *ucsdata)
     int vtmode;
 
     /* Decide on the Line and Font codepages */
-    ucsdata->line_codepage = decode_codepage(conf_get_str(conf,
-                                                          CONF_line_codepage));
+    ucsdata->line_codepage = decode_codepage(""); // TG, was conf_get_str(conf, CONF_line_codepage));
 
     if (ucsdata->font_codepage <= 0) {
         ucsdata->font_codepage=0;
         ucsdata->dbcs_screenfont=false;
     }
 
-    vtmode = conf_get_int(conf, CONF_vtmode);
+    vtmode = VT_UNICODE; // TG, was: conf_get_int(conf, CONF_vtmode);
     if (vtmode == VT_OEMONLY) {
         ucsdata->font_codepage = 437;
         ucsdata->dbcs_screenfont = false;

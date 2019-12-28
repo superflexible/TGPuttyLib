@@ -72,6 +72,13 @@ public:
 	TOnVerifyHostKey GetOnVerifyHostKey() { return FOnVerifyHostKey; }
 	void SetOnVerifyHostKey(TOnVerifyHostKey AnOnVerifyHostKey) { FOnVerifyHostKey = AnOnVerifyHostKey; }
 
+	int GetTimeoutTicks() { return Fcontext.timeoutticks; }
+	void SetTimeoutTicks(const int Value) { Fcontext.timeoutticks = Value; }
+	int GetConnectionTimeoutTicks() { return Fcontext.connectiontimeoutticks; }
+	void SetConnectionTimeoutTicks(const int Value) { Fcontext.connectiontimeoutticks = Value; }
+	bool GetAborted() { return Fcontext.aborted; }
+	void SetAborted(const bool Value) { Fcontext.aborted = Value; }
+
 	char* GetLibVersion();
 	int GetErrorCode();
 	const char* GetErrorMessage();
@@ -127,4 +134,7 @@ public:
 	__declspec(property(get = GetOnListing, put = SetOnListing)) TOnListing OnListing;
 	__declspec(property(get = GetOnGetInput, put = SetOnGetInput)) TOnGetInput OnGetInput;
 	__declspec(property(get = GetOnVerifyHostKey, put = SetOnVerifyHostKey)) TOnVerifyHostKey OnVerifyHostKey;
+	__declspec(property(get = GetTimeoutTicks, put = SetTimeoutTicks)) int TimeoutTicks;
+	__declspec(property(get = GetConnectionTimeoutTicks, put = SetConnectionTimeoutTicks)) int ConnectionTimeoutTicks;
+	__declspec(property(get = GetAborted, put = SetAborted)) bool Aborted;
 };

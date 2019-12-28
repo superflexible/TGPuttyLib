@@ -36,6 +36,8 @@ uses Classes, SysUtils, SyncObjs;
 
 const tgputtydll='tgputtylib.dll';
 
+      cDefaultTimeoutTicks=60000;
+
 {$ifdef USEMEMORYCALLBACKS}
       UseMemoryAllocationCallbacks=false;
       DebugMemory=false;
@@ -60,6 +62,105 @@ const
    // with these flags, tgsftp_mvex can skip checking whether the destination is an existing folder
    cMoveFlag_DestinationPathIncludesItemName =1;
    cMoveFlag_AddSourceItemNameToDestinationPath =2;
+
+   TYPE_NONE = 0;
+   TYPE_BOOL = 1;
+   TYPE_INT  = 2;
+   TYPE_STR  = 3;
+   TYPE_FILENAME = 4;
+
+   txtPuttyConfTypes:array[0..4] of string=('none','Boolean','Integer','AnsiString','Filename');
+
+   cPuttyConf_host='host'; // AnsiString default ''
+   cPuttyConf_port='port'; // Integer default 0
+   cPuttyConf_protocol='protocol'; // Integer default 0
+   cPuttyConf_addressfamily='addressfamily'; // Integer default 0
+   cPuttyConf_ping_interval='ping_interval'; // Integer default 0
+   cPuttyConf_tcp_nodelay='tcp_nodelay'; // Boolean default TRUE
+   cPuttyConf_tcp_keepalives='tcp_keepalives'; // Boolean default FALSE
+   cPuttyConf_loghost='loghost'; // AnsiString default ''
+   cPuttyConf_proxy_exclude_list='proxy_exclude_list'; // AnsiString default ''
+   cPuttyConf_proxy_dns='proxy_dns'; // Integer default 2
+   cPuttyConf_even_proxy_localhost='even_proxy_localhost'; // Boolean default FALSE
+   cPuttyConf_proxy_type='proxy_type'; // Integer default 0
+   cPuttyConf_proxy_host='proxy_host'; // AnsiString default 'proxy'
+   cPuttyConf_proxy_port='proxy_port'; // Integer default 80
+   cPuttyConf_proxy_username='proxy_username'; // AnsiString default ''
+   cPuttyConf_proxy_password='proxy_password'; // AnsiString default ''
+   cPuttyConf_proxy_telnet_command='proxy_telnet_command'; // AnsiString default 'connect %host %port\n'
+   cPuttyConf_proxy_log_to_term='proxy_log_to_term'; // Integer default 1
+   cPuttyConf_remote_cmd='remote_cmd'; // AnsiString default ''
+   cPuttyConf_remote_cmd2='remote_cmd2'; // AnsiString default ''
+   cPuttyConf_nopty='nopty'; // Boolean default FALSE
+   cPuttyConf_compression='compression'; // Boolean default FALSE
+   cPuttyConf_ssh_kexlist='ssh_kexlist'; // Integer [Integer]
+   cPuttyConf_ssh_hklist='ssh_hklist'; // Integer [Integer]
+   cPuttyConf_ssh_rekey_time='ssh_rekey_time'; // Integer default 60
+   cPuttyConf_ssh_rekey_data='ssh_rekey_data'; // AnsiString default '1G'
+   cPuttyConf_tryagent='tryagent'; // Boolean default TRUE
+   cPuttyConf_agentfwd='agentfwd'; // Boolean default FALSE
+   cPuttyConf_change_username='change_username'; // Boolean default FALSE
+   cPuttyConf_ssh_cipherlist='ssh_cipherlist'; // Integer [Integer]
+   cPuttyConf_keyfile='keyfile'; // Filename
+   cPuttyConf_sshprot='sshprot'; // Integer default 3
+   cPuttyConf_ssh2_des_cbc='ssh2_des_cbc'; // Boolean default FALSE
+   cPuttyConf_ssh_no_userauth='ssh_no_userauth'; // Boolean default FALSE
+   cPuttyConf_ssh_show_banner='ssh_show_banner'; // Boolean default TRUE
+   cPuttyConf_try_tis_auth='try_tis_auth'; // Boolean default FALSE
+   cPuttyConf_try_ki_auth='try_ki_auth'; // Boolean default TRUE
+   cPuttyConf_try_gssapi_auth='try_gssapi_auth'; // Boolean default TRUE
+   cPuttyConf_try_gssapi_kex='try_gssapi_kex'; // Boolean default TRUE
+   cPuttyConf_gssapifwd='gssapifwd'; // Boolean default FALSE
+   cPuttyConf_gssapirekey='gssapirekey'; // Integer default 2
+   cPuttyConf_ssh_gsslist='ssh_gsslist'; // Integer [Integer]
+   cPuttyConf_ssh_gss_custom='ssh_gss_custom'; // Filename
+   cPuttyConf_ssh_subsys='ssh_subsys'; // Boolean default FALSE
+   cPuttyConf_ssh_subsys2='ssh_subsys2'; // Boolean default
+   cPuttyConf_ssh_no_shell='ssh_no_shell'; // Boolean default FALSE
+   cPuttyConf_ssh_nc_host='ssh_nc_host'; // AnsiString default ''
+   cPuttyConf_ssh_nc_port='ssh_nc_port'; // Integer default
+   cPuttyConf_termtype='termtype'; // AnsiString default 'xterm'
+   cPuttyConf_termspeed='termspeed'; // AnsiString default '38400,38400'
+   cPuttyConf_ttymodes='ttymodes'; // AnsiString [AnsiString]
+   cPuttyConf_environmt='environmt'; // AnsiString [AnsiString]
+   cPuttyConf_username='username'; // AnsiString default ''
+   cPuttyConf_width='width'; // Integer default 80
+   cPuttyConf_height='height'; // Integer default 24
+   cPuttyConf_logfilename='logfilename'; // Filename
+   cPuttyConf_logtype='logtype'; // Integer default 0
+   cPuttyConf_logxfovr='logxfovr'; // Integer default -1
+   cPuttyConf_logflush='logflush'; // Boolean default TRUE
+   cPuttyConf_logheader='logheader'; // Boolean default TRUE
+   cPuttyConf_logomitpass='logomitpass'; // Boolean default TRUE
+   cPuttyConf_logomitdata='logomitdata'; // Boolean default FALSE
+   cPuttyConf_lport_acceptall='lport_acceptall'; // Boolean default FALSE
+   cPuttyConf_rport_acceptall='rport_acceptall'; // Boolean default FALSE
+   cPuttyConf_portfwd='portfwd'; // AnsiString [AnsiString]
+   cPuttyConf_sshbug_ignore1='sshbug_ignore1'; // Integer default 2
+   cPuttyConf_sshbug_plainpw1='sshbug_plainpw1'; // Integer default 2
+   cPuttyConf_sshbug_rsa1='sshbug_rsa1'; // Integer default 2
+   cPuttyConf_sshbug_hmac2='sshbug_hmac2'; // Integer default 2
+   cPuttyConf_sshbug_derivekey2='sshbug_derivekey2'; // Integer default 2
+   cPuttyConf_sshbug_rsapad2='sshbug_rsapad2'; // Integer default 2
+   cPuttyConf_sshbug_pksessid2='sshbug_pksessid2'; // Integer default 2
+   cPuttyConf_sshbug_rekey2='sshbug_rekey2'; // Integer default 2
+   cPuttyConf_sshbug_maxpkt2='sshbug_maxpkt2'; // Integer default 2
+   cPuttyConf_sshbug_ignore2='sshbug_ignore2'; // Integer default 2
+   cPuttyConf_sshbug_oldgex2='sshbug_oldgex2'; // Integer default 2
+   cPuttyConf_sshbug_winadj='sshbug_winadj'; // Integer default 2
+   cPuttyConf_sshbug_chanreq='sshbug_chanreq'; // Integer default 2
+   cPuttyConf_ssh_simple='ssh_simple'; // Boolean default FALSE
+   cPuttyConf_ssh_connection_sharing='ssh_connection_sharing'; // Boolean default FALSE
+   cPuttyConf_ssh_connection_sharing_upstream='ssh_connection_sharing_upstream'; // Boolean default TRUE
+   cPuttyConf_ssh_connection_sharing_downstream='ssh_connection_sharing_downstream'; // Boolean default TRUE
+   cPuttyConf_ssh_manual_hostkeys='ssh_manual_hostkeys'; // AnsiString [AnsiString]
+
+
+type
+   TProxyTypes=(PROXY_NONE,PROXY_SOCKS4,PROXY_SOCKS5,PROXY_HTTP,PROXY_TELNET,PROXY_CMD,PROXY_FUZZ);
+
+const
+   txtProxyTypes:array[TProxyTypes] of string=('NONE','SOCKS4','SOCKS5','HTTP','TELNET','CMD','FUZZ');
 
 type fxp_attrs=record
        flags:Cardinal;
@@ -119,6 +220,10 @@ type fxp_attrs=record
        fxp_error_message:PAnsiChar;
        fxp_errtype:Integer;
 
+       timeoutticks:Integer;
+       connectiontimeoutticks:Integer;
+       aborted:Boolean;
+
 {$ifdef USEMEMORYCALLBACKS}
        malloc_callback:function(size:NativeUInt):Pointer;  cdecl;
        free_callback:procedure(ptr:Pointer);  cdecl;
@@ -136,18 +241,21 @@ type fxp_attrs=record
        procedure Init;
        end;
 
+{$ifdef WITHCOMMANDLINE} // TGPuttyLib is compiled without command line support by default
 // run the whole psftp interactive commmand prompt
 // includes init and cleanup, only one function call needed
 function psftp_main(argcparam: Longint; argvparam: ppchar):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgputty_initwithcmdline(argcparam: Longint; argvparam: ppchar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+{$endif}
 
 // basic functions
 function tggetlibrarycontextsize:Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
-function tgputty_initwithcmdline(argcparam: Longint; argvparam: ppchar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgputty_initcontext(const verbose:Boolean;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtysetappname(const newappname,appversion:PAnsiChar); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputty_setverbose(const averbose:Boolean); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtyfree(const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtygetversions(puttyrelease:PDouble; tgputtylibbuild:PInteger); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif}; // TG 2019
+function tgputty_getconfigarrays(types,subtypes,names:Pointer;count:PInteger):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 
 // run the whole psftp interactive commmand prompt
 // after calling tgputtyinit
@@ -193,6 +301,19 @@ procedure tgputty_xfer_upload_data(const xfer:TSFTPTransfer;const buffer:Pointer
 function tgputty_xfer_ensuredone(const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgputty_xfer_done(const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputty_xfer_cleanup(const xfer:TSFTPTransfer;const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+function tgputty_conf_get_bool(key:Integer; const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgputty_conf_get_int(key:Integer; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgputty_conf_get_int_int(key,subkey:Integer; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+// PAnsiChar result still owned by conf
+function tgputty_conf_get_str(key:Integer; const libctx:PTGLibraryContext):PAnsiChar; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgputty_conf_get_str_str(key:Integer;const subkey:PAnsiChar; const libctx:PTGLibraryContext):PAnsiChar; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+procedure tgputty_conf_set_bool(key:Integer; Value: Boolean; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgputty_conf_set_int(key:Integer; Value: Integer; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgputty_conf_set_int_int(key,subkey:Integer; Value: Integer; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgputty_conf_set_str(key:Integer; Value: PAnsiChar; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgputty_conf_set_str_str(key:Integer;const subkey,Value:PAnsiChar; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 
 implementation
 
@@ -359,6 +480,9 @@ begin
 
 procedure TTGLibraryContext.Init;
 begin
+  timeoutticks:=cDefaultTimeoutTicks;
+  connectiontimeoutticks:=cDefaultTimeoutTicks;
+
   //entercriticalsection_callback:=TGPuttyDLLEnterCriticalSection;
   //leavecriticalsection_callback:=TGPuttyDLLLeaveCriticalSection;
 

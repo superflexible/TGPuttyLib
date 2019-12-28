@@ -48,7 +48,7 @@ char *psftp_lcd(char *dir)
                       NULL, GetLastError(),
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                       (LPTSTR)&message, 0, NULL);
-        i = strcspn((char *)message, "\n");
+        i = (int) strcspn((char *)message, "\n");
         ret = dupprintf("%.*s", i, (LPCTSTR)message);
         LocalFree(message);
     }
@@ -66,7 +66,7 @@ char *psftp_getcwd(void)
     size_t len = GetCurrentDirectory(256, ret);
     if (len > 256)
         ret = sresize(ret, len, char);
-    GetCurrentDirectory(len, ret);
+    GetCurrentDirectory((DWORD) len, ret);
     return ret;
 }
 
@@ -472,35 +472,33 @@ char *dir_file_cat(const char *dir, const char *file)
 static SOCKET sftp_ssh_socket = INVALID_SOCKET;
 static HANDLE netevent = INVALID_HANDLE_VALUE;
 #endif
-char *do_select(SOCKET skt, bool startup)
+char *do_select(SOCKET skt, bool enable)
 {
     int events;
-    if (startup)
-        sftp_ssh_socket = skt;
+    if (enable)
+       sftp_ssh_socket = skt;
     else
-        sftp_ssh_socket = INVALID_SOCKET;
+       sftp_ssh_socket = INVALID_SOCKET;
 
+    if ((netevent==0) || // TG prefers this to be checked also
+        (netevent==INVALID_HANDLE_VALUE)) // TG fix event handle leak: psftp 0.73 can create thousands of these while downloading a file
+    {
+       // this event is never freed in psftp.exe
+       // but it's freed in tgputtyfree when a TGPuttyLib context is freed
+       netevent = CreateEvent(NULL, false, false, NULL);
+    }
+    else
+    {
+       ResetEvent(netevent); // TG prefers this being done too
+    }
     if (p_WSAEventSelect) {
-        if (startup)
+        if (enable)
         {
             events = (FD_CONNECT | FD_READ | FD_WRITE |
                       FD_OOB | FD_CLOSE | FD_ACCEPT);
-
-            if ((netevent==0) || (netevent==INVALID_HANDLE_VALUE)) // TG fix event handle leak: psftp 0.73 can create thousands of these while downloading a file
-            {
-               // this event is never freed in psftp.exe
-               // but it's freed in tgputtyfree when a TGPuttyLib context is freed
-               netevent = CreateEvent(NULL, false, false, NULL);
-            }
-            else
-            {
-               // printf("INFO to developer: do_select called with startup=true but netevent already exists.\n");
-               ResetEvent(netevent);
-            }
         }
         else
         {
-            assert((netevent!=NULL) && (netevent != INVALID_HANDLE_VALUE));
             events = 0;
         }
         if (p_WSAEventSelect(skt, netevent, events) == SOCKET_ERROR) {
@@ -535,10 +533,14 @@ int do_eventsel_loop(HANDLE other_event)
       {
         then = now;
         now = GETTICKCOUNT();
-        if (now - then > next - then)
-            ticks = 0;
+        if (now>next)
+           ticks = 0;
         else
-            ticks = next - now;
+        {
+           ticks = next - now;
+           if (ticks>1000)
+              ticks = 1000; // TG 2019: never hang for more than one second
+        }
       }
       else
       {
@@ -561,6 +563,7 @@ int do_eventsel_loop(HANDLE other_event)
     else
         otherindex = -1;
 
+    // printf("Calling WaitForMultipleObjects with ticks: %ld\n",ticks);
     n = WaitForMultipleObjects(nallhandles, handles, false, ticks);
 
     if ((unsigned)(n - WAIT_OBJECT_0) < (unsigned)nhandles) {
@@ -609,7 +612,7 @@ int do_eventsel_loop(HANDLE other_event)
                 };
                 int e;
 
-                noise_ultralight(NOISE_SOURCE_IOID, socket);
+                noise_ultralight(NOISE_SOURCE_IOID, (unsigned long) socket);
 
                 for (e = 0; e < lenof(eventtypes); e++)
                     if (things.lNetworkEvents & eventtypes[e].mask) {
@@ -751,9 +754,12 @@ char *ssh_sftp_get_cmdline(const char *prompt, bool no_fds_ok)
     }
 
     do {
+        // printf("ssh_sftp_get_cmdline calling do_eventsel_loop\n");
         ret = do_eventsel_loop(ctx->event);
 
-        /* Error return can only occur if netevent==NULL, and it ain't. */
+        /* do_eventsel_loop can't return an error (unlike
+         * ssh_sftp_loop_iteration, which can return -1 if select goes
+         * wrong or if the socket doesn't exist). */
         assert(ret >= 0);
     } while (ret == 0);
 

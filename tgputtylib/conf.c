@@ -22,9 +22,14 @@ typedef enum {
  * given primary key id.
  */
 #define CONF_SUBKEYTYPE_DEF(valtype, keytype, keyword) TYPE_ ## keytype,
-static int subkeytypes[] = { CONFIG_OPTIONS(CONF_SUBKEYTYPE_DEF) };
+const int subkeytypes[] = { CONFIG_OPTIONS(CONF_SUBKEYTYPE_DEF) }; // TG: non static
 #define CONF_VALUETYPE_DEF(valtype, keytype, keyword) TYPE_ ## valtype,
-static int valuetypes[] = { CONFIG_OPTIONS(CONF_VALUETYPE_DEF) };
+const int valuetypes[] = { CONFIG_OPTIONS(CONF_VALUETYPE_DEF) }; // TG: non static
+
+// TG: define an array of option names
+#define CONF_NAMES_DEF(valtype, keytype, keyword) #keyword,
+const char *confnames[] = { CONFIG_OPTIONS(CONF_NAMES_DEF) };
+
 
 /*
  * Configuration keys are primarily integers (big enum of all the
@@ -313,7 +318,10 @@ int conf_get_int(Conf *conf, int primary)
     assert(valuetypes[primary] == TYPE_INT);
     key.primary = primary;
     entry = find234(conf->tree, &key, NULL);
+    if (!entry)
+       printf("ERROR: config entry number %d not found.",primary);
     assert(entry);
+
     return entry->value.u.intval;
 }
 

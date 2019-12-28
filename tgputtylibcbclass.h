@@ -11,6 +11,7 @@
 
 #include "ctgputtylib.h"
 
+#define cDefaultTimeoutTicks 60000
 
 typedef void (__closure *TOnMessage)(const char *Msg, const bool isstderr);
 typedef bool (__closure *TOnProgress)(const __int64 bytescopied, const bool isupload);
@@ -61,6 +62,13 @@ class TTGPuttySFTP
 	int GetErrorCode();
 	const char *GetErrorMessage();
 
+    int GetTimeoutTicks() { return Fcontext.timeoutticks; }
+    void SetTimeoutTicks(const int Value) { Fcontext.timeoutticks=Value; }
+    int GetConnectionTimeoutTicks()  { return Fcontext.connectiontimeoutticks; }
+    void SetConnectionTimeoutTicks(const int Value) { Fcontext.connectiontimeoutticks=Value; }
+    bool GetAborted()  { return Fcontext.aborted; }
+    void SetAborted(const bool Value) { Fcontext.aborted=Value; }
+
 	TTGPuttySFTP(const bool verbose);
 	virtual ~TTGPuttySFTP();
     void ClearStatus();
@@ -109,6 +117,11 @@ class TTGPuttySFTP
 	__property std::string LastMessages = {read=FLastMessages, write=FLastMessages};
 	__property int ErrorCode = {read=GetErrorCode};
 	__property const char *ErrorMessage = {read=GetErrorMessage};
+
+    __property int TimeoutTicks = {read=GetTimeoutTicks, write=SetTimeoutTicks};
+    __property int ConnectionTimeoutTicks = {read=GetConnectionTimeoutTicks, write=SetConnectionTimeoutTicks};
+    __property bool Aborted = {read=GetAborted, write=SetAborted};
+
 	__property TOnMessage OnMessage = {read=FOnMessage, write=FOnMessage};
 	__property TOnProgress OnProgress = {read=FOnProgress, write=FOnProgress};
 	__property TOnListing OnListing = {read=FOnListing, write=FOnListing};

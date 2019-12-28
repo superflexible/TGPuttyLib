@@ -162,7 +162,7 @@ int cmdline_process_param(const char *p, char *value,
                           int need_save, Conf *conf)
 {
     int ret = 0;
-
+#ifndef TGDLL
     if (p[0] != '-') {
         if (need_save < 0)
             return 0;
@@ -851,6 +851,7 @@ int cmdline_process_param(const char *p, char *value,
         restrict_process_acl();
         restricted_acl = true;
     }
+#endif
 #endif
 
     return ret;                        /* unrecognised */

@@ -82,6 +82,10 @@ typedef struct
   const char *fxp_error_message; // accessed by host application too
   int fxp_errtype; // accessed by host application too
 
+  int timeoutticks;
+  int connectiontimeoutticks;
+  bool aborted;
+
 #if defined(CALLBACK_MALLOC) || defined(DEBUG_MALLOC)
   void* (*malloc_callback) (size_t size);
   void (*free_callback) (void* ptr);

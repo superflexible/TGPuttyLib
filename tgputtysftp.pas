@@ -6,7 +6,7 @@ interface
 
 uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
      {$ifdef MSWINDOWS}Windows,{$endif}
-     Classes, SysUtils, DateUtils,
+     Classes, SysUtils, DateUtils, SyncObjs,
      tgputtylib;
 
 {$ifndef FPC}
@@ -17,8 +17,11 @@ uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
 {$endif}
 {$endif}
 
-const MinimumLibraryBuildNum=1;
+const MinimumLibraryBuildNum=8;
       cDummyClearedErrorCode=-1000; // this error code means there was no real error code
+
+      cConfCount=83;
+      cDumpSettingsFile=false;
 
 type TGPuttySFTPException=class(Exception);
 
@@ -30,6 +33,12 @@ type TGPuttySFTPException=class(Exception);
                                const fingerprint:PAnsiChar;
                                const verificationstatus:Integer;
                                var storehostkey:Boolean):Boolean of object;
+
+     TConfIntArray=array[0..cConfCount-1] of Integer;
+     TConfPAnsiCharArray=array[0..cConfCount-1] of PAnsiChar;
+
+     PConfIntArray=^TConfIntArray;
+     PConfPAnsiCharArray=^TConfPAnsiCharArray;
 
      TTGPuttySFTP=class(TObject)
        private
@@ -47,6 +56,10 @@ type TGPuttySFTPException=class(Exception);
          FConnected:Boolean;
          FPasswordAttempts:Integer;
          FLastMessages:AnsiString;
+         FConfNames:PConfPAnsiCharArray;
+         FConfTypes:PConfIntArray;
+         FConfSubTypes:PConfIntArray;
+         FConfCount:Integer;
          function GetHomeDir: AnsiString;
          function GetWorkDir: AnsiString;
          procedure SetVerbose(const Value: Boolean);
@@ -54,11 +67,30 @@ type TGPuttySFTPException=class(Exception);
          function GetLibVersion: AnsiString;
          function GetErrorCode: Integer;
          function GetErrorMessage: AnsiString;
+         function GetAborted: Boolean;
+         function GetConnectionTimeoutTicks: Integer;
+         function GetTimeoutTicks: Integer;
+         procedure SetAborted(const Value: Boolean);
+         procedure SetConnectionTimeoutTicks(const Value: Integer);
+         procedure SetTimeoutTicks(const Value: Integer);
+         procedure DumpSettingsFile;
+         procedure CreateConfigIndex;
+         function GetProxyType: TProxyTypes;
+         function GetProxyHost: AnsiString;
+         function GetProxyPassword: AnsiString;
+         function GetProxyUserName: AnsiString;
+         function GetProxyPort: Integer;
+         procedure SetProxyType(const Value: TProxyTypes);
+         procedure SetProxyHost(const Value: AnsiString);
+         procedure SetProxyPassword(const Value: AnsiString);
+         procedure SetProxyUserName(const Value: AnsiString);
+         procedure SetProxyPort(const Value: Integer);
        public
          constructor Create(const verbose:Boolean);
          destructor Destroy; override;
 
          function MakePSFTPErrorMsg(const where:string):string;
+         function GetPuttyConfIndex(const name:string):Integer;
 
          procedure Connect;
          procedure Disconnect;
@@ -111,6 +143,15 @@ type TGPuttySFTPException=class(Exception);
          property LastMessages:AnsiString read FLastMessages write FLastMessages;
          property ErrorCode:Integer read GetErrorCode;
          property ErrorMessage:AnsiString read GetErrorMessage;
+         property TimeoutTicks:Integer read GetTimeoutTicks write SetTimeoutTicks;
+         property ConnectionTimeoutTicks:Integer read GetConnectionTimeoutTicks write SetConnectionTimeoutTicks;
+         property Aborted:Boolean read GetAborted write SetAborted;
+
+         property ProxyType:TProxyTypes read GetProxyType write SetProxyType;
+         property ProxyHost:AnsiString read GetProxyHost write SetProxyHost;
+         property ProxyPort:Integer read GetProxyPort write SetProxyPort;
+         property ProxyUserName:AnsiString read GetProxyUserName write SetProxyUserName;
+         property ProxyPassword:AnsiString read GetProxyPassword write SetProxyPassword;
 
          property OnMessage:TOnMessage read FOnMessage write FOnMessage;
          property OnProgress:TOnProgress read FOnProgress write FOnProgress;
@@ -120,6 +161,9 @@ type TGPuttySFTPException=class(Exception);
        end;
 
 implementation
+
+var GPuttyConfigIndex:tStringList;
+    GPuttyConfigCS:TCriticalSection;
 
 function ls_callback(const names:Pfxp_names;const libctx:PTGLibraryContext):Boolean; cdecl;
 var TGPSFTP:TTGPuttySFTP;
@@ -319,7 +363,37 @@ begin
   Fcontext.verify_host_key_callback:=verify_host_key_callback;
 
   if tgputty_initcontext(verbose,@Fcontext)<>0 then
-     raise TGPuttySFTPException.Create('tgputty_initcontext failed - incorrect DLL version?');
+     raise TGPuttySFTPException.Create('tgputty_initcontext failed - incorrect tgputtylib version?');
+
+  if not tgputty_getconfigarrays(@FConfTypes,@FConfSubTypes,@FConfNames,@FConfCount) then
+     raise TGPuttySFTPException.Create('tgputty_getconfigarrays failed - incorrect tgputtylib version?');
+
+  if FConfCount<>cConfCount then
+     printmessage_callback(PAnsiChar(AnsiString('Possibly tgputtylib version mismatch, it has ')+
+                            AnsiString(IntToStr(FConfCount))+
+                            AnsiString(' config strings, but we expected ')+
+                            AnsiString(IntToStr(cConfCount))),false,@Fcontext);
+
+  if cDumpSettingsFile and (DebugHook<>0) then
+     DumpSettingsFile;
+
+  CreateConfigIndex;
+  end;
+
+procedure TTGPuttySFTP.CreateConfigIndex;
+var i:Integer;
+begin
+  GPuttyConfigCS.Enter;
+  try
+    if not Assigned(GPuttyConfigIndex) then begin
+       GPuttyConfigIndex:=tStringList.Create;
+       GPuttyConfigIndex.Sorted:=true;
+       for i:=0 to FConfCount-1 do
+         GPuttyConfigIndex.AddObject(FConfNames[i],TObject(NativeUInt(i)));
+       end;
+    finally
+      GPuttyConfigCS.Leave;
+    end;
   end;
 
 procedure TTGPuttySFTP.DeleteFile(const AName: AnsiString);
@@ -372,6 +446,48 @@ begin
     end;
   end;
 
+procedure TTGPuttySFTP.DumpSettingsFile;
+var T:System.Text;
+    i:Integer;
+begin
+  AssignFile(T,'C:\TEMP\TGPuttyLibSettings.pas');
+  Rewrite(T);
+  WriteLn(T,'const');
+  for i:=0 to FConfCount-1 do begin
+    Write(T,'      cPuttyConf_',FConfNames[i],'=''',FConfNames[i],'''; // ',txtPuttyConfTypes[FConfTypes[i]]);
+    try
+      if FConfSubTypes[i]>0 then
+         WriteLn(T,' [',txtPuttyConfTypes[FConfTypes[i]],']') //  default ',tgputty_conf_get_int_int(i,0))
+      else
+        try
+          case FConfTypes[i] of
+            TYPE_BOOL : WriteLn(T,' default ',tgputty_conf_get_bool(i,@FContext));
+            TYPE_INT  : WriteLn(T,' default ',tgputty_conf_get_int(i,@FContext));
+            TYPE_STR  : WriteLn(T,' default ''',tgputty_conf_get_str(i,@FContext),'''');
+            else
+              WriteLn(T);
+            end;
+          except
+            WriteLn(T); // no default value
+          end;
+      except
+        on E:Exception do
+           WriteLn(T,' Exception: ',E.Message);
+      end;
+    end;
+  System.Close(T);
+  end;
+
+function TTGPuttySFTP.GetAborted: Boolean;
+begin
+  Result:=Fcontext.aborted;
+  end;
+
+function TTGPuttySFTP.GetConnectionTimeoutTicks: Integer;
+begin
+  Result:=Fcontext.connectiontimeoutticks;
+  end;
+
 function TTGPuttySFTP.GetErrorCode: Integer;
 begin
   Result:=Fcontext.fxp_errtype;
@@ -397,12 +513,51 @@ begin
   Result:=AnsiString('tgputtylib build ')+AnsiString(IntToStr(tgputtylibbuild))+AnsiString(' based on PuTTY Release ')+strpv;
   end;
 
+function TTGPuttySFTP.GetProxyHost: AnsiString;
+begin
+  Result:=tgputty_conf_get_str(GetPuttyConfIndex(cPuttyConf_proxy_host),@FContext);
+  end;
+
+function TTGPuttySFTP.GetProxyPassword: AnsiString;
+begin
+  Result:=tgputty_conf_get_str(GetPuttyConfIndex(cPuttyConf_proxy_password),@FContext);
+  end;
+
+function TTGPuttySFTP.GetProxyPort: Integer;
+begin
+  Result:=tgputty_conf_get_int(GetPuttyConfIndex(cPuttyConf_proxy_port),@FContext);
+  end;
+
+function TTGPuttySFTP.GetProxyType: TProxyTypes;
+begin
+  Result:=TProxyTypes(tgputty_conf_get_int(GetPuttyConfIndex(cPuttyConf_proxy_type),@FContext));
+  end;
+
+function TTGPuttySFTP.GetProxyUserName: AnsiString;
+begin
+  Result:=tgputty_conf_get_str(GetPuttyConfIndex(cPuttyConf_proxy_username),@FContext);
+  end;
+
+function TTGPuttySFTP.GetPuttyConfIndex(const name: string): Integer;
+var idx:Integer;
+begin
+  idx:=GPuttyConfigIndex.IndexOf(name);
+  if idx<0 then
+     raise TGPuttySFTPException.Create('Putty Conf Name Not Found: '+name);
+  Result:=NativeUInt(GPuttyConfigIndex.Objects[idx]);
+  end;
+
 procedure TTGPuttySFTP.GetStat(const AFileName: AnsiString;out Attrs: fxp_attrs);
 begin
   FLastMessages:='';
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
   if not tgsftp_getstat(PAnsiChar(AFileName),@Attrs,@Fcontext) then
      raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_getstat'));
+  end;
+
+function TTGPuttySFTP.GetTimeoutTicks: Integer;
+begin
+  Result:=Fcontext.timeoutticks;
   end;
 
 function TTGPuttySFTP.GetWorkDir: AnsiString;
@@ -473,6 +628,16 @@ begin
      raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_rmdir'));
   end;
 
+procedure TTGPuttySFTP.SetAborted(const Value: Boolean);
+begin
+  Fcontext.aborted:=Value;
+  end;
+
+procedure TTGPuttySFTP.SetConnectionTimeoutTicks(const Value: Integer);
+begin
+  Fcontext.connectiontimeoutticks:=Value;
+  end;
+
 procedure TTGPuttySFTP.SetFileSize(const AFileName: AnsiString; const ASize: Int64);
 var Attrs:fxp_attrs;
 begin
@@ -509,25 +674,55 @@ begin
 
 procedure TTGPuttySFTP.SetModifiedDate(const AFileName: AnsiString;const ATimestamp: TDateTime; const isUTC:Boolean);
 var Attrs:fxp_attrs;
+    unixtime:Int64;
 begin
   GetStat(AFileName,Attrs);
   attrs.flags := SSH_FILEXFER_ATTR_ACMODTIME; // set only this
   {$ifdef FPC}
   if isUTC then
-     attrs.mtime:=DateTimeToUnix(ATimestamp)
+     unixtime:=DateTimeToUnix(ATimestamp)
   else
-     attrs.mtime:=DateTimeToUnix(LocalTimeToUniversal(ATimestamp));
+     unixtime:=DateTimeToUnix(LocalTimeToUniversal(ATimestamp));
   {$else}
   {$ifdef HASUTCPARAM}
-  attrs.mtime:=DateTimeToUnix(ATimestamp,isUTC);
+  unixtime:=DateTimeToUnix(ATimestamp,isUTC);
   {$else}
   if isUTC then
-     attrs.mtime:=DateTimeToUnix(ATimestamp)
+     unixtime:=DateTimeToUnix(ATimestamp)
   else
-     attrs.mtime:=DateTimeToUnix(ATimestamp+GetBias);
+     unixtime:=DateTimeToUnix(ATimestamp+GetBias);
   {$endif}
   {$endif}
+  if unixtime>=0 then
+     attrs.mtime:=unixtime
+  else
+     attrs.mtime:=0;
   SetStat(AFileName,Attrs);
+  end;
+
+procedure TTGPuttySFTP.SetProxyHost(const Value: AnsiString);
+begin
+  tgputty_conf_set_str(GetPuttyConfIndex(cPuttyConf_proxy_host),PAnsiChar(Value),@FContext);
+  end;
+
+procedure TTGPuttySFTP.SetProxyPassword(const Value: AnsiString);
+begin
+  tgputty_conf_set_str(GetPuttyConfIndex(cPuttyConf_proxy_password),PAnsiChar(Value),@FContext);
+  end;
+
+procedure TTGPuttySFTP.SetProxyPort(const Value: Integer);
+begin
+  tgputty_conf_set_int(GetPuttyConfIndex(cPuttyConf_proxy_type),ord(Value),@FContext);
+  end;
+
+procedure TTGPuttySFTP.SetProxyType(const Value: TProxyTypes);
+begin
+  tgputty_conf_set_int(GetPuttyConfIndex(cPuttyConf_proxy_type),ord(Value),@FContext);
+  end;
+
+procedure TTGPuttySFTP.SetProxyUserName(const Value: AnsiString);
+begin
+  tgputty_conf_set_str(GetPuttyConfIndex(cPuttyConf_proxy_username),PAnsiChar(Value),@FContext);
   end;
 
 procedure TTGPuttySFTP.SetStat(const AFileName: AnsiString;const Attrs: fxp_attrs);
@@ -536,6 +731,11 @@ begin
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
   if not tgsftp_setstat(PAnsiChar(AFileName),@Attrs,@Fcontext) then
      raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_setstat'));
+  end;
+
+procedure TTGPuttySFTP.SetTimeoutTicks(const Value: Integer);
+begin
+  Fcontext.timeoutticks:=Value;
   end;
 
 procedure TTGPuttySFTP.SetVerbose(const Value: Boolean);
@@ -598,6 +798,16 @@ function TTGPuttySFTP.xfer_upload_ready(const xfer: TSFTPTransfer): Boolean;
 begin
   Result:=tgputty_xfer_upload_ready(xfer,@Fcontext);
   end;
+
+
+initialization
+
+  GPuttyConfigCS:=TCriticalSection.Create;
+
+finalization
+
+  FreeAndNil(GPuttyConfigIndex);
+  FreeAndNil(GPuttyConfigCS);
 
 end.
 

@@ -97,21 +97,29 @@ char *get_remote_username(Conf *conf)
     char *username = conf_get_str(conf, CONF_username);
     if (*username) {
         return dupstr(username);
-    } else if (conf_get_bool(conf, CONF_username_from_env)) {
+    } else
+#ifndef TGDLL
+    if (conf_get_bool(conf, CONF_username_from_env)) {
         /* Use local username. */
         return get_username();     /* might still be NULL */
-    } else {
+    } else
+#endif
+    {
         return NULL;
     }
 }
 
 static char *gpps_raw(settings_r *sesskey, const char *name, const char *def)
 {
+#ifdef TGDLL
+    char *ret = def ? dupstr(def) : NULL;
+#else
     char *ret = read_setting_s(sesskey, name);
     if (!ret)
         ret = platform_default_s(name);
     if (!ret)
         ret = def ? dupstr(def) : NULL;   /* permit NULL as final fallback */
+#endif	
     return ret;
 }
 
@@ -128,6 +136,7 @@ static void gpps(settings_r *sesskey, const char *name, const char *def,
  * format of a Filename or FontSpec is platform-dependent. So the
  * platform-dependent functions MUST return some sort of value.
  */
+#ifndef TGDLL
 static void gppfont(settings_r *sesskey, char *name,
                     Conf *conf, int primary)
 {
@@ -137,12 +146,17 @@ static void gppfont(settings_r *sesskey, char *name,
     conf_set_fontspec(conf, primary, result);
     fontspec_free(result);
 }
+#endif	
 static void gppfile(settings_r *sesskey, const char *name,
                     Conf *conf, int primary)
 {
+#ifdef TGDLL
+    Filename *result = platform_default_filename(name);
+#else
     Filename *result = read_setting_filename(sesskey, name);
     if (!result)
         result = platform_default_filename(name);
+#endif	
     conf_set_filename(conf, primary, result);
     filename_free(result);
 }
@@ -150,7 +164,11 @@ static void gppfile(settings_r *sesskey, const char *name,
 static bool gppb_raw(settings_r *sesskey, const char *name, bool def)
 {
     def = platform_default_b(name, def);
+#ifdef TGDLL
+    return def;
+#else
     return sesskey ? read_setting_i(sesskey, name, def) != 0 : def;
+#endif
 }
 
 static void gppb(settings_r *sesskey, const char *name, bool def,
@@ -162,7 +180,11 @@ static void gppb(settings_r *sesskey, const char *name, bool def,
 static int gppi_raw(settings_r *sesskey, const char *name, int def)
 {
     def = platform_default_i(name, def);
+#ifdef TGDLL
+    return def;
+#else
     return read_setting_i(sesskey, name, def);
+#endif
 }
 
 static void gppi(settings_r *sesskey, const char *name, int def,
@@ -434,6 +456,7 @@ static void gprefs(settings_r *sesskey, const char *name, const char *def,
 /*
  * Write out a preference list.
  */
+ #ifndef TGDLL 
 static void wprefs(settings_w *sesskey, const char *name,
                    const struct keyvalwhere *mapping, int nvals,
                    Conf *conf, int primary)
@@ -784,15 +807,23 @@ void save_open_settings(settings_w *sesskey, Conf *conf)
     write_setting_b(sesskey, "ConnectionSharingDownstream", conf_get_bool(conf, CONF_ssh_connection_sharing_downstream));
     wmap(sesskey, "SSHManualHostKeys", conf, CONF_ssh_manual_hostkeys, false);
 }
+#endif
 
 bool load_settings(const char *section, Conf *conf)
 {
     settings_r *sesskey;
 
-    sesskey = open_settings_r(section);
+    // TG: we need this to initialize the default values
+#ifdef TGDLL
+    sesskey = NULL;
+#else
+	sesskey = open_settings_r(section);
+#endif
     bool exists = (sesskey != NULL);
     load_open_settings(sesskey, conf);
+#ifndef TGDLL
     close_settings_r(sesskey);
+#endif
 
     if (exists && conf_launchable(conf))
         add_session_to_jumplist(section);
@@ -836,8 +867,10 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
 
     /* The CloseOnExit numbers are arranged in a different order from
      * the standard FORCE_ON / FORCE_OFF / AUTO. */
+#ifndef TGDLL
     i = gppi_raw(sesskey, "CloseOnExit", 1); conf_set_int(conf, CONF_close_on_exit, (i+1)%3);
     gppb(sesskey, "WarnOnClose", true, conf, CONF_warn_on_close);
+#endif
     {
         /* This is two values for backward compatibility with 0.50/0.51 */
         int pingmin, pingsec;
@@ -933,9 +966,11 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
     gppi(sesskey, "ProxyLogToTerm", FORCE_OFF, conf, CONF_proxy_log_to_term);
     gppmap(sesskey, "Environment", conf, CONF_environmt);
     gpps(sesskey, "UserName", "", conf, CONF_username);
+#ifndef TGDLL
     gppb(sesskey, "UserNameFromEnvironment", false,
          conf, CONF_username_from_env);
     gpps(sesskey, "LocalUserName", "", conf, CONF_localusername);
+#endif	
     gppb(sesskey, "NoPTY", false, conf, CONF_nopty);
     gppb(sesskey, "Compression", false, conf, CONF_compression);
     gppb(sesskey, "TryAgent", true, conf, CONF_tryagent);
@@ -1025,6 +1060,7 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
     gppb(sesskey, "SshNoShell", false, conf, CONF_ssh_no_shell);
     gppfile(sesskey, "PublicKeyFile", conf, CONF_keyfile);
     gpps(sesskey, "RemoteCommand", "", conf, CONF_remote_cmd);
+#ifndef TGDLL
     gppb(sesskey, "RFCEnviron", false, conf, CONF_rfc_environ);
     gppb(sesskey, "PassiveTelnet", false, conf, CONF_passive_telnet);
     gppb(sesskey, "BackspaceIsDelete", true, conf, CONF_bksp_is_delete);
@@ -1110,8 +1146,10 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
     gppb(sesskey, "DisableBidi", false, conf, CONF_no_bidi);
     gppb(sesskey, "WinNameAlways", true, conf, CONF_win_name_always);
     gpps(sesskey, "WinTitle", "", conf, CONF_wintitle);
+#endif
     gppi(sesskey, "TermWidth", 80, conf, CONF_width);
     gppi(sesskey, "TermHeight", 24, conf, CONF_height);
+#ifndef TGDLL
     gppfont(sesskey, "Font", conf, CONF_font);
     gppi(sesskey, "FontQuality", FQ_DEFAULT, conf, CONF_font_quality);
     gppi(sesskey, "FontVTMode", VT_UNICODE, conf, CONF_vtmode);
@@ -1204,6 +1242,7 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
     gpps(sesskey, "X11Display", "", conf, CONF_x11_display);
     gppi(sesskey, "X11AuthType", X11_MIT, conf, CONF_x11_auth);
     gppfile(sesskey, "X11AuthFile", conf, CONF_xauthfile);
+#endif
 
     gppb(sesskey, "LocalPortAcceptAll", false, conf, CONF_lport_acceptall);
     gppb(sesskey, "RemotePortAcceptAll", false, conf, CONF_rport_acceptall);
@@ -1230,6 +1269,8 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
     i = gppi_raw(sesskey, "BugWinadj", 0); conf_set_int(conf, CONF_sshbug_winadj, 2-i);
     i = gppi_raw(sesskey, "BugChanReq", 0); conf_set_int(conf, CONF_sshbug_chanreq, 2-i);
     conf_set_bool(conf, CONF_ssh_simple, false);
+
+#ifndef TGDLL
     gppb(sesskey, "StampUtmp", true, conf, CONF_stamp_utmp);
     gppb(sesskey, "LoginShell", true, conf, CONF_login_shell);
     gppb(sesskey, "ScrollbarOnLeft", false, conf, CONF_scrollbar_on_left);
@@ -1245,6 +1286,7 @@ void load_open_settings(settings_r *sesskey, Conf *conf)
     gppi(sesskey, "SerialParity", SER_PAR_NONE, conf, CONF_serparity);
     gppi(sesskey, "SerialFlowControl", SER_FLOW_XONXOFF, conf, CONF_serflow);
     gpps(sesskey, "WindowClass", "", conf, CONF_winclass);
+#endif
     gppb(sesskey, "ConnectionSharing", false,
          conf, CONF_ssh_connection_sharing);
     gppb(sesskey, "ConnectionSharingUpstream", true,

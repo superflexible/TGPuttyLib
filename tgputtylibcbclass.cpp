@@ -155,6 +155,9 @@ TTGPuttySFTP::TTGPuttySFTP(const bool verbose)
   Fcontext.raise_exception_callback=raise_exception_callback;
   Fcontext.verify_host_key_callback=verify_host_key_callback;
 
+  Fcontext.timeoutticks=cDefaultTimeoutTicks;
+  Fcontext.connectiontimeoutticks=cDefaultTimeoutTicks;
+
   if (tgputty_initcontext(verbose,&Fcontext)!=0)
      throw TTGPuttySFTPException("tgputty_initcontext failed - incorrect DLL version?");
 }

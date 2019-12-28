@@ -103,17 +103,21 @@ void free_prompts(prompts_t *p)
  */
 bool conf_launchable(Conf *conf)
 {
+#ifndef TGDLL
     if (conf_get_int(conf, CONF_protocol) == PROT_SERIAL)
         return conf_get_str(conf, CONF_serline)[0] != 0;
     else
+#endif
         return conf_get_str(conf, CONF_host)[0] != 0;
 }
 
 char const *conf_dest(Conf *conf)
 {
+#ifndef TGDLL
     if (conf_get_int(conf, CONF_protocol) == PROT_SERIAL)
         return conf_get_str(conf, CONF_serline);
     else
+#endif
         return conf_get_str(conf, CONF_host);
 }
 

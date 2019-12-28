@@ -59,6 +59,12 @@ type
     procedure SetPort(const Value: Integer);
     procedure SetUserName(const Value: UnicodeString);
     procedure SetVerbose(const Value: Boolean);
+    function GetAborted: Boolean;
+    function GetConnectionTimeoutTicks: Integer;
+    function GetTimeoutTicks: Integer;
+    procedure SetAborted(const Value: Boolean);
+    procedure SetConnectionTimeoutTicks(const Value: Integer);
+    procedure SetTimeoutTicks(const Value: Integer);
 
     function ListingCallback(const names:Pfxp_names):Boolean;
     procedure MessageCallback(const Msg:AnsiString;const isstderr:Boolean);
@@ -102,6 +108,8 @@ type
     property LastMessages:UnicodeString read GetLastMessages write SetLastMessages;
     property ErrorCode:Integer read GetErrorCode;
     property ErrorMessage:UnicodeString read GetErrorMessage;
+    property Aborted:Boolean read GetAborted write SetAborted;
+
   published
     { Published declarations }
     property HostName:UnicodeString read GetHostName write SetHostName;
@@ -110,6 +118,8 @@ type
     property Password:UnicodeString read GetPassword write SetPassword;
     property KeyPassword:UnicodeString read GetKeyPassword write SetKeyPassword;
     property Verbose:Boolean read GetVerbose write SetVerbose;
+    property TimeoutTicks:Integer read GetTimeoutTicks write SetTimeoutTicks;
+    property ConnectionTimeoutTicks:Integer read GetConnectionTimeoutTicks write SetConnectionTimeoutTicks;
 
     property OnSFTPMessage:TOnSFTPMessage read FOnSFTPMessage write FOnSFTPMessage;
     property OnSFTPProgress:TOnSFTPProgress read FOnSFTPProgress write FOnSFTPProgress;
@@ -196,9 +206,19 @@ begin
   FTGPuttySFTP.DownloadStream(Utf8Encode(ARemoteFilename),AStream,anAppend);
   end;
 
+function TTGPuttySFTPClient.GetAborted: Boolean;
+begin
+  Result:=FTGPuttySFTP.Aborted;
+  end;
+
 function TTGPuttySFTPClient.GetConnected: Boolean;
 begin
   Result:=FTGPuttySFTP.Connected;
+  end;
+
+function TTGPuttySFTPClient.GetConnectionTimeoutTicks: Integer;
+begin
+  Result:=FTGPuttySFTP.ConnectionTimeoutTicks;
   end;
 
 function TTGPuttySFTPClient.GetErrorCode: Integer;
@@ -259,6 +279,11 @@ begin
 procedure TTGPuttySFTPClient.GetStat(const AFileName: UnicodeString; var Attrs: fxp_attrs);
 begin
   FTGPuttySFTP.GetStat(Utf8Encode(AFileName),Attrs);
+  end;
+
+function TTGPuttySFTPClient.GetTimeoutTicks: Integer;
+begin
+  Result:=FTGPuttySFTP.TimeoutTicks;
   end;
 
 function TTGPuttySFTPClient.GetUserName: UnicodeString;
@@ -328,6 +353,16 @@ begin
   FTGPuttySFTP.RemoveDir(Utf8Encode(ADirectory));
   end;
 
+procedure TTGPuttySFTPClient.SetAborted(const Value: Boolean);
+begin
+  FTGPuttySFTP.Aborted:=Value;
+  end;
+
+procedure TTGPuttySFTPClient.SetConnectionTimeoutTicks(const Value: Integer);
+begin
+  FTGPuttySFTP.ConnectionTimeoutTicks:=Value;
+  end;
+
 procedure TTGPuttySFTPClient.SetFileSize(const AFileName: UnicodeString; const ASize: Int64);
 begin
   FTGPuttySFTP.SetFileSize(Utf8Encode(AFileName),ASize);
@@ -371,6 +406,11 @@ begin
 procedure TTGPuttySFTPClient.SetStat(const AFileName: UnicodeString;const Attrs: fxp_attrs);
 begin
   FTGPuttySFTP.SetStat(Utf8Encode(AFileName),Attrs);
+  end;
+
+procedure TTGPuttySFTPClient.SetTimeoutTicks(const Value: Integer);
+begin
+  FTGPuttySFTP.TimeoutTicks:=Value;
   end;
 
 procedure TTGPuttySFTPClient.SetUserName(const Value: UnicodeString);

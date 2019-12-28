@@ -734,11 +734,6 @@ $(BUILDDIR)errsock.obj: ..\errsock.c ..\tree234.h ..\putty.h ..\network.h \
 		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
 $(BUILDDIR)fromucs.obj: ..\charset\fromucs.c ..\charset\charset.h \
 		..\charset\internal.h
-$(BUILDDIR)fuzzterm.obj: ..\fuzzterm.c ..\putty.h ..\terminal.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\tree234.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
-		..\charset\charset.h
 $(BUILDDIR)gtkapp.obj: ..\unix\gtkapp.c ..\putty.h ..\unix\gtkmisc.h \
 		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
 		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \

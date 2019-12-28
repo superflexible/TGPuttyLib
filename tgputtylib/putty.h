@@ -1253,8 +1253,6 @@ NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
     X(INT, NONE, port) \
     X(INT, NONE, protocol) /* PROT_SSH, PROT_TELNET etc */ \
     X(INT, NONE, addressfamily) /* ADDRTYPE_IPV[46] or ADDRTYPE_UNSPEC */ \
-    X(INT, NONE, close_on_exit) /* FORCE_ON, FORCE_OFF, AUTO */ \
-    X(BOOL, NONE, warn_on_close) \
     X(INT, NONE, ping_interval) /* in seconds */ \
     X(BOOL, NONE, tcp_nodelay) \
     X(BOOL, NONE, tcp_keepalives) \
@@ -1320,76 +1318,11 @@ NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
     X(STR, STR, ttymodes) /* values are "Vvalue" or "A" */ \
     X(STR, STR, environmt) \
     X(STR, NONE, username) \
-    X(BOOL, NONE, username_from_env) \
-    X(STR, NONE, localusername) \
-    X(BOOL, NONE, rfc_environ) \
-    X(BOOL, NONE, passive_telnet) \
     /* Serial port options */ \
-    X(STR, NONE, serline) \
-    X(INT, NONE, serspeed) \
-    X(INT, NONE, serdatabits) \
-    X(INT, NONE, serstopbits) \
-    X(INT, NONE, serparity) /* SER_PAR_NONE, SER_PAR_ODD, ... */ \
-    X(INT, NONE, serflow) /* SER_FLOW_NONE, SER_FLOW_XONXOFF, ... */ \
     /* Keyboard options */ \
-    X(BOOL, NONE, bksp_is_delete) \
-    X(BOOL, NONE, rxvt_homeend) \
-    X(INT, NONE, funky_type) /* FUNKY_XTERM, FUNKY_LINUX, ... */ \
-    X(BOOL, NONE, no_applic_c) /* totally disable app cursor keys */ \
-    X(BOOL, NONE, no_applic_k) /* totally disable app keypad */ \
-    X(BOOL, NONE, no_mouse_rep) /* totally disable mouse reporting */ \
-    X(BOOL, NONE, no_remote_resize) /* disable remote resizing */ \
-    X(BOOL, NONE, no_alt_screen) /* disable alternate screen */ \
-    X(BOOL, NONE, no_remote_wintitle) /* disable remote retitling */ \
-    X(BOOL, NONE, no_remote_clearscroll) /* disable ESC[3J */ \
-    X(BOOL, NONE, no_dbackspace) /* disable destructive backspace */ \
-    X(BOOL, NONE, no_remote_charset) /* disable remote charset config */ \
-    X(INT, NONE, remote_qtitle_action) /* remote win title query action
-                                       * (TITLE_NONE, TITLE_EMPTY, ...) */ \
-    X(BOOL, NONE, app_cursor) \
-    X(BOOL, NONE, app_keypad) \
-    X(BOOL, NONE, nethack_keypad) \
-    X(BOOL, NONE, telnet_keyboard) \
-    X(BOOL, NONE, telnet_newline) \
-    X(BOOL, NONE, alt_f4) /* is it special? */ \
-    X(BOOL, NONE, alt_space) /* is it special? */ \
-    X(BOOL, NONE, alt_only) /* is it special? */ \
-    X(INT, NONE, localecho) /* FORCE_ON, FORCE_OFF, AUTO */ \
-    X(INT, NONE, localedit) /* FORCE_ON, FORCE_OFF, AUTO */ \
-    X(BOOL, NONE, alwaysontop) \
-    X(BOOL, NONE, fullscreenonaltenter) \
-    X(BOOL, NONE, scroll_on_key) \
-    X(BOOL, NONE, scroll_on_disp) \
-    X(BOOL, NONE, erase_to_scrollback) \
-    X(BOOL, NONE, compose_key) \
-    X(BOOL, NONE, ctrlaltkeys) \
-    X(BOOL, NONE, osx_option_meta) \
-    X(BOOL, NONE, osx_command_meta) \
-    X(STR, NONE, wintitle) /* initial window title */ \
     /* Terminal options */ \
-    X(INT, NONE, savelines) \
-    X(BOOL, NONE, dec_om) \
-    X(BOOL, NONE, wrap_mode) \
-    X(BOOL, NONE, lfhascr) \
-    X(INT, NONE, cursor_type) /* 0=block 1=underline 2=vertical */ \
-    X(BOOL, NONE, blink_cur) \
-    X(INT, NONE, beep) /* BELL_DISABLED, BELL_DEFAULT, ... */ \
-    X(INT, NONE, beep_ind) /* B_IND_DISABLED, B_IND_FLASH, ... */ \
-    X(BOOL, NONE, bellovl) /* bell overload protection active? */ \
-    X(INT, NONE, bellovl_n) /* number of bells to cause overload */ \
-    X(INT, NONE, bellovl_t) /* time interval for overload (seconds) */ \
-    X(INT, NONE, bellovl_s) /* period of silence to re-enable bell (s) */ \
-    X(FILENAME, NONE, bell_wavefile) \
-    X(BOOL, NONE, scrollbar) \
-    X(BOOL, NONE, scrollbar_in_fullscreen) \
-    X(INT, NONE, resize_action) /* RESIZE_TERM, RESIZE_DISABLED, ... */ \
-    X(BOOL, NONE, bce) \
-    X(BOOL, NONE, blinktext) \
-    X(BOOL, NONE, win_name_always) \
     X(INT, NONE, width) \
     X(INT, NONE, height) \
-    X(FONT, NONE, font) \
-    X(INT, NONE, font_quality) /* FQ_DEFAULT, FQ_ANTIALIASED, ... */ \
     X(FILENAME, NONE, logfilename) \
     X(INT, NONE, logtype) /* LGTYP_NONE, LGTYPE_ASCII, ... */ \
     X(INT, NONE, logxfovr) /* LGXF_OVR, LGXF_APN, LGXF_ASK */ \
@@ -1397,48 +1330,10 @@ NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
     X(BOOL, NONE, logheader) \
     X(BOOL, NONE, logomitpass) \
     X(BOOL, NONE, logomitdata) \
-    X(BOOL, NONE, hide_mouseptr) \
-    X(BOOL, NONE, sunken_edge) \
-    X(INT, NONE, window_border) /* in pixels */ \
-    X(STR, NONE, answerback) \
-    X(STR, NONE, printer) \
-    X(BOOL, NONE, no_arabicshaping) \
-    X(BOOL, NONE, no_bidi) \
     /* Colour options */ \
-    X(BOOL, NONE, ansi_colour) \
-    X(BOOL, NONE, xterm_256_colour) \
-    X(BOOL, NONE, true_colour) \
-    X(BOOL, NONE, system_colour) \
-    X(BOOL, NONE, try_palette) \
-    X(INT, NONE, bold_style) /* 1=font 2=colour (3=both) */ \
-    X(INT, INT, colours) \
     /* Selection options */ \
-    X(INT, NONE, mouse_is_xterm) /* 0=compromise 1=xterm 2=Windows */ \
-    X(BOOL, NONE, rect_select) \
-    X(BOOL, NONE, paste_controls) \
-    X(BOOL, NONE, rawcnp) \
-    X(BOOL, NONE, utf8linedraw) \
-    X(BOOL, NONE, rtf_paste) \
-    X(BOOL, NONE, mouse_override) \
-    X(INT, INT, wordness) \
-    X(BOOL, NONE, mouseautocopy) \
-    X(INT, NONE, mousepaste) /* CLIPUI_IMPLICIT, CLIPUI_EXPLICIT, ... */ \
-    X(INT, NONE, ctrlshiftins) /* CLIPUI_IMPLICIT, CLIPUI_EXPLICIT, ... */ \
-    X(INT, NONE, ctrlshiftcv) /* CLIPUI_IMPLICIT, CLIPUI_EXPLICIT, ... */ \
-    X(STR, NONE, mousepaste_custom) \
-    X(STR, NONE, ctrlshiftins_custom) \
-    X(STR, NONE, ctrlshiftcv_custom) \
     /* translations */ \
-    X(INT, NONE, vtmode) /* VT_XWINDOWS, VT_OEMANSI, ... */ \
-    X(STR, NONE, line_codepage) \
-    X(BOOL, NONE, cjk_ambig_wide) \
-    X(BOOL, NONE, utf8_override) \
-    X(BOOL, NONE, xlat_capslockcyr) \
     /* X11 forwarding */ \
-    X(BOOL, NONE, x11_forward) \
-    X(STR, NONE, x11_display) \
-    X(INT, NONE, x11_auth) /* X11_NO_AUTH, X11_MIT, X11_XDM */ \
-    X(FILENAME, NONE, xauthfile) \
     /* port forwarding */ \
     X(BOOL, NONE, lport_acceptall) /* accept conns from hosts other than localhost */ \
     X(BOOL, NONE, rport_acceptall) /* same for remote forwarded ports (SSH-2 only) */ \
@@ -1483,22 +1378,18 @@ NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
      */ \
     X(STR, STR, ssh_manual_hostkeys) \
     /* Options for pterm. Should split out into platform-dependent part. */ \
-    X(BOOL, NONE, stamp_utmp) \
-    X(BOOL, NONE, login_shell) \
-    X(BOOL, NONE, scrollbar_on_left) \
-    X(BOOL, NONE, shadowbold) \
-    X(FONT, NONE, boldfont) \
-    X(FONT, NONE, widefont) \
-    X(FONT, NONE, wideboldfont) \
-    X(INT, NONE, shadowboldoffset) /* in pixels */ \
-    X(BOOL, NONE, crhaslf) \
-    X(STR, NONE, winclass) \
     /* end of list */
+
+#define MAXCONFKEY CONF_ssh_manual_hostkeys
 
 /* Now define the actual enum of option keywords using that macro. */
 #define CONF_ENUM_DEF(valtype, keytype, keyword) CONF_ ## keyword,
 enum config_primary_key { CONFIG_OPTIONS(CONF_ENUM_DEF) N_CONFIG_OPTIONS };
 #undef CONF_ENUM_DEF
+
+extern const int subkeytypes[]; // TG
+extern const int valuetypes[]; // TG
+extern const char *confnames[]; // TG
 
 #define NCFGCOLOURS 22 /* number of colours in CONF_colours above */
 
@@ -2312,6 +2203,10 @@ typedef struct
   // static items from sftp.c
   const char *fxp_error_message; // accessed by host application too
   int fxp_errtype; // accessed by host application too
+
+  int timeoutticks;
+  int connectiontimeoutticks;
+  bool aborted;
 
 #if defined(CALLBACK_MALLOC) || defined(DEBUG_MALLOC)
   void* (*malloc_callback) (size_t size);

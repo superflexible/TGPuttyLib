@@ -461,9 +461,9 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
        }
     }
     else
-       file = NULL;
+       file = NULL; // TG: use stream callbacks
 
-    if (restart && file) {
+    if (restart && file) { // TG
         if (seek_file(file, 0, FROM_END) == -1) {
             close_wfile(file);
             with_stripctrl(san, outfname)
@@ -476,7 +476,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
         }
 
         offset = get_file_posn(file);
-        printf("reget: restarting at file position %I64u\n", offset);
+        printf("reget: restarting at file position %"PRIu64"\n", offset);
     } else {
         offset = 0;
     }
@@ -499,7 +499,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
 	uint64_t lastprogresstick=starttick;
     bool canceled=false;
     xfer = xfer_download_init(fh, offset);
-    while (!xfer_done(xfer) && !canceled) {
+    while (!xfer_done(xfer) && !canceled && !curlibctx->aborted) {
         void *vbuf;
         int retd, len;
         int wpos, wlen;
@@ -763,7 +763,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
             goto cleanup;
         }
         offset = attrs.size;
-        printf("reput: restarting at file position %I64u\n", offset);
+        printf("reput: restarting at file position %"PRIu64"\n", offset);
 
         if (file) // TG 2019
            if (seek_file((WFile *)file, offset, FROM_START) != 0)
@@ -792,7 +792,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
 	uint64_t TotalBytes=0;
 	uint64_t lastprogresstick=starttick;
     bool canceled=false;
-    while (((!err && !eof) || !xfer_done(xfer)) && !canceled)
+    while (((!err && !eof) || !xfer_done(xfer)) && !canceled && !curlibctx->aborted)
 	{
 		int len, ret;
 
@@ -1053,8 +1053,13 @@ void sftp_finish_wildcard_matching(SftpWildcardMatcher *swcm)
  */
 bool wildcard_iterate(char *filename, bool (*func)(void *, char *), void *ctx)
 {
-	char *unwcfname, *newname, *cname;
-	bool is_wc, toret;
+	char *unwcfname,*cname;
+    bool toret;
+
+#ifndef TGDLL
+    char *newname,
+	bool is_wc;
+#endif
 
 	unwcfname = snewn(strlen(filename)+1, char);
 
@@ -2723,18 +2728,45 @@ static bool psftp_eof(Seat *seat)
 
 bool sftp_recvdata(char *buf, size_t len)
 {
-    while (len > 0) {
+    // printf("sftp_recvdata len=%zd\n",len);
+	uint64_t starttick=GetTickCount64();
+    if (curlibctx->timeoutticks<1000)
+       curlibctx->timeoutticks=60000;
+    while (len > 0)
+    {
         assert(backend!=NULL);
-        while (bufchain_size(&received_data) == 0) {
+        // printf("sftp_recvdata wanting %zd\n",len);
+        while (bufchain_size(&received_data) == 0)
+        {
+            // printf("sftp_recvdata no data received, still wanting %zd\n",len);
             assert(backend!=NULL);
             if (backend_exitcode(backend) >= 0 ||
                 ssh_sftp_loop_iteration() < 0)
                 return false;          /* doom */
+
+            if (curlibctx->aborted)
+            {
+                fprintf(stderr, "sftp_recvdata: aborted by program\n");
+                return false;
+            }
+
+            // recalculate on every pass because
+            // curlibctx->timeoutticks may be changed ad hoc by host program
+            uint64_t maxtick = starttick + (curlibctx->timeoutticks / 1000 * TICKSPERSEC);
+            if (GetTickCount64()>maxtick)
+            {
+                int elapsedseconds = (int) ((GetTickCount64() - starttick) / TICKSPERSEC);
+                fprintf(stderr, "sftp_recvdata: timeout, no data received for %d seconds\n",elapsedseconds);
+                return false;
+            }
         }
 
         size_t got = bufchain_fetch_consume_up_to(&received_data, buf, len);
         buf += got;
         len -= got;
+
+        if (got>0) // got some Bytes - start a new 60 seconds timeout period
+           starttick=GetTickCount64();
     }
 
     return true;
@@ -2935,7 +2967,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
      * things like SCP and SFTP: agent forwarding, port forwarding,
      * X forwarding.
      */
-    conf_set_bool(conf, CONF_x11_forward, false);
+    NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);)
     conf_set_bool(conf, CONF_agentfwd, false);
     conf_set_bool(conf, CONF_ssh_simple, true);
     {
@@ -3000,7 +3032,31 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
            sfree(realhost);
         return 1;
     }
-    while (!backend_sendok(backend)) {
+
+	uint64_t starttick=GetTickCount64();
+    if (curlibctx->connectiontimeoutticks<1000)
+       curlibctx->connectiontimeoutticks=60000;
+
+    while (!backend_sendok(backend))
+    {
+        if (curlibctx->aborted)
+        {
+            fprintf(stderr, "ssh_init: aborted by program\n");
+            if (realhost != NULL)
+               sfree(realhost);
+            return 1;
+        }
+        // recalculate on every pass because
+        // curlibctx->connectiontimeoutticks may be changed ad hoc by host program
+        uint64_t maxtick = starttick + (curlibctx->connectiontimeoutticks / 1000 * TICKSPERSEC);
+        if (GetTickCount64()>maxtick)
+        {
+            int elapsedseconds = (int) ((GetTickCount64() - starttick) / TICKSPERSEC);
+            fprintf(stderr, "ssh_init: timeout, no connection after %d seconds\n",elapsedseconds);
+            if (realhost != NULL)
+               sfree(realhost);
+            return 1;
+        }
         if (backend_exitcode(backend) >= 0)
         {
             if (realhost != NULL)
@@ -3069,6 +3125,7 @@ static void free_thread_vars()
 /*
  * Main program. Parse arguments etc.
  */
+#ifdef WITHCMDLINEXXXX
 TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 2019
 {
     int i, ret;
@@ -3201,6 +3258,7 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
 
     return ret;
 }
+#endif
 
 // TG: functions for external programs
 __declspec(dllexport) int tggetlibrarycontextsize() // TG 2019
@@ -3260,6 +3318,7 @@ __declspec(dllexport) int tgputty_initcontext(const bool averbose,TTGLibraryCont
 }
 
 
+#ifdef WITHCMDLINEXXXX
 __declspec(dllexport) int tgputty_initwithcmdline(int argc, char *argv[], TTGLibraryContext *libctx) // TG 2019
 {
     int res=tgputty_initcontext(false,libctx);
@@ -3358,6 +3417,7 @@ __declspec(dllexport) int tgputty_initwithcmdline(int argc, char *argv[], TTGLib
 	}
     return 0;
 }
+#endif
 
 __declspec(dllexport) int tgputtyrunpsftp(TTGLibraryContext *libctx) // TG 2019
 {
@@ -3793,6 +3853,76 @@ __declspec(dllexport) void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
   curlibctx=NULL;
   return;
 }
+
+__declspec(dllexport) bool tgputty_getconfigarrays(const void **types,const void **subtypes,const void **names,int *count)
+{
+  (*types) = valuetypes;
+  (*subtypes) = subkeytypes;
+  (*names) = confnames;
+  (*count) = MAXCONFKEY+1;
+  return true;
+}
+
+__declspec(dllexport) bool tgputty_conf_get_bool(int key,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   return conf_get_bool(conf,key);
+}
+
+__declspec(dllexport) int tgputty_conf_get_int(int key,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   return conf_get_int(conf,key);
+}
+
+__declspec(dllexport) int tgputty_conf_get_int_int(int key, int subkey,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   return conf_get_int_int(conf,key,subkey);
+}
+
+__declspec(dllexport) char *tgputty_conf_get_str(int key,TTGLibraryContext *libctx)   /* result still owned by conf */
+{
+   curlibctx=libctx;
+   return conf_get_str(conf,key);
+}
+
+__declspec(dllexport) char *tgputty_conf_get_str_str(int key, const char *subkey,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   return conf_get_str_str(conf,key,subkey);
+}
+
+__declspec(dllexport) void tgputty_conf_set_bool(int key, bool value,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   conf_set_bool(conf,key,value);
+}
+
+__declspec(dllexport) void tgputty_conf_set_int(int key, int value,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   conf_set_int(conf,key,value);
+}
+
+__declspec(dllexport) void tgputty_conf_set_int_int(int key, int subkey, int value,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   conf_set_int_int(conf,key,subkey,value);
+}
+
+__declspec(dllexport) void tgputty_conf_set_str(int key, const char *value,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   conf_set_str(conf,key,value);
+}
+
+__declspec(dllexport) void tgputty_conf_set_str_str(int key,const char *subkey, const char *value,TTGLibraryContext *libctx)
+{
+   curlibctx=libctx;
+   conf_set_str_str(conf,key,subkey,value);
+}
+
 
 // TG 2019, for DLL use
 // similar to cmdline_get_passwd_input in cmdline.c

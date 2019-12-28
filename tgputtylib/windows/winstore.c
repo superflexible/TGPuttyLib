@@ -35,6 +35,9 @@ struct settings_w {
 
 settings_w *open_settings_w(const char *sessionname, char **errmsg)
 {
+#ifdef TGDLL
+    return NULL;
+#else
     HKEY subkey1, sesskey;
     int ret;
     strbuf *sb;
@@ -67,6 +70,7 @@ settings_w *open_settings_w(const char *sessionname, char **errmsg)
     settings_w *toret = snew(settings_w);
     toret->sesskey = sesskey;
     return toret;
+#endif
 }
 
 void write_setting_s(settings_w *handle, const char *key, const char *value)
@@ -93,6 +97,7 @@ struct settings_r {
     HKEY sesskey;
 };
 
+#ifndef TGDLL
 settings_r *open_settings_r(const char *sessionname)
 {
     HKEY subkey1, sesskey;
@@ -265,12 +270,14 @@ void del_settings(const char *sessionname)
 
     remove_session_from_jumplist(sessionname);
 }
+#endif
 
 struct settings_e {
     HKEY key;
     int i;
 };
 
+#ifndef TGDLL
 settings_e *enum_settings_start(void)
 {
     settings_e *ret;
@@ -316,6 +323,7 @@ void enum_settings_finish(settings_e *e)
     RegCloseKey(e->key);
     sfree(e);
 }
+#endif
 
 static void hostkey_regname(strbuf *sb, const char *hostname,
                             int port, const char *keytype)

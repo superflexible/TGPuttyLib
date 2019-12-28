@@ -138,10 +138,13 @@ static void mainchan_open_confirmation(Channel *chan)
          * Send the CHANNEL_REQUESTS for the main session channel.
          */
         char *key, *val, *cmd;
+#ifndef TGDLL
         struct X11Display *x11disp;
         struct X11FakeAuth *x11auth;
+#endif
         bool retry_cmd_now = false;
 
+#ifndef TGDLL
         if (conf_get_bool(mc->conf, CONF_x11_forward)) {;
             char *x11_setup_err;
             if ((x11disp = x11_setup_display(
@@ -160,6 +163,7 @@ static void mainchan_open_confirmation(Channel *chan)
                 mc->req_x11 = true;
             }
         }
+#endif
 
         if (ssh_agent_forwarding_permitted(mc->cl)) {
             sshfwd_request_agent_forwarding(mc->sc, true);
