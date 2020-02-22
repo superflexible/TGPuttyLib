@@ -71,6 +71,16 @@ type
     function ProgressCallback(const bytescopied:Int64;const isupload:Boolean):Boolean;
     function GetInputCallback(var cancel:Boolean):AnsiString;
     function VerifyHostKeyCallback(const host:PAnsiChar;const port:Integer;const fingerprint:PAnsiChar;const verificationstatus:Integer;var storehostkey:Boolean):Boolean;
+    function GetProxyHost: string;
+    function GetProxyPassword: string;
+    function GetProxyPort: Integer;
+    function GetProxyType: TProxyTypes;
+    function GetProxyUserName: string;
+    procedure SetProxyHost(const Value: string);
+    procedure SetProxyPassword(const Value: string);
+    procedure SetProxyPort(const Value: Integer);
+    procedure SetProxyType(const Value: TProxyTypes);
+    procedure SetProxyUserName(const Value: string);
   protected
     { Protected declarations }
   public
@@ -120,6 +130,13 @@ type
     property Verbose:Boolean read GetVerbose write SetVerbose;
     property TimeoutTicks:Integer read GetTimeoutTicks write SetTimeoutTicks;
     property ConnectionTimeoutTicks:Integer read GetConnectionTimeoutTicks write SetConnectionTimeoutTicks;
+
+    property ProxyType:TProxyTypes read GetProxyType write SetProxyType;
+    property ProxyHost:string read GetProxyHost write SetProxyHost;
+    property ProxyPort:Integer read GetProxyPort write SetProxyPort;
+    property ProxyUserName:string read GetProxyUserName write SetProxyUserName;
+    property ProxyPassword:string read GetProxyPassword write SetProxyPassword;
+
 
     property OnSFTPMessage:TOnSFTPMessage read FOnSFTPMessage write FOnSFTPMessage;
     property OnSFTPProgress:TOnSFTPProgress read FOnSFTPProgress write FOnSFTPProgress;
@@ -276,6 +293,31 @@ begin
   Result:=FTGPuttySFTP.Port;
   end;
 
+function TTGPuttySFTPClient.GetProxyHost: string;
+begin
+  Result:=Utf8ToString(FTGPuttySFTP.ProxyHost);
+  end;
+
+function TTGPuttySFTPClient.GetProxyPassword: string;
+begin
+  Result:=Utf8ToString(FTGPuttySFTP.ProxyPassword);
+  end;
+
+function TTGPuttySFTPClient.GetProxyPort: Integer;
+begin
+  Result:=FTGPuttySFTP.ProxyPort;
+  end;
+
+function TTGPuttySFTPClient.GetProxyType: TProxyTypes;
+begin
+  Result:=FTGPuttySFTP.ProxyType;
+  end;
+
+function TTGPuttySFTPClient.GetProxyUserName: string;
+begin
+  Result:=Utf8ToString(FTGPuttySFTP.ProxyUserName);
+  end;
+
 procedure TTGPuttySFTPClient.GetStat(const AFileName: UnicodeString; var Attrs: fxp_attrs);
 begin
   FTGPuttySFTP.GetStat(Utf8Encode(AFileName),Attrs);
@@ -401,6 +443,31 @@ begin
 procedure TTGPuttySFTPClient.SetPort(const Value: Integer);
 begin
   FTGPuttySFTP.Port:=Value;
+  end;
+
+procedure TTGPuttySFTPClient.SetProxyHost(const Value: string);
+begin
+  FTGPuttySFTP.ProxyHost:=Utf8Encode(Value);
+  end;
+
+procedure TTGPuttySFTPClient.SetProxyPassword(const Value: string);
+begin
+  FTGPuttySFTP.ProxyPassword:=Utf8Encode(Value);
+  end;
+
+procedure TTGPuttySFTPClient.SetProxyPort(const Value: Integer);
+begin
+  FTGPuttySFTP.ProxyPort:=Value;
+  end;
+
+procedure TTGPuttySFTPClient.SetProxyType(const Value: TProxyTypes);
+begin
+  FTGPuttySFTP.ProxyType:=Value;
+  end;
+
+procedure TTGPuttySFTPClient.SetProxyUserName(const Value: string);
+begin
+  FTGPuttySFTP.ProxyUserName:=Utf8Encode(Value);
   end;
 
 procedure TTGPuttySFTPClient.SetStat(const AFileName: UnicodeString;const Attrs: fxp_attrs);

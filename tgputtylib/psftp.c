@@ -489,12 +489,16 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
     else
        printf("remote: %s => stream \n", fname);
 
+    if (curlibctx->timeoutticks<1000)
+       curlibctx->timeoutticks=60000;
+
     /*
      * FIXME: we can use FXP_FSTAT here to get the file size, and
      * thus put up a progress bar.
      */
     toret = true;
 	uint64_t starttick=GetTickCount64();
+	uint64_t idlesincetick=0;
 	uint64_t TotalBytes=0;
 	uint64_t lastprogresstick=starttick;
     bool canceled=false;
@@ -503,6 +507,8 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
         void *vbuf;
         int retd, len;
         int wpos, wlen;
+
+        uint64_t PrevTotalBytes = TotalBytes;
 
         xfer_download_queue(xfer);
         pktin = sftp_recv();
@@ -555,11 +561,29 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
 
             sfree(vbuf);
         }
+
+        // check if transfer still going
+        if (TotalBytes>PrevTotalBytes)
+           idlesincetick = 0; // all good
+        else
+        {
+           if (idlesincetick==0)
+              idlesincetick = GetTickCount64();
+           else
+              if (GetTickCount64()-idlesincetick > curlibctx->timeoutticks)
+              {
+                 printf("Timeout error, no more data received.\n");
+                 toret = false;
+                 xfer_set_error(xfer);
+                 break;
+              }
+        }
     }
 
 	uint64_t endtick=GetTickCount64();
     if (endtick-starttick==0)
        endtick=starttick+1; // prevent divide by zero ;=)
+
 	printf("Downloaded %I64u Bytes in %I64u milliseconds, rate = %I64u MB/sec.\n",
 	       TotalBytes,
 		   (endtick-starttick),
@@ -3770,7 +3794,10 @@ __declspec(dllexport) bool tgputty_xfer_ensuredone(struct fxp_xfer *xfer,TTGLibr
         }
      }
      else
-        printf("OOPS pktin==NULL\n");
+     {
+        printf("Disconnection detected (pktin==NULL)\n");
+        err = true;
+     }
   }
 #ifdef DEBUG_UPLOAD
   else
