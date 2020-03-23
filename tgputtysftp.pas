@@ -17,8 +17,6 @@ uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
 {$endif}
 {$endif}
 
-type PBoolean=^Boolean;
-
 const MinimumLibraryBuildNum=8;
       cDummyClearedErrorCode=-1000; // this error code means there was no real error code
 
@@ -177,7 +175,7 @@ begin
      Result:=true;
   end;
 
-function getpassword_callback(const prompt:PAnsiChar;const echo:Boolean;const cancel:PBoolean;const libctx:PTGLibraryContext):PAnsiChar; cdecl;
+function getpassword_callback(const prompt:PAnsiChar;const echo:Boolean;const cancel:System.PBoolean;const libctx:PTGLibraryContext):PAnsiChar; cdecl;
 var TGPSFTP:TTGPuttySFTP;
 begin
   Result:=nil;
@@ -297,7 +295,7 @@ begin
 
 function verify_host_key_callback(const host:PAnsiChar;const port:Integer;const keytype:PAnsiChar;
                                   const keystr:PAnsiChar;const fingerprint:PAnsiChar;
-                                  const verificationstatus:Integer;const storehostkey:PBoolean;
+                                  const verificationstatus:Integer;const storehostkey:System.PBoolean;
                                   const libctx:PTGLibraryContext):Boolean; cdecl;
 var TGPSFTP:TTGPuttySFTP;
 begin
