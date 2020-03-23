@@ -1,6 +1,11 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 8 - 23 Mar 2020
+
+Adds Proxy Support and includes various bug fixes.
+
+---------------------
 Build 7 - 23 Dec 2019
 
 Uses #ifdefs to remove the memory allocation callback features, which are only used for debugging.
