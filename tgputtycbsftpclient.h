@@ -5,6 +5,11 @@
 //---------------------------------------------------------------------------
 #include <System.SysUtils.hpp>
 #include <System.Classes.hpp>
+
+#ifndef SUPPORTDELPHISTREAMS
+#define SUPPORTDELPHISTREAMS
+#endif
+
 #include "ctgputtylib.h"
 #include "tgputtylibcbclass.h"
 //---------------------------------------------------------------------------

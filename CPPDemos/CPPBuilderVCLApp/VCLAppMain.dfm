@@ -277,7 +277,9 @@ object FVCLAppMain: TFVCLAppMain
     OnSFTPListing = TGPuttySFTPClient1SFTPListing
     OnSFTPGetInput = TGPuttySFTPClient1SFTPGetInput
     OnSFTPVerifyHostKey = TGPuttySFTPClient1SFTPVerifyHostKey
+    TimeoutTicks = 60000
+    ConnectionTimeoutTicks = 60000
     Left = 304
-    Top = 160
+    Top = 136
   end
 end

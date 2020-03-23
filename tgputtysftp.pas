@@ -17,6 +17,8 @@ uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
 {$endif}
 {$endif}
 
+type PBoolean=^Boolean;
+
 const MinimumLibraryBuildNum=8;
       cDummyClearedErrorCode=-1000; // this error code means there was no real error code
 
@@ -374,7 +376,7 @@ begin
                             AnsiString(' config strings, but we expected ')+
                             AnsiString(IntToStr(cConfCount))),false,@Fcontext);
 
-  if cDumpSettingsFile and (DebugHook<>0) then
+  if cDumpSettingsFile then
      DumpSettingsFile;
 
   CreateConfigIndex;
@@ -389,7 +391,7 @@ begin
        GPuttyConfigIndex:=tStringList.Create;
        GPuttyConfigIndex.Sorted:=true;
        for i:=0 to FConfCount-1 do
-         GPuttyConfigIndex.AddObject(FConfNames[i],TObject(NativeUInt(i)));
+         GPuttyConfigIndex.AddObject(string(FConfNames[i]),TObject(NativeUInt(i)));
        end;
     finally
       GPuttyConfigCS.Leave;
@@ -712,7 +714,7 @@ begin
 
 procedure TTGPuttySFTP.SetProxyPort(const Value: Integer);
 begin
-  tgputty_conf_set_int(GetPuttyConfIndex(cPuttyConf_proxy_type),ord(Value),@FContext);
+  tgputty_conf_set_int(GetPuttyConfIndex(cPuttyConf_proxy_port),ord(Value),@FContext);
   end;
 
 procedure TTGPuttySFTP.SetProxyType(const Value: TProxyTypes);

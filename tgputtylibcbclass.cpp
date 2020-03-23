@@ -111,13 +111,25 @@ bool verify_host_key_callback(const char *host,const int port,const char *keytyp
      return false;
 }
 
+
+std::string makestring(const int i)
+{
+  char buf[100];
+  snprintf(buf,99,"%d",i);
+  return std::string(buf);
+}
+
 void raise_exception_callback(const char *msg,const char *srcfile,const int line,const void *libctx)
 {
   TTGPuttySFTP *TGPSFTP = (TTGPuttySFTP*)((TTGLibraryContext *)libctx)->tag;
   throw TTGPuttySFTPException((std::string("TTGPuttySFTP exception ")+
                        std::string(msg)+
 					   std::string(" at line ")+
+                       #ifdef SUPPORTDELPHISTREAMS
 					   std::string(UTF8Encode(IntToStr(line)).c_str())+
+                       #else
+					   makestring(line).c_str()+
+                       #endif
                        std::string(" in ")+
                        std::string(srcfile)).c_str());
 
@@ -225,7 +237,11 @@ std::string TTGPuttySFTP::MakePSFTPErrorMsg(const char *where)
   if (Fcontext.fxp_errtype>=0)
      return std::string(where)+
 			std::string(": Error ")+
+            #ifdef SUPPORTSDELPHISTREAMS
 			std::string(UTF8Encode(IntToStr(Fcontext.fxp_errtype)).c_str())+
+            #else
+            makestring(Fcontext.fxp_errtype)+
+            #endif
             std::string(", ")+
             std::string(Fcontext.fxp_error_message);
   else

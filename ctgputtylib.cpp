@@ -4,11 +4,14 @@
 
 HINSTANCE hPuttyLib = NULL;
 
+#ifdef WITHCOMMANDLINE // TGPuttyLib is compiled without command line support by default
 int (*psftp_main)(int argc, char *argv[]);
+int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx);
+#endif
+
 int (*tggetlibrarycontextsize)();
 
 int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
-int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx);
 
 int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
 
@@ -92,10 +95,12 @@ bool LoadTGPuttyLib()
 
   bool res=true;
 
+#ifdef WITHCOMMANDLINE // TGPuttyLib is compiled without command line support by default
   res &= GetProc("psftp_main",&psftp_main);
+  res &= GetProc("tgputty_initwithcmdline",&tgputty_initwithcmdline);
+#endif
   res &= GetProc("tggetlibrarycontextsize",&tggetlibrarycontextsize);
   res &= GetProc("tgputty_initcontext",&tgputty_initcontext);
-  res &= GetProc("tgputty_initwithcmdline",&tgputty_initwithcmdline);
   res &= GetProc("tgputtyrunpsftp",&tgputtyrunpsftp);
   res &= GetProc("tgputtysetappname",&tgputtysetappname);
   res &= GetProc("tgputtysftpcommand",&tgputtysftpcommand);

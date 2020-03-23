@@ -275,6 +275,11 @@ object VCLSFTPClientComponentDemoForm: TVCLSFTPClientComponentDemoForm
   object TGPuttySFTPClient1: TTGPuttySFTPClient
     Port = 22
     Verbose = False
+    TimeoutTicks = 60000
+    ConnectionTimeoutTicks = 60000
+    ProxyType = PROXY_NONE
+    ProxyHost = 'proxy'
+    ProxyPort = 80
     OnSFTPMessage = TGPuttySFTPClient1SFTPMessage
     OnSFTPProgress = TGPuttySFTPClient1SFTPProgress
     OnSFTPListing = TGPuttySFTPClient1SFTPListing

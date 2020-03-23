@@ -1,7 +1,8 @@
 #ifndef tgputtylibcbclassH
 #define tgputtylibcbclassH
 
-#define SUPPORTDELPHISTREAMS
+// this can only be used in VCL projects
+// #define SUPPORTDELPHISTREAMS
 
 #include <string>
 

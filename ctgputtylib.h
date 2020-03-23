@@ -105,13 +105,15 @@ typedef struct
 
 
 
+#ifdef WITHCOMMANDLINE // TGPuttyLib is compiled without command line support by default
 extern int (*psftp_main)(int argc, char *argv[]);
+extern int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx);
+#endif
 
 extern int (*tggetlibrarycontextsize)();
 
 extern int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
 
-extern int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx);
 
 extern int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
 
