@@ -104,6 +104,7 @@ type TGPuttySFTPException=class(Exception);
          procedure SetStat(const AFileName:AnsiString;const Attrs:fxp_attrs);
          procedure SetModifiedDate(const AFileName:AnsiString;const ATimestamp:TDateTime; const isUTC:Boolean);
          procedure SetFileSize(const AFileName:AnsiString;const ASize:Int64);
+         procedure SetUnixMode(const AFileName:AnsiString;const AMode:Integer);
          procedure Move(const AFromName,AToName:AnsiString);
          procedure MoveEx(const AFromName,AToName:AnsiString;const MoveFlags:Integer);
          procedure DeleteFile(const AName:AnsiString);
@@ -266,6 +267,8 @@ begin
   if Assigned(TGPSFTP.FDownloadStream) then begin
      TGPSFTP.FDownloadStream.Position:=Offset;
      Result:=TGPSFTP.FDownloadStream.Write(buffer^,bufsize);
+     if Assigned(TGPSFTP.OnProgress) then
+        TGPSFTP.OnProgress(Offset+bufsize,false);
      end
   else
      Result:=0;
@@ -736,6 +739,15 @@ begin
 procedure TTGPuttySFTP.SetTimeoutTicks(const Value: Integer);
 begin
   Fcontext.timeoutticks:=Value;
+  end;
+
+procedure TTGPuttySFTP.SetUnixMode(const AFileName: AnsiString; const AMode: Integer);
+var Attrs:fxp_attrs;
+begin
+  GetStat(AFileName,Attrs);
+  attrs.flags := SSH_FILEXFER_ATTR_PERMISSIONS; // set only this
+  attrs.permissions:=AMode;
+  SetStat(AFileName,Attrs);
   end;
 
 procedure TTGPuttySFTP.SetVerbose(const Value: Boolean);

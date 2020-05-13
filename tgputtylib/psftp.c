@@ -55,6 +55,28 @@ Conf *conf;
 bool sent_eof = false;
 #endif
 
+// emulate 64 bit tick counter
+uint64_t CurrentIncrement=0;
+uint64_t LastTickCount=0;
+
+uint64_t TGGetTickCount64()
+{
+   uint64_t LIncrement=CurrentIncrement;
+
+   uint64_t result=GetTickCount()+LIncrement;
+
+   if (result<LastTickCount)
+   {
+      result += (uint64_t) 0x100000000;
+      LIncrement += (uint64_t) 0x100000000;
+      CurrentIncrement=LIncrement; // thread safe - as opposed to incrementing CurrentIncrement directly
+   }
+
+   LastTickCount=result;
+   return result;
+}
+
+
 /* ------------------------------------------------------------
  * Seat vtable.
  */
@@ -497,7 +519,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
      * thus put up a progress bar.
      */
     toret = true;
-	uint64_t starttick=GetTickCount64();
+	uint64_t starttick=TGGetTickCount64();
 	uint64_t idlesincetick=0;
 	uint64_t TotalBytes=0;
 	uint64_t lastprogresstick=starttick;
@@ -548,7 +570,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
   		    TotalBytes+=len;
 			if ((curlibctx->progress_callback!=NULL) &&
 				((TotalBytes % (1024*1024))==0) &&
-				(GetTickCount64()-lastprogresstick>=1000))
+				(TGGetTickCount64()-lastprogresstick>=1000))
 			{
 			   if (!curlibctx->progress_callback(TotalBytes,false,curlibctx))
 			   {
@@ -556,7 +578,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
   				 //eof = true;
                  printf("Canceling ...\n");
 			   }
-			   lastprogresstick=GetTickCount64();
+			   lastprogresstick=TGGetTickCount64();
 			}
 
             sfree(vbuf);
@@ -568,9 +590,9 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
         else
         {
            if (idlesincetick==0)
-              idlesincetick = GetTickCount64();
+              idlesincetick = TGGetTickCount64();
            else
-              if (GetTickCount64()-idlesincetick > curlibctx->timeoutticks)
+              if (TGGetTickCount64()-idlesincetick > curlibctx->timeoutticks)
               {
                  printf("Timeout error, no more data received.\n");
                  toret = false;
@@ -580,7 +602,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
         }
     }
 
-	uint64_t endtick=GetTickCount64();
+	uint64_t endtick=TGGetTickCount64();
     if (endtick-starttick==0)
        endtick=starttick+1; // prevent divide by zero ;=)
 
@@ -812,7 +834,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
 	eof = false;
 	const sftpbufsize=16384*4; // TG: much more is not possible, 1MB will definitely fail!
 	char *buffer=malloc(sftpbufsize); // TG
-	uint64_t starttick=GetTickCount64();
+	uint64_t starttick=TGGetTickCount64();
 	uint64_t TotalBytes=0;
 	uint64_t lastprogresstick=starttick;
     bool canceled=false;
@@ -847,7 +869,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
 			  }
 			if ((curlibctx->progress_callback!=NULL) &&
 				((TotalBytes % (1024*1024))==0) &&
-				(GetTickCount64()-lastprogresstick>=1000))
+				(TGGetTickCount64()-lastprogresstick>=1000))
 			{
 			   if (!curlibctx->progress_callback(TotalBytes,true,curlibctx))
 			   {
@@ -855,7 +877,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
   				 eof = true;
                  printf("Canceling ...\n");
 			   }
-			   lastprogresstick=GetTickCount64();
+			   lastprogresstick=TGGetTickCount64();
 			}
         }
 
@@ -883,7 +905,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
             printf("xfer_done=true\n");
 #endif
     }
-	uint64_t endtick=GetTickCount64();
+	uint64_t endtick=TGGetTickCount64();
 	free(buffer);
 
     if (endtick-starttick==0)
@@ -2753,7 +2775,7 @@ static bool psftp_eof(Seat *seat)
 bool sftp_recvdata(char *buf, size_t len)
 {
     // printf("sftp_recvdata len=%zd\n",len);
-	uint64_t starttick=GetTickCount64();
+	uint64_t starttick=TGGetTickCount64();
     if (curlibctx->timeoutticks<1000)
        curlibctx->timeoutticks=60000;
     while (len > 0)
@@ -2777,9 +2799,9 @@ bool sftp_recvdata(char *buf, size_t len)
             // recalculate on every pass because
             // curlibctx->timeoutticks may be changed ad hoc by host program
             uint64_t maxtick = starttick + (curlibctx->timeoutticks / 1000 * TICKSPERSEC);
-            if (GetTickCount64()>maxtick)
+            if (TGGetTickCount64()>maxtick)
             {
-                int elapsedseconds = (int) ((GetTickCount64() - starttick) / TICKSPERSEC);
+                int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC);
                 fprintf(stderr, "sftp_recvdata: timeout, no data received for %d seconds\n",elapsedseconds);
                 return false;
             }
@@ -2790,7 +2812,7 @@ bool sftp_recvdata(char *buf, size_t len)
         len -= got;
 
         if (got>0) // got some Bytes - start a new 60 seconds timeout period
-           starttick=GetTickCount64();
+           starttick=TGGetTickCount64();
     }
 
     return true;
@@ -3057,7 +3079,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
         return 1;
     }
 
-	uint64_t starttick=GetTickCount64();
+	uint64_t starttick=TGGetTickCount64();
     if (curlibctx->connectiontimeoutticks<1000)
        curlibctx->connectiontimeoutticks=60000;
 
@@ -3073,9 +3095,9 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
         // recalculate on every pass because
         // curlibctx->connectiontimeoutticks may be changed ad hoc by host program
         uint64_t maxtick = starttick + (curlibctx->connectiontimeoutticks / 1000 * TICKSPERSEC);
-        if (GetTickCount64()>maxtick)
+        if (TGGetTickCount64()>maxtick)
         {
-            int elapsedseconds = (int) ((GetTickCount64() - starttick) / TICKSPERSEC);
+            int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC);
             fprintf(stderr, "ssh_init: timeout, no connection after %d seconds\n",elapsedseconds);
             if (realhost != NULL)
                sfree(realhost);
