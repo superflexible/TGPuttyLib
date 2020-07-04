@@ -233,10 +233,10 @@ HMODULE load_system32_dll(const char *libname)
             sgrowarray(sysdir, sysdirsize, len);
     }
 
-    fullpath = dupcat(sysdir, "\\", libname, NULL);
+    fullpath = dupcat(sysdir, "\\", libname);
     ret = LoadLibrary(fullpath);
     sfree(fullpath);
-    sfree(sysdir); // avoid memory leak
+    sfree(sysdir); // TG: avoid memory leak
     return ret;
 }
 
@@ -267,23 +267,23 @@ static int errstring_compare(void *av, void *bv)
 
 static tree234 *errstrings = NULL;
 
-static CRITICAL_SECTION errstringsCS;
-static bool errstringsCSinitialized=false;
+static CRITICAL_SECTION errstringsCS; // TG
+static bool errstringsCSinitialized=false; // TG
 
 const char *win_strerror(int error)
 {
     struct errstring *es;
 
-    if (!errstringsCSinitialized)
+    if (!errstringsCSinitialized) // TG
     {
        // we will assume the first error is not going to happen in two threads simultaneously
        // we also won't ever call DeleteCriticalSection
        // Windows will free any memory when the DLL is unloaded
-       InitializeCriticalSection(&errstringsCS);
-       errstringsCSinitialized=true;
+       InitializeCriticalSection(&errstringsCS); // TG
+       errstringsCSinitialized=true; // TG
     }
 
-    EnterCriticalSection(&errstringsCS);
+    EnterCriticalSection(&errstringsCS); // TG
 
     if (!errstrings)
         errstrings = newtree234(errstring_compare);
@@ -311,9 +311,9 @@ const char *win_strerror(int error)
         add234(errstrings, es);
     }
 
-    LeaveCriticalSection(&errstringsCS);
+    LeaveCriticalSection(&errstringsCS); // TG
 
-	return es->text;
+    return es->text;
 }
 
 FontSpec *fontspec_new(const char *name, bool bold, int height, int charset)

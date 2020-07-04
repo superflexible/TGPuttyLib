@@ -303,8 +303,7 @@ void ssh_verstring_handle_input(BinaryPacketProtocol *bpp)
     while (s->vstring->len > 0 &&
            (s->vstring->s[s->vstring->len-1] == '\r' ||
             s->vstring->s[s->vstring->len-1] == '\n'))
-        s->vstring->len--;
-    s->vstring->s[s->vstring->len] = '\0';
+        strbuf_shrink_by(s->vstring, 1);
 
     bpp_logevent("Remote version: %s", s->vstring->s);
 
@@ -402,7 +401,7 @@ void ssh_verstring_handle_input(BinaryPacketProtocol *bpp)
 static PktOut *ssh_verstring_new_pktout(int type)
 {
     unreachable("Should never try to send packets during SSH version "
-				"string exchange");
+                "string exchange");
 	return NULL; // TG 2019, remove compiler warning
 }
 

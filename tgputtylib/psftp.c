@@ -14,14 +14,14 @@
 #include "storage.h"
 #include "ssh.h"
 #include "sftp.h"
-#include "version.h"
+#include "version.h" // TG
 
-__declspec(thread) TTGLibraryContext *curlibctx;
+__declspec(thread) TTGLibraryContext *curlibctx; // TG
 
-static int ContextCounter=0;
-__declspec(thread) int ThreadContextCounter=0;
+static int ContextCounter=0; // TG
+__declspec(thread) int ThreadContextCounter=0; // TG
 
-char *appname = NORMALCODE("PSFTP") TGDLLCODE("tgputtylib");
+char *appname = NORMALCODE("PSFTP") TGDLLCODE("tgputtylib"); // TG
 
 /*
  * Since SFTP is a request-response oriented protocol, it requires
@@ -55,11 +55,11 @@ Conf *conf;
 bool sent_eof = false;
 #endif
 
-// emulate 64 bit tick counter
+// TG: emulate 64 bit tick counter
 uint64_t CurrentIncrement=0;
 uint64_t LastTickCount=0;
 
-uint64_t TGGetTickCount64()
+uint64_t TGGetTickCount64() // TG
 {
    uint64_t LIncrement=CurrentIncrement;
 
@@ -107,6 +107,7 @@ static const SeatVtable psftp_seat_vt = {
 static Seat psftp_seat[1] = {{ &psftp_seat_vt }};
 
 // TG 2019: we do not want any strip ctrl stuff, it can break UTF-8 encodings
+// TG
 #define with_stripctrl(varname, input)  \
     for (char *varname = input; varname;  \
          varname = NULL)
@@ -119,7 +120,7 @@ struct sftp_packet *sftp_wait_for_reply(struct sftp_request *req)
     struct sftp_packet *pktin;
     struct sftp_request *rreq;
 
-    if (!req)
+    if (!req) // TG
     {
        if (curlibctx->raise_exception_callback)
           curlibctx->raise_exception_callback("no req in sftp_wait_for_reply - not connected?",__FILE__,__LINE__,curlibctx);
@@ -157,16 +158,16 @@ char *canonify(const char *name)
     struct sftp_packet *pktin;
     struct sftp_request *req;
 
-    if ((name[0] == '/') || (pwd==NULL) || (strlen(pwd)==0))
+    if ((name[0] == '/') || (pwd==NULL) || (strlen(pwd)==0)) // TG
     {
         fullname = dupstr(name);
     } else {
         const char *slash;
-        if ((pwd[strlen(pwd) - 1] == '/'))
+        if (pwd[strlen(pwd) - 1] == '/')
             slash = "";
         else
             slash = "/";
-        fullname = dupcat(pwd, slash, name, NULL);
+        fullname = dupcat(pwd, slash, name);
     }
 
     req = fxp_realpath_send(fullname);
@@ -175,7 +176,7 @@ char *canonify(const char *name)
 
     if (canonname) {
         sfree(fullname);
-        if (flags & FLAG_VERBOSE) printf("Canonified %s to %s\n",name,canonname);
+        if (flags & FLAG_VERBOSE) printf("Canonified %s to %s\n",name,canonname); // TG
         return canonname;
     } else {
         /*
@@ -206,7 +207,7 @@ char *canonify(const char *name)
         int i;
         char *returnname;
 
-        i = (int) strlen(fullname);
+        i = (int) strlen(fullname); // TG
         if (i > 2 && fullname[i - 1] == '/')
             fullname[--i] = '\0';      /* strip trailing / unless at pos 0 */
         while (i > 0 && fullname[--i] != '/');
@@ -238,7 +239,7 @@ char *canonify(const char *name)
             /* Even that failed. Restore our best guess at the
              * constructed filename and give up */
             fullname[i] = '/';  /* restore slash and last component */
-            if (flags & FLAG_VERBOSE) printf("Canonifying %s failed, returning %s\n",name,fullname);
+            if (flags & FLAG_VERBOSE) printf("Canonifying %s failed, returning %s\n",name,fullname); // TG
             return fullname;
         }
 
@@ -247,11 +248,11 @@ char *canonify(const char *name)
          * component. Concatenate the last component and return.
          */
         returnname = dupcat(canonname,
-                            canonname[strlen(canonname) - 1] ==
-                            '/' ? "" : "/", fullname + i + 1, NULL);
+                            (strendswith(canonname, "/") ? "" : "/"),
+                            fullname + i + 1);
         sfree(fullname);
         sfree(canonname);
-        if (flags & FLAG_VERBOSE) printf("Canonified %s to %s\n",name,returnname);
+        if (flags & FLAG_VERBOSE) printf("Canonified %s to %s\n",name,returnname); // TG
         return returnname;
     }
 }
@@ -265,7 +266,7 @@ static int bare_name_compare(const void *av, const void *bv)
 
 static void not_connected(void)
 {
-    printf("psftp: not connected to a host\n");
+    printf("psftp: not connected to a host\n"); // TG
 }
 
 /* ----------------------------------------------------------------------
@@ -421,7 +422,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                 char *nextfname, *nextoutfname;
                 bool retd;
 
-                nextfname = dupcat(fname, "/", ournames[i]->filename, NULL);
+                nextfname = dupcat(fname, "/", ournames[i]->filename);
                 nextoutfname = dir_file_cat(outfname, ournames[i]->filename);
                 retd = sftp_get_file(
                     nextfname, nextoutfname, recurse, restart);
@@ -503,15 +504,15 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
         offset = 0;
     }
 
-    if (outfname)
+    if (outfname) // TG
        with_stripctrl(san, fname) {
           with_stripctrl(sano, outfname)
             printf("remote: %s => local:%s\n", san, sano);
        }
     else
-       printf("remote: %s => stream \n", fname);
+       printf("remote: %s => stream \n", fname); // TG
 
-    if (curlibctx->timeoutticks<1000)
+    if (curlibctx->timeoutticks<1000) // TG
        curlibctx->timeoutticks=60000;
 
     /*
@@ -519,18 +520,18 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
      * thus put up a progress bar.
      */
     toret = true;
-	uint64_t starttick=TGGetTickCount64();
-	uint64_t idlesincetick=0;
-	uint64_t TotalBytes=0;
-	uint64_t lastprogresstick=starttick;
-    bool canceled=false;
+	uint64_t starttick=TGGetTickCount64(); // TG
+	uint64_t idlesincetick=0; // TG
+	uint64_t TotalBytes=0; // TG
+	uint64_t lastprogresstick=starttick; // TG
+    bool canceled=false; // TG
     xfer = xfer_download_init(fh, offset);
-    while (!xfer_done(xfer) && !canceled && !curlibctx->aborted) {
+    while (!xfer_done(xfer) && !canceled && !curlibctx->aborted) { // TG
         void *vbuf;
         int retd, len;
         int wpos, wlen;
 
-        uint64_t PrevTotalBytes = TotalBytes;
+        uint64_t PrevTotalBytes = TotalBytes; // TG
 
         xfer_download_queue(xfer);
         pktin = sftp_recv();
@@ -550,10 +551,10 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
 
             wpos = 0;
             while (wpos < len) {
-                if (file)
+                if (file) // TG
                    wlen = write_to_file(file, buf + wpos, len - wpos);
-                else
-                   wlen = curlibctx->write_to_stream(offset, buf + wpos, len - wpos, curlibctx);
+                else // TG
+                   wlen = curlibctx->write_to_stream(offset, buf + wpos, len - wpos, curlibctx); // TG
                 if (wlen <= 0) {
                     printf("error while writing local file\n");
                     toret = false;
@@ -561,31 +562,31 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                     break;
                 }
                 wpos += wlen;
-                offset += wlen;
+                offset += wlen; // TG
             }
             if (wpos < len) {          /* we had an error */
                 toret = false;
                 xfer_set_error(xfer);
             }
-  		    TotalBytes+=len;
-			if ((curlibctx->progress_callback!=NULL) &&
+  		    TotalBytes+=len; // TG
+			if ((curlibctx->progress_callback!=NULL) && // TG
 				((TotalBytes % (1024*1024))==0) &&
 				(TGGetTickCount64()-lastprogresstick>=1000))
 			{
-			   if (!curlibctx->progress_callback(TotalBytes,false,curlibctx))
+			   if (!curlibctx->progress_callback(TotalBytes,false,curlibctx)) // TG
 			   {
 				 canceled=true;
   				 //eof = true;
-                 printf("Canceling ...\n");
+                 printf("Canceling ...\n"); // TG
 			   }
-			   lastprogresstick=TGGetTickCount64();
+			   lastprogresstick=TGGetTickCount64(); // TG
 			}
 
             sfree(vbuf);
         }
 
         // check if transfer still going
-        if (TotalBytes>PrevTotalBytes)
+        if (TotalBytes>PrevTotalBytes) // TG
            idlesincetick = 0; // all good
         else
         {
@@ -594,7 +595,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
            else
               if (TGGetTickCount64()-idlesincetick > curlibctx->timeoutticks)
               {
-                 printf("Timeout error, no more data received.\n");
+                 printf("Timeout error, no more data received.\n"); // TG
                  toret = false;
                  xfer_set_error(xfer);
                  break;
@@ -602,11 +603,11 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
         }
     }
 
-	uint64_t endtick=TGGetTickCount64();
-    if (endtick-starttick==0)
+	uint64_t endtick=TGGetTickCount64(); // TG
+    if (endtick-starttick==0) // TG
        endtick=starttick+1; // prevent divide by zero ;=)
 
-	printf("Downloaded %I64u Bytes in %I64u milliseconds, rate = %I64u MB/sec.\n",
+	printf("Downloaded %I64u Bytes in %I64u milliseconds, rate = %I64u MB/sec.\n", // TG
 	       TotalBytes,
 		   (endtick-starttick),
 		   (TotalBytes/1024) / (endtick-starttick)
@@ -614,7 +615,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
 
     xfer_cleanup(xfer);
 
-    if (file)
+    if (file) // TG
        close_wfile(file);
 
     req = fxp_close_send(fh);
@@ -708,7 +709,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
         if (restart) {
             while (i < nnames) {
                 char *nextoutfname;
-                nextoutfname = dupcat(outfname, "/", ournames[i], NULL);
+                nextoutfname = dupcat(outfname, "/", ournames[i]);
                 req = fxp_stat_send(nextoutfname);
                 pktin = sftp_wait_for_reply(req);
                 result = fxp_stat_recv(pktin, req, &attrs);
@@ -732,7 +733,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
             bool retd;
 
             nextfname = dir_file_cat(fname, ournames[i]);
-            nextoutfname = dupcat(outfname, "/", ournames[i], NULL);
+            nextoutfname = dupcat(outfname, "/", ournames[i]);
             retd = sftp_put_file(nextfname, nextoutfname, recurse, restart);
             restart = false;           /* after first partial file, do full */
             sfree(nextoutfname);
@@ -757,7 +758,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
         return true;
     }
 
-    if (fname!=NULL)
+    if (fname!=NULL) // TG
     {
        file = open_existing_file(fname, NULL, NULL, NULL, &permissions);
        if (!file) {
@@ -765,7 +766,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
            return false;
        }
     }
-    else
+    else // TG
     {
        file=NULL; // if null, we will use a callback to read from stream
        permissions=-1; // use default permissions
@@ -818,10 +819,10 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
         offset = 0;
     }
 
-    if (fname!=NULL)
+    if (fname!=NULL) // TG
        printf("local: %s => remote: %s\n", fname, outfname);
-    else
-       printf("stream => remote: %s\n", outfname);
+    else // TG
+       printf("stream => remote: %s\n", outfname); // TG
 
     /*
      * FIXME: we can use FXP_FSTAT here to get the file size, and
@@ -829,25 +830,26 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
      */
     xfer = xfer_upload_init(fh, offset);
 #ifdef DEBUG_UPLOAD
-    printf("calling xfer_upload_init with offset %I64u\n",offset);
+    printf("calling xfer_upload_init with offset %I64u\n",offset); // TG
 #endif
 	eof = false;
 	const sftpbufsize=16384*4; // TG: much more is not possible, 1MB will definitely fail!
 	char *buffer=malloc(sftpbufsize); // TG
-	uint64_t starttick=TGGetTickCount64();
-	uint64_t TotalBytes=0;
-	uint64_t lastprogresstick=starttick;
-    bool canceled=false;
-    while (((!err && !eof) || !xfer_done(xfer)) && !canceled && !curlibctx->aborted)
+	uint64_t starttick=TGGetTickCount64(); // TG
+	uint64_t TotalBytes=0; // TG
+	uint64_t lastprogresstick=starttick; // TG
+    bool canceled=false; // TG
+    while (((!err && !eof) || !xfer_done(xfer)) && !canceled && !curlibctx->aborted) // TG
 	{
+	    // TG: no small buffer on stack!
 		int len, ret;
 
 		while (xfer_upload_ready(xfer) && !err && !eof)
 		{
-            if (file)
+            if (file) // TG
 			   len = read_from_file(file, buffer, sftpbufsize);
             else
-               len = curlibctx->read_from_stream(offset, buffer, sftpbufsize, curlibctx);
+               len = curlibctx->read_from_stream(offset, buffer, sftpbufsize, curlibctx); // TG
 			if (len == -1)
 			{
 				printf("error while reading local file\n");
@@ -861,34 +863,44 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
 			  else
 			  {
 #ifdef DEBUG_UPLOAD
-                printf("calling xfer_upload_data, len is %d\n",len);
+                printf("calling xfer_upload_data, len is %d\n",len); // TG
 #endif
 				xfer_upload_data(xfer, buffer, len);
-				TotalBytes+=len;
-                offset+=len;
+				TotalBytes+=len; // TG
+                offset+=len; // TG
 			  }
-			if ((curlibctx->progress_callback!=NULL) &&
+			if ((curlibctx->progress_callback!=NULL) &&   // TG
 				((TotalBytes % (1024*1024))==0) &&
 				(TGGetTickCount64()-lastprogresstick>=1000))
 			{
-			   if (!curlibctx->progress_callback(TotalBytes,true,curlibctx))
+			   if (!curlibctx->progress_callback(TotalBytes,true,curlibctx))  // TG
 			   {
 				 canceled=true;
   				 eof = true;
                  printf("Canceling ...\n");
 			   }
-			   lastprogresstick=TGGetTickCount64();
+			   lastprogresstick=TGGetTickCount64();  // TG
 			}
         }
 
+        if (toplevel_callback_pending() && !err && !eof) {
+            /* If we have pending callbacks, they might make
+             * xfer_upload_ready start to return true. So we should
+             * run them and then re-check xfer_upload_ready, before
+             * we go as far as waiting for an entire packet to
+             * arrive. */
+            run_toplevel_callbacks();
+            continue;
+        }
+
 #ifdef DEBUG_UPLOAD
-        printf("ensure xfer_done\n");
+        printf("ensure xfer_done\n"); // TG
 #endif
         if (!xfer_done(xfer))
 		{
             pktin = sftp_recv();
 #ifdef DEBUG_UPLOAD
-            printf("calling xfer_upload_gotpkt\n");
+            printf("calling xfer_upload_gotpkt\n"); // TG
 #endif
             ret = xfer_upload_gotpkt(xfer, pktin);
             if (ret <= 0) {
@@ -902,22 +914,22 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
         }
 #ifdef DEBUG_UPLOAD
 		else
-            printf("xfer_done=true\n");
+            printf("xfer_done=true\n"); // TG
 #endif
     }
-	uint64_t endtick=TGGetTickCount64();
-	free(buffer);
+	uint64_t endtick=TGGetTickCount64(); // TG
+	free(buffer); // TG
 
-    if (endtick-starttick==0)
+    if (endtick-starttick==0) // TG
        endtick=starttick+1; // prevent divide by zero ;=)
-	printf("Uploaded %I64u Bytes in %I64u milliseconds, rate = %I64u MB/sec.\n",
+	printf("Uploaded %I64u Bytes in %I64u milliseconds, rate = %I64u MB/sec.\n", // TG
 	       TotalBytes,
 		   (endtick-starttick),
 		   (TotalBytes/1024) / (endtick-starttick)
 		   );
 
 #ifdef DEBUG_UPLOAD
-    printf("calling xfer_cleanup\n");
+    printf("calling xfer_cleanup\n"); // TG
 #endif
     xfer_cleanup(xfer);
 
@@ -970,7 +982,7 @@ SftpWildcardMatcher *sftp_begin_wildcard_matching(char *name)
     wildcard = stripslashes(name, false);
 
     unwcdir = dupstr(name);
-    len = (int) (wildcard - name);
+    len = (int) (wildcard - name);   // TG
     unwcdir[len] = '\0';
     if (len > 0 && unwcdir[len-1] == '/')
         unwcdir[len-1] = '\0';
@@ -1099,12 +1111,12 @@ void sftp_finish_wildcard_matching(SftpWildcardMatcher *swcm)
  */
 bool wildcard_iterate(char *filename, bool (*func)(void *, char *), void *ctx)
 {
-	char *unwcfname,*cname;
-    bool toret;
+	char *unwcfname,*cname; // TG
+    bool toret; // TG
 
 #ifndef TGDLL
-    char *newname,
-	bool is_wc;
+    char *newname, // TG
+	bool is_wc; // TG
 #endif
 
 	unwcfname = snewn(strlen(filename)+1, char);
@@ -1259,7 +1271,7 @@ int sftp_cmd_ls(struct sftp_command *cmd)
         sfree(unwcdir);
         wildcard = stripslashes(dir, false);
         unwcdir = dupstr(dir);
-        len = (int) (wildcard - dir);
+        len = (int) (wildcard - dir); // TG
         unwcdir[len] = '\0';
         if (len > 0 && unwcdir[len-1] == '/')
             unwcdir[len-1] = '\0';
@@ -1313,7 +1325,7 @@ int sftp_cmd_ls(struct sftp_command *cmd)
             }
 
             if (!ctx)
-               curlibctx->ls_callback(names,curlibctx);
+               curlibctx->ls_callback(names,curlibctx); // TG
             else
             for (size_t i = 0; i < names->nnames; i++)
                 if (!wildcard || wc_match(wildcard, names->names[i].filename))
@@ -1326,7 +1338,7 @@ int sftp_cmd_ls(struct sftp_command *cmd)
         pktin = sftp_wait_for_reply(req);
         fxp_close_recv(pktin, req);
 
-		if (ctx)
+		if (ctx) // TG
 		{
 		   list_directory_from_sftp_finish(ctx);
 		   list_directory_from_sftp_free(ctx);
@@ -1751,7 +1763,7 @@ static bool check_is_dir(char *dstfname)
         return false;
 }
 
-static bool get_stat(char *dstfname, struct fxp_attrs *attrs)
+static bool get_stat(char *dstfname, struct fxp_attrs *attrs) // TG
 {
     struct sftp_packet *pktin;
     struct sftp_request *req;
@@ -1765,7 +1777,7 @@ static bool get_stat(char *dstfname, struct fxp_attrs *attrs)
     return result;
 }
 
-static bool set_stat(char *dstfname, struct fxp_attrs *attrs)
+static bool set_stat(char *dstfname, struct fxp_attrs *attrs) // TG
 {
     struct sftp_packet *pktin;
     struct sftp_request *req;
@@ -1799,7 +1811,7 @@ static bool sftp_action_mv(void *vctx, char *srcfname)
 
         p = srcfname + strlen(srcfname);
         while (p > srcfname && p[-1] != '/') p--;
-        newname = dupcat(ctx->dstfname, "/", p, NULL);
+        newname = dupcat(ctx->dstfname, "/", p);
         newcanon = canonify(newname);
         sfree(newname);
 
@@ -1808,7 +1820,7 @@ static bool sftp_action_mv(void *vctx, char *srcfname)
         finalfname = ctx->dstfname;
     }
 
-    printf("Renaming %s to %s\n",srcfname, finalfname);
+    printf("Renaming %s to %s\n",srcfname, finalfname); // TG
     req = fxp_rename_send(srcfname, finalfname);
     pktin = sftp_wait_for_reply(req);
     result = fxp_rename_recv(pktin, req);
@@ -1846,13 +1858,13 @@ int sftp_cmd_mvex(struct sftp_command *cmd,const int moveflags) // TG 2019
 
     ctx->dstfname = canonify(cmd->words[cmd->nwords-1]);
 
-    if ((moveflags & cMoveFlag_DestinationPathIncludesItemName) != 0)
+    if ((moveflags & cMoveFlag_DestinationPathIncludesItemName) != 0) // TG
        ctx->dest_is_dir = false;
     else
-       if ((moveflags & cMoveFlag_AddSourceItemNameToDestinationPath) != 0)
+       if ((moveflags & cMoveFlag_AddSourceItemNameToDestinationPath) != 0) // TG
           ctx->dest_is_dir = true;
        else
-          ctx->dest_is_dir = check_is_dir(ctx->dstfname);
+          ctx->dest_is_dir = check_is_dir(ctx->dstfname); // TG
 
 	#ifndef TGDLL
     // BIG PROBLEM! is_wildcard could return true if filename contains brackets
@@ -1862,13 +1874,13 @@ int sftp_cmd_mvex(struct sftp_command *cmd,const int moveflags) // TG 2019
      * argument which is a wildcard, we _require_ that the
      * destination is a directory.
      */
-
-	if ((cmd->nwords > 3 || is_wildcard(cmd->words[1])) && !ctx->dest_is_dir) {
-		printf("mv: multiple or wildcard arguments require the destination"
-			   " to be a directory\n");
-		sfree(ctx->dstfname);
-		return 0;
-	}
+    ctx->dest_is_dir = check_is_dir(ctx->dstfname);
+    if ((cmd->nwords > 3 || is_wildcard(cmd->words[1])) && !ctx->dest_is_dir) {
+        printf("mv: multiple or wildcard arguments require the destination"
+               " to be a directory\n");
+        sfree(ctx->dstfname);
+        return 0;
+    }
 	#endif
 
     /*
@@ -2408,7 +2420,7 @@ static int sftp_cmd_help(struct sftp_command *cmd)
             int len;
             if (!sftp_lookup[i].listed)
                 continue;
-            len = (int) strlen(sftp_lookup[i].name);
+            len = (int) strlen(sftp_lookup[i].name); // TG
             if (maxlen < len)
                 maxlen = len;
         }
@@ -2448,30 +2460,30 @@ static int sftp_cmd_help(struct sftp_command *cmd)
 #ifdef TGDLL
 struct sftp_command *sftp_getcmd(FILE *fp, int mode, int modeflags, char *tgline) // TG 2019
 #else
-struct sftp_command *sftp_getcmd(FILE *fp, int mode, int modeflags) // TG 2019
+struct sftp_command *sftp_getcmd(FILE *fp, int mode, int modeflags)
 #endif
 {
-	char *line;
-	struct sftp_command *cmd;
-	char *p, *q, *r;
-	bool quoting;
+    char *line;
+    struct sftp_command *cmd;
+    char *p, *q, *r;
+    bool quoting;
 
-	cmd = snew(struct sftp_command);
-	cmd->words = NULL;
-	cmd->nwords = 0;
-	cmd->wordssize = 0;
+    cmd = snew(struct sftp_command);
+    cmd->words = NULL;
+    cmd->nwords = 0;
+    cmd->wordssize = 0;
 
-	line = NULL;
+    line = NULL;
 
 #ifdef TGDLL
 	if (tgline!=NULL) // TG 2019
 	   line=tgline;
 	else
 #endif
-	if (fp) {
-		if (modeflags & 1)
-			printf("psftp> ");
-		line = fgetline(fp);
+    if (fp) {
+        if (modeflags & 1)
+            printf("psftp> ");
+        line = fgetline(fp);
     } else {
         line = ssh_sftp_get_cmdline("psftp> ", !backend);
     }
@@ -2500,13 +2512,13 @@ struct sftp_command *sftp_getcmd(FILE *fp, int mode, int modeflags) // TG 2019
          * exactly two words: one containing the !, and the second
          * containing everything else on the line.
          */
-		cmd->nwords = 2;
-		sgrowarrayn(cmd->words, cmd->wordssize, cmd->nwords, 0);
-		cmd->words[0] = dupstr("!");
-		cmd->words[1] = dupstr(p+1);
-	} else if (*p == '#') {
-		/*
-		 * Special case: comment. Entire line is ignored.
+        cmd->nwords = 2;
+        sgrowarrayn(cmd->words, cmd->wordssize, cmd->nwords, 0);
+        cmd->words[0] = dupstr("!");
+        cmd->words[1] = dupstr(p+1);
+    } else if (*p == '#') {
+        /*
+         * Special case: comment. Entire line is ignored.
          */
         cmd->nwords = cmd->wordssize = 0;
     } else {
@@ -2575,6 +2587,18 @@ struct sftp_command *sftp_getcmd(FILE *fp, int mode, int modeflags) // TG 2019
     return cmd;
 }
 
+#ifndef TGDLL
+static void sftp_cmd_free(struct sftp_command *cmd)
+{
+    if (cmd->words) {
+        for (size_t i = 0; i < cmd->nwords; i++)
+            sfree(cmd->words[i]);
+        sfree(cmd->words);
+    }
+    sfree(cmd);
+}
+#endif
+
 static int do_sftp_init(void)
 {
     struct sftp_packet *pktin;
@@ -2611,15 +2635,15 @@ static int do_sftp_init(void)
 
 static void do_sftp_cleanup(void)
 {
-    if (backend)
+    if (backend) // TG
     {
-        if (!sent_eof && backend_connected(backend))
+        if (!sent_eof && backend_connected(backend)) // TG
         {
            char ch;
            backend_special(backend, SS_EOF, 0);
            sent_eof = true;
            sftp_recvdata(&ch, 1);
-        }
+        } // TG
         backend_free(backend);
         sftp_cleanup_request();
         backend = NULL;
@@ -2685,7 +2709,7 @@ int do_sftp(int mode, int modeflags, char *batchfile)
             cmd = sftp_getcmd(fp, mode, modeflags, NULL); // TG 2019
             if (!cmd)
                 break;
-			ret = cmd->obey(cmd);
+            ret = cmd->obey(cmd);
             free_sftp_command(&cmd); // TG 2019
             if (ret < 0)
                 break;
@@ -2748,8 +2772,8 @@ static size_t psftp_output(
      */
     if (is_stderr)
     {
-       if (!stderr_bs || !thread_vars_initialized)
-          init_thread_vars();
+       if (!stderr_bs || !thread_vars_initialized) // TG
+          init_thread_vars(); // TG
        put_data(stderr_bs, data, len);
        return 0;
     }
@@ -2775,22 +2799,22 @@ static bool psftp_eof(Seat *seat)
 bool sftp_recvdata(char *buf, size_t len)
 {
     // printf("sftp_recvdata len=%zd\n",len);
-	uint64_t starttick=TGGetTickCount64();
-    if (curlibctx->timeoutticks<1000)
-       curlibctx->timeoutticks=60000;
+	uint64_t starttick=TGGetTickCount64(); // TG
+    if (curlibctx->timeoutticks<1000) // TG
+       curlibctx->timeoutticks=60000; // TG
     while (len > 0)
     {
-        assert(backend!=NULL);
+        assert(backend!=NULL); // TG
         // printf("sftp_recvdata wanting %zd\n",len);
         while (bufchain_size(&received_data) == 0)
         {
             // printf("sftp_recvdata no data received, still wanting %zd\n",len);
-            assert(backend!=NULL);
+            assert(backend!=NULL); // TG
             if (backend_exitcode(backend) >= 0 ||
                 ssh_sftp_loop_iteration() < 0)
                 return false;          /* doom */
 
-            if (curlibctx->aborted)
+            if (curlibctx->aborted) // TG
             {
                 fprintf(stderr, "sftp_recvdata: aborted by program\n");
                 return false;
@@ -2798,8 +2822,8 @@ bool sftp_recvdata(char *buf, size_t len)
 
             // recalculate on every pass because
             // curlibctx->timeoutticks may be changed ad hoc by host program
-            uint64_t maxtick = starttick + (curlibctx->timeoutticks / 1000 * TICKSPERSEC);
-            if (TGGetTickCount64()>maxtick)
+            uint64_t maxtick = starttick + (curlibctx->timeoutticks / 1000 * TICKSPERSEC); // TG
+            if (TGGetTickCount64()>maxtick) // TG
             {
                 int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC);
                 fprintf(stderr, "sftp_recvdata: timeout, no data received for %d seconds\n",elapsedseconds);
@@ -2811,7 +2835,7 @@ bool sftp_recvdata(char *buf, size_t len)
         buf += got;
         len -= got;
 
-        if (got>0) // got some Bytes - start a new 60 seconds timeout period
+        if (got>0) // TG: got some Bytes - start a new 60 seconds timeout period
            starttick=TGGetTickCount64();
     }
 
@@ -2819,24 +2843,24 @@ bool sftp_recvdata(char *buf, size_t len)
 }
 bool sftp_senddata(const char *buf, size_t len)
 {
-   if (backend) // fix AV on disconnection
+   if (backend) // TG fix AV on disconnection
    {
       backend_send(backend, buf, len);
       return true;
    }
    else
    {
-      printf("not connected error in sftp_senddata\n");
+      printf("not connected error in sftp_senddata\n"); // TG
       return false;
    }
 }
 size_t sftp_sendbuffer(void)
 {
-   if (backend) // fix AV on disconnection
+   if (backend) // TG fix AV on disconnection
       return backend_sendbuffer(backend);
    else
    {
-      printf("not connected error in sftp_sendbuffer\n");
+      printf("not connected error in sftp_sendbuffer\n"); // TG
       return 0;
    }
 }
@@ -2876,7 +2900,7 @@ static void usage(void)
     printf("  -sshlog file\n");
     printf("  -sshrawlog file\n");
     printf("            log protocol details to a file\n");
-    cleanup_exit(1,true);
+    cleanup_exit(1,true); // TG
 }
 
 static void version(void)
@@ -2892,9 +2916,9 @@ static void version(void)
  */
 static int psftp_connect(char *userhost, char *user, int portnumber)
 {
-    printf("psftp_connect connecting with %s, port %d, as user %s.\n",userhost,portnumber,user);
+    printf("psftp_connect connecting with %s, port %d, as user %s.\n",userhost,portnumber,user); // TG
 
-	char *host, *realhost;
+    char *host, *realhost;
     const char *err;
 
     /* Separate host and username */
@@ -3013,7 +3037,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
      * things like SCP and SFTP: agent forwarding, port forwarding,
      * X forwarding.
      */
-    NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);)
+    NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);) // TG
     conf_set_bool(conf, CONF_agentfwd, false);
     conf_set_bool(conf, CONF_ssh_simple, true);
     {
@@ -3056,12 +3080,12 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
     {
        psftp_logctx = log_init(default_logpolicy, conf);
 #ifdef DEBUG_MALLOC
-       printf("Created new logctx.\n");
+       printf("Created new logctx.\n"); // TG
 #endif
     }
 #ifdef DEBUG_MALLOC
     else
-       printf("Reusing logctx.\n");
+       printf("Reusing logctx.\n"); // TG
 #endif
 
     platform_psftp_pre_conn_setup();
@@ -3074,30 +3098,30 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
     if (err != NULL)
     {
         fprintf(stderr, "ssh_init: %s\n", err);
-        if (realhost != NULL)
-           sfree(realhost);
+        if (realhost != NULL) // TG
+           sfree(realhost); // TG
         return 1;
     }
 
-	uint64_t starttick=TGGetTickCount64();
-    if (curlibctx->connectiontimeoutticks<1000)
-       curlibctx->connectiontimeoutticks=60000;
+	uint64_t starttick=TGGetTickCount64(); // TG
+    if (curlibctx->connectiontimeoutticks<1000) // TG
+       curlibctx->connectiontimeoutticks=60000; // TG
 
     while (!backend_sendok(backend))
     {
-        if (curlibctx->aborted)
+        if (curlibctx->aborted) // TG
         {
-            fprintf(stderr, "ssh_init: aborted by program\n");
+            fprintf(stderr, "ssh_init: aborted by program\n"); // TG
             if (realhost != NULL)
                sfree(realhost);
             return 1;
         }
         // recalculate on every pass because
         // curlibctx->connectiontimeoutticks may be changed ad hoc by host program
-        uint64_t maxtick = starttick + (curlibctx->connectiontimeoutticks / 1000 * TICKSPERSEC);
+        uint64_t maxtick = starttick + (curlibctx->connectiontimeoutticks / 1000 * TICKSPERSEC); // TG
         if (TGGetTickCount64()>maxtick)
         {
-            int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC);
+            int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC); // TG
             fprintf(stderr, "ssh_init: timeout, no connection after %d seconds\n",elapsedseconds);
             if (realhost != NULL)
                sfree(realhost);
@@ -3105,14 +3129,14 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
         }
         if (backend_exitcode(backend) >= 0)
         {
-            if (realhost != NULL)
+            if (realhost != NULL) // TG
                sfree(realhost);
             return 1;
         }
         if (ssh_sftp_loop_iteration() < 0)
         {
             fprintf(stderr, "ssh_init: error during SSH connection setup\n");
-            if (realhost != NULL)
+            if (realhost != NULL) // TG
                sfree(realhost);
             return 1;
         }
@@ -3144,7 +3168,7 @@ const bool share_can_be_upstream = false;
 TGDLLCODE(__declspec(thread)) static StripCtrlChars *stderr_scc;
 TGDLLCODE(__declspec(thread)) static stdio_sink stderr_ss;
 
-static void init_thread_vars()
+static void init_thread_vars() // TG
 {
    if (!thread_vars_initialized)
    {
@@ -3158,7 +3182,7 @@ static void init_thread_vars()
    //   printf("init_thread_vars() redundant call, Thread ID: %ud\n",GetCurrentThreadId());
 }
 
-static void free_thread_vars()
+static void free_thread_vars() // TG
 {
    if (thread_vars_initialized)
    {
@@ -3256,6 +3280,8 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
         stderr_bs = BinarySink_UPCAST(stderr_scc);
     }
 
+ // TG
+ // TG
     /*
      * If the loaded session provides a hostname, and a hostname has not
      * otherwise been specified, pop it in `userhost' so that
@@ -3278,7 +3304,7 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
         if (do_sftp_init())
             return 1;
     } else {
-        printf("psftp: no hostname specified\n");
+        printf("psftp: no hostname specified\n"); // TG
     }
 
     ret = do_sftp(mode, modeflags, batchfile);
@@ -3292,14 +3318,15 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
     do_sftp_cleanup();
     random_save_seed();
     cmdline_cleanup();
-    sk_cleanup(true);
+    sk_cleanup(true); // TG
 
+ // TG
     stripctrl_free(stderr_scc);
 
     if (psftp_logctx)
     {
         log_free(psftp_logctx);
-        psftp_logctx = NULL;
+        psftp_logctx = NULL; // TG
     }
 
     return ret;

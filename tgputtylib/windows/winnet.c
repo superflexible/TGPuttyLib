@@ -232,9 +232,9 @@ static bool sk_startup(int hi, int lo)
  * annoying winelib header-ordering issue. (See comment in winstuff.h.) */
 DECL_WINDOWS_FUNCTION(/* empty */, int, select,
                       (int, fd_set FAR *, fd_set FAR *,
-					   fd_set FAR *, const struct timeval FAR *));
+                       fd_set FAR *, const struct timeval FAR *));
 
-static bool sk_globals_initialized=false;
+static bool sk_globals_initialized=false; // TG
 
 void sk_init(void)
 {
@@ -286,7 +286,7 @@ void sk_init(void)
     GET_WINDOWS_FUNCTION(winsock_module, WSAEnumNetworkEvents);
     GET_WINDOWS_FUNCTION(winsock_module, WSAStartup);
     GET_WINDOWS_FUNCTION(winsock_module, WSACleanup);
-	GET_WINDOWS_FUNCTION(winsock_module, closesocket);
+    GET_WINDOWS_FUNCTION(winsock_module, closesocket);
 #ifndef COVERITY
     GET_WINDOWS_FUNCTION(winsock_module, ntohl);
     GET_WINDOWS_FUNCTION(winsock_module, htonl);
@@ -339,7 +339,7 @@ void sk_init(void)
   sktree = newtree234(cmpfortree);
 }
 
-void sk_cleanup(const bool cleanupglobalstoo)
+void sk_cleanup(const bool cleanupglobalstoo) // TG
 {
     NetSocket *s;
     int i;
@@ -363,7 +363,7 @@ void sk_cleanup(const bool cleanupglobalstoo)
 	   if (wship6_module)
 		   FreeLibrary(wship6_module);
 #endif
-       sk_globals_initialized = false;
+       sk_globals_initialized = false; // TG
 	}
 }
 
@@ -519,11 +519,11 @@ SockAddr *sk_namelookup(const char *host, char **canonicalname,
 #ifndef NO_IPV6
                           p_getaddrinfo&&p_gai_strerror ? p_gai_strerror(err) :
 #endif
-                          NULL);
-            if (!ret->error)
+                          NULL); // TG
+            if (!ret->error) // TG
             {
                ret->error = malloc(50); // memory leak but not important, should be rare
-               sprintf(ret->error,"gethostbyname error %d",err);
+               sprintf(ret->error,"gethostbyname error %d",err); // TG
             }
         } else {
             ret->error = NULL;
@@ -1838,8 +1838,7 @@ char *get_hostname(void)
     return dupstr(hostbuf);
 }
 
-SockAddr *platform_get_x11_unix_address(const char *display, int displaynum,
-                                       char **canonicalname)
+SockAddr *platform_get_x11_unix_address(const char *display, int displaynum)
 {
     SockAddr *ret = snew(SockAddr);
     memset(ret, 0, sizeof(SockAddr));

@@ -70,6 +70,10 @@ begin
 
        Write('Enter Hostname or IP of SFTP Server: ');
        ReadLn(HostName);
+       if HostName='' then begin
+          WriteLn('Exiting ...');
+          Exit;
+          end;
        Write('Enter Username: ');
        ReadLn(UserName);
        Write('Enter Password: ');

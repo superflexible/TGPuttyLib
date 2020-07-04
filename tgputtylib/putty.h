@@ -22,15 +22,15 @@
 #include "network.h"
 #include "misc.h"
 #include "marshal.h"
-#include "tgmem.h"
+#include "tgmem.h" // TG
 // #define DEBUG_UPLOAD
 
 
-#define cBufferMaxFillSizeThresholdToAcceptMoreUploadData 1024*1024
+#define cBufferMaxFillSizeThresholdToAcceptMoreUploadData 1024*1024 // TG
 
 // with these flags, tgsftp_mvex can skip checking whether the destination is an existing folder
-#define cMoveFlag_DestinationPathIncludesItemName 1
-#define cMoveFlag_AddSourceItemNameToDestinationPath 2
+#define cMoveFlag_DestinationPathIncludesItemName 1 // TG
+#define cMoveFlag_AddSourceItemNameToDestinationPath 2 // TG
 
 /*
  * We express various time intervals in unsigned long minutes, but may need to
@@ -544,7 +544,7 @@ static inline const char *backend_init(
     Conf *conf, const char *host, int port, char **rhost, bool nd, bool ka)
 { return vt->init(seat, out, logctx, conf, host, port, rhost, nd, ka); }
 static inline void backend_free(Backend *be)
-{ be->vt->freefunc(be); }
+{ be->vt->freefunc(be); } // TG
 static inline void backend_reconfig(Backend *be, Conf *conf)
 { be->vt->reconfig(be, conf); }
 static inline size_t backend_send(Backend *be, const char *buf, size_t len)
@@ -645,19 +645,7 @@ GLOBAL char *cmdline_session_name;
 typedef struct {
     char *prompt;
     bool echo;
-    /*
-     * 'result' must be a dynamically allocated array of exactly
-     * 'resultsize' chars. The code for actually reading input may
-     * realloc it bigger (and adjust resultsize accordingly) if it has
-     * to. The caller should free it again when finished with it.
-     *
-     * If resultsize==0, then result may be NULL. When setting up a
-     * prompt_t, it's therefore easiest to initialise them this way,
-     * which means all actual allocation is done by the callee. This
-     * is what add_prompt does.
-     */
-    char *result;
-    size_t resultsize;
+    strbuf *result;
 } prompt_t;
 typedef struct {
     /*
@@ -688,11 +676,11 @@ typedef struct {
     void *data;         /* slot for housekeeping data, managed by
                          * seat_get_userpass_input(); initially NULL */
 } prompts_t;
-prompts_t *new_prompts();
+prompts_t *new_prompts(void);
 void add_prompt(prompts_t *p, char *promptstr, bool echo);
 void prompt_set_result(prompt_t *pr, const char *newstr);
-void prompt_ensure_result_size(prompt_t *pr, int len);
-/* Burn the evidence. (Assumes _all_ strings want free()ing.) */
+char *prompt_get_result(prompt_t *pr);
+const char *prompt_get_result_ref(prompt_t *pr);
 void free_prompts(prompts_t *p);
 
 /*
@@ -1024,7 +1012,7 @@ static inline bool seat_set_trust_status(Seat *seat, bool trusted)
 /* Unlike the seat's actual method, the public entry point
  * seat_connection_fatal is a wrapper function with a printf-like API,
  * defined in misc.c. */
-void seat_connection_fatal(Seat *seat, const char *fmt, ...);
+void seat_connection_fatal(Seat *seat, const char *fmt, ...) PRINTF_LIKE(2, 3);
 
 /* Handy aliases for seat_output which set is_stderr to a fixed value. */
 static inline size_t seat_stdout(Seat *seat, const void *data, size_t len)
@@ -1239,8 +1227,8 @@ static inline bool win_is_utf8(TermWin *win)
 /*
  * Global functions not specific to a connection instance.
  */
-void nonfatal(const char *, ...);
-NORETURN void modalfatalbox(const char *, ...);
+void nonfatal(const char *, ...) PRINTF_LIKE(1, 2);
+NORETURN void modalfatalbox(const char *, ...) PRINTF_LIKE(1, 2);
 NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
 
 /*
@@ -1253,6 +1241,8 @@ NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
     X(INT, NONE, port) \
     X(INT, NONE, protocol) /* PROT_SSH, PROT_TELNET etc */ \
     X(INT, NONE, addressfamily) /* ADDRTYPE_IPV[46] or ADDRTYPE_UNSPEC */ \
+/* TG   X(INT, NONE, close_on_exit) /* FORCE_ON, FORCE_OFF, AUTO */ \
+/* TG   X(BOOL, NONE, warn_on_close) */ \
     X(INT, NONE, ping_interval) /* in seconds */ \
     X(BOOL, NONE, tcp_nodelay) \
     X(BOOL, NONE, tcp_keepalives) \
@@ -1275,6 +1265,7 @@ NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
     X(BOOL, NONE, compression) \
     X(INT, INT, ssh_kexlist) \
     X(INT, INT, ssh_hklist) \
+    X(BOOL, NONE, ssh_prefer_known_hostkeys) \
     X(INT, NONE, ssh_rekey_time) /* in minutes */ \
     X(STR, NONE, ssh_rekey_data) /* string encoding e.g. "100K", "2M", "1G" */ \
     X(BOOL, NONE, tryagent) \
@@ -1318,69 +1309,182 @@ NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
     X(STR, STR, ttymodes) /* values are "Vvalue" or "A" */ \
     X(STR, STR, environmt) \
     X(STR, NONE, username) \
-    /* Serial port options */ \
-    /* Keyboard options */ \
-    /* Terminal options */ \
-    X(INT, NONE, width) \
-    X(INT, NONE, height) \
-    X(FILENAME, NONE, logfilename) \
-    X(INT, NONE, logtype) /* LGTYP_NONE, LGTYPE_ASCII, ... */ \
-    X(INT, NONE, logxfovr) /* LGXF_OVR, LGXF_APN, LGXF_ASK */ \
-    X(BOOL, NONE, logflush) \
-    X(BOOL, NONE, logheader) \
-    X(BOOL, NONE, logomitpass) \
-    X(BOOL, NONE, logomitdata) \
-    /* Colour options */ \
-    /* Selection options */ \
-    /* translations */ \
-    /* X11 forwarding */ \
-    /* port forwarding */ \
-    X(BOOL, NONE, lport_acceptall) /* accept conns from hosts other than localhost */ \
-    X(BOOL, NONE, rport_acceptall) /* same for remote forwarded ports (SSH-2 only) */ \
-    /*                                                                \
-     * Subkeys for 'portfwd' can have the following forms:            \
-     *                                                                \
-     *   [LR]localport                                                \
-     *   [LR]localaddr:localport                                      \
-     *                                                                \
-     * Dynamic forwardings are indicated by an 'L' key, and the       \
-     * special value "D". For all other forwardings, the value        \
-     * should be of the form 'host:port'.                             \
-     */ \
-    X(STR, STR, portfwd) \
-    /* SSH bug compatibility modes. All FORCE_ON/FORCE_OFF/AUTO */ \
-    X(INT, NONE, sshbug_ignore1) \
-    X(INT, NONE, sshbug_plainpw1) \
-    X(INT, NONE, sshbug_rsa1) \
-    X(INT, NONE, sshbug_hmac2) \
-    X(INT, NONE, sshbug_derivekey2) \
-    X(INT, NONE, sshbug_rsapad2) \
-    X(INT, NONE, sshbug_pksessid2) \
-    X(INT, NONE, sshbug_rekey2) \
-    X(INT, NONE, sshbug_maxpkt2) \
-    X(INT, NONE, sshbug_ignore2) \
-    X(INT, NONE, sshbug_oldgex2) \
-    X(INT, NONE, sshbug_winadj) \
-    X(INT, NONE, sshbug_chanreq) \
-    /*                                                                \
-     * ssh_simple means that we promise never to open any channel     \
-     * other than the main one, which means it can safely use a very  \
-     * large window in SSH-2.                                         \
-     */ \
-    X(BOOL, NONE, ssh_simple) \
-    X(BOOL, NONE, ssh_connection_sharing) \
-    X(BOOL, NONE, ssh_connection_sharing_upstream) \
-    X(BOOL, NONE, ssh_connection_sharing_downstream) \
-    /*
-     * ssh_manual_hostkeys is conceptually a set rather than a
-     * dictionary: the string subkeys are the important thing, and the
-     * actual values to which those subkeys map are all "".
-     */ \
-    X(STR, STR, ssh_manual_hostkeys) \
-    /* Options for pterm. Should split out into platform-dependent part. */ \
-    /* end of list */
+/* TG    X(BOOL, NONE, username_from_env) \
+	X(STR, NONE, localusername) \
+	X(BOOL, NONE, rfc_environ) \
+	X(BOOL, NONE, passive_telnet) */ \
+	/* Serial port options */ \
+/* TG    X(STR, NONE, serline) \
+	X(INT, NONE, serspeed) \
+	X(INT, NONE, serdatabits) \
+	X(INT, NONE, serstopbits) \
+	X(INT, NONE, serparity) /* SER_PAR_NONE, SER_PAR_ODD, ... */ \
+/* TG    X(INT, NONE, serflow) /* SER_FLOW_NONE, SER_FLOW_XONXOFF, ... */ \
+	/* Keyboard options */ \
+/* TG    X(BOOL, NONE, bksp_is_delete) \
+	X(BOOL, NONE, rxvt_homeend) \
+	X(INT, NONE, funky_type) /* FUNKY_XTERM, FUNKY_LINUX, ... */ \
+/* TG    X(BOOL, NONE, no_applic_c) /* totally disable app cursor keys */ \
+/* TG    X(BOOL, NONE, no_applic_k) /* totally disable app keypad */ \
+/* TG    X(BOOL, NONE, no_mouse_rep) /* totally disable mouse reporting */ \
+/* TG    X(BOOL, NONE, no_remote_resize) /* disable remote resizing */ \
+/* TG    X(BOOL, NONE, no_alt_screen) /* disable alternate screen */ \
+/* TG    X(BOOL, NONE, no_remote_wintitle) /* disable remote retitling */ \
+/* TG    X(BOOL, NONE, no_remote_clearscroll) /* disable ESC[3J */ \
+/* TG    X(BOOL, NONE, no_dbackspace) /* disable destructive backspace */ \
+/* TG    X(BOOL, NONE, no_remote_charset) /* disable remote charset config */ \
+/* TG    X(INT, NONE, remote_qtitle_action) /* remote win title query action
+									  * (TITLE_NONE, TITLE_EMPTY, ...) */ \
+/* TG    X(BOOL, NONE, app_cursor) \
+	X(BOOL, NONE, app_keypad) \
+	X(BOOL, NONE, nethack_keypad) \
+	X(BOOL, NONE, telnet_keyboard) \
+	X(BOOL, NONE, telnet_newline) \
+	X(BOOL, NONE, alt_f4) /* is it special? */ \
+/* TG    X(BOOL, NONE, alt_space) /* is it special? */ \
+/* TG    X(BOOL, NONE, alt_only) /* is it special? */ \
+/* TG    X(INT, NONE, localecho) /* FORCE_ON, FORCE_OFF, AUTO */ \
+/* TG    X(INT, NONE, localedit) /* FORCE_ON, FORCE_OFF, AUTO */ \
+/* TG    X(BOOL, NONE, alwaysontop) \
+	X(BOOL, NONE, fullscreenonaltenter) \
+	X(BOOL, NONE, scroll_on_key) \
+	X(BOOL, NONE, scroll_on_disp) \
+	X(BOOL, NONE, erase_to_scrollback) \
+	X(BOOL, NONE, compose_key) \
+	X(BOOL, NONE, ctrlaltkeys) \
+	X(BOOL, NONE, osx_option_meta) \
+	X(BOOL, NONE, osx_command_meta) \
+	X(STR, NONE, wintitle) /* initial window title */ \
+	/* Terminal options */ \
+/* TG    X(INT, NONE, savelines) \
+	X(BOOL, NONE, dec_om) \
+	X(BOOL, NONE, wrap_mode) \
+	X(BOOL, NONE, lfhascr) \
+	X(INT, NONE, cursor_type) /* 0=block 1=underline 2=vertical */ \
+/* TG    X(BOOL, NONE, blink_cur) \
+	X(INT, NONE, beep) /* BELL_DISABLED, BELL_DEFAULT, ... */ \
+/* TG    X(INT, NONE, beep_ind) /* B_IND_DISABLED, B_IND_FLASH, ... */ \
+/* TG    X(BOOL, NONE, bellovl) /* bell overload protection active? */ \
+/* TG    X(INT, NONE, bellovl_n) /* number of bells to cause overload */ \
+/* TG    X(INT, NONE, bellovl_t) /* time interval for overload (seconds) */ \
+/* TG    X(INT, NONE, bellovl_s) /* period of silence to re-enable bell (s) */ \
+/* TG    X(FILENAME, NONE, bell_wavefile) \
+	X(BOOL, NONE, scrollbar) \
+	X(BOOL, NONE, scrollbar_in_fullscreen) \
+	X(INT, NONE, resize_action) /* RESIZE_TERM, RESIZE_DISABLED, ... */ \
+/* TG    X(BOOL, NONE, bce) \
+	X(BOOL, NONE, blinktext) \
+	X(BOOL, NONE, win_name_always) */ \
+	X(INT, NONE, width) \
+	X(INT, NONE, height) \
+/* TG    X(FONT, NONE, font) \
+	X(INT, NONE, font_quality) /* FQ_DEFAULT, FQ_ANTIALIASED, ... */ \
+	X(FILENAME, NONE, logfilename) \
+	X(INT, NONE, logtype) /* LGTYP_NONE, LGTYPE_ASCII, ... */ \
+	X(INT, NONE, logxfovr) /* LGXF_OVR, LGXF_APN, LGXF_ASK */ \
+	X(BOOL, NONE, logflush) \
+	X(BOOL, NONE, logheader) \
+	X(BOOL, NONE, logomitpass) \
+	X(BOOL, NONE, logomitdata) \
+/* TG    X(BOOL, NONE, hide_mouseptr) \
+	X(BOOL, NONE, sunken_edge) \
+	X(INT, NONE, window_border) /* in pixels */ \
+/* TG    X(STR, NONE, answerback) \
+	X(STR, NONE, printer) \
+	X(BOOL, NONE, no_arabicshaping) \
+	X(BOOL, NONE, no_bidi) \
+	/* Colour options */ \
+/* TG    X(BOOL, NONE, ansi_colour) \
+	X(BOOL, NONE, xterm_256_colour) \
+	X(BOOL, NONE, true_colour) \
+	X(BOOL, NONE, system_colour) \
+	X(BOOL, NONE, try_palette) \
+	X(INT, NONE, bold_style) /* 1=font 2=colour (3=both) */ \
+/* TG    X(INT, INT, colours) \
+	/* Selection options */ \
+/* TG    X(INT, NONE, mouse_is_xterm) /* 0=compromise 1=xterm 2=Windows */ \
+/* TG    X(BOOL, NONE, rect_select) \
+	X(BOOL, NONE, paste_controls) \
+	X(BOOL, NONE, rawcnp) \
+	X(BOOL, NONE, utf8linedraw) \
+	X(BOOL, NONE, rtf_paste) \
+	X(BOOL, NONE, mouse_override) \
+	X(INT, INT, wordness) \
+	X(BOOL, NONE, mouseautocopy) \
+	X(INT, NONE, mousepaste) /* CLIPUI_IMPLICIT, CLIPUI_EXPLICIT, ... */ \
+/* TG    X(INT, NONE, ctrlshiftins) /* CLIPUI_IMPLICIT, CLIPUI_EXPLICIT, ... */ \
+/* TG    X(INT, NONE, ctrlshiftcv) /* CLIPUI_IMPLICIT, CLIPUI_EXPLICIT, ... */ \
+/* TG    X(STR, NONE, mousepaste_custom) \
+	X(STR, NONE, ctrlshiftins_custom) \
+	X(STR, NONE, ctrlshiftcv_custom) \
+	/* translations */ \
+/* TG    X(INT, NONE, vtmode) /* VT_XWINDOWS, VT_OEMANSI, ... */ \
+/* TG    X(STR, NONE, line_codepage) \
+	X(BOOL, NONE, cjk_ambig_wide) \
+	X(BOOL, NONE, utf8_override) \
+	X(BOOL, NONE, xlat_capslockcyr) \
+	/* X11 forwarding */ \
+/* TG    X(BOOL, NONE, x11_forward) \
+	X(STR, NONE, x11_display) \
+	X(INT, NONE, x11_auth) /* X11_NO_AUTH, X11_MIT, X11_XDM */ \
+/* TG    X(FILENAME, NONE, xauthfile) \
+	/* port forwarding */ \
+	X(BOOL, NONE, lport_acceptall) /* accept conns from hosts other than localhost */ \
+	X(BOOL, NONE, rport_acceptall) /* same for remote forwarded ports (SSH-2 only) */ \
+	/*                                                                \
+	 * Subkeys for 'portfwd' can have the following forms:            \
+	 *                                                                \
+	 *   [LR]localport                                                \
+	 *   [LR]localaddr:localport                                      \
+	 *                                                                \
+	 * Dynamic forwardings are indicated by an 'L' key, and the       \
+	 * special value "D". For all other forwardings, the value        \
+	 * should be of the form 'host:port'.                             \
+	 */ \
+	X(STR, STR, portfwd) \
+	/* SSH bug compatibility modes. All FORCE_ON/FORCE_OFF/AUTO */ \
+	X(INT, NONE, sshbug_ignore1) \
+	X(INT, NONE, sshbug_plainpw1) \
+	X(INT, NONE, sshbug_rsa1) \
+	X(INT, NONE, sshbug_hmac2) \
+	X(INT, NONE, sshbug_derivekey2) \
+	X(INT, NONE, sshbug_rsapad2) \
+	X(INT, NONE, sshbug_pksessid2) \
+	X(INT, NONE, sshbug_rekey2) \
+	X(INT, NONE, sshbug_maxpkt2) \
+	X(INT, NONE, sshbug_ignore2) \
+	X(INT, NONE, sshbug_oldgex2) \
+	X(INT, NONE, sshbug_winadj) \
+	X(INT, NONE, sshbug_chanreq) \
+	/*                                                                \
+	 * ssh_simple means that we promise never to open any channel     \
+	 * other than the main one, which means it can safely use a very  \
+	 * large window in SSH-2.                                         \
+	 */ \
+	X(BOOL, NONE, ssh_simple) \
+	X(BOOL, NONE, ssh_connection_sharing) \
+	X(BOOL, NONE, ssh_connection_sharing_upstream) \
+	X(BOOL, NONE, ssh_connection_sharing_downstream) \
+	/*                                                                 \
+	 * ssh_manual_hostkeys is conceptually a set rather than a         \
+	 * dictionary: the string subkeys are the important thing, and the \
+	 * actual values to which those subkeys map are all "".            \
+	 */ \
+	X(STR, STR, ssh_manual_hostkeys) \
+	/* Options for pterm. Should split out into platform-dependent part. */ \
+/* TG    X(BOOL, NONE, stamp_utmp) \
+	X(BOOL, NONE, login_shell) \
+	X(BOOL, NONE, scrollbar_on_left) \
+	X(BOOL, NONE, shadowbold) \
+	X(FONT, NONE, boldfont) \
+	X(FONT, NONE, widefont) \
+	X(FONT, NONE, wideboldfont) \
+	X(INT, NONE, shadowboldoffset) /* in pixels */ \
+/* TG    X(BOOL, NONE, crhaslf) \
+    X(STR, NONE, winclass) \
+	/* end of list */
 
-#define MAXCONFKEY CONF_ssh_manual_hostkeys
+#define MAXCONFKEY CONF_ssh_manual_hostkeys // TG
 
 /* Now define the actual enum of option keywords using that macro. */
 #define CONF_ENUM_DEF(valtype, keytype, keyword) CONF_ ## keyword,
@@ -1395,7 +1499,7 @@ extern const char *confnames[]; // TG
 
 /* Functions handling configuration structures. */
 
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
 Conf *realconf_new(const char *filename,const int line);                  /* create an empty configuration */
 void realconf_free(Conf *conf,const char *filename,const int line);
 Conf *realconf_copy(Conf *oldconf,const char *filename,const int line);
@@ -1409,7 +1513,7 @@ Conf *conf_new(void);                  /* create an empty configuration */
 void conf_free(Conf *conf);
 Conf *conf_copy(Conf *oldconf);
 void conf_copy_into(Conf *dest, Conf *src);
-#endif
+#endif // TG
 
 /* Mandatory accessor functions: enforce by assertion that keys exist. */
 bool conf_get_bool(Conf *conf, int key);
@@ -1628,7 +1732,7 @@ void logfclose(LogContext *logctx);
 void logtraffic(LogContext *logctx, unsigned char c, int logmode);
 void logflush(LogContext *logctx);
 void logevent(LogContext *logctx, const char *event);
-void logeventf(LogContext *logctx, const char *fmt, ...);
+void logeventf(LogContext *logctx, const char *fmt, ...) PRINTF_LIKE(2, 3);
 void logeventvf(LogContext *logctx, const char *fmt, va_list ap);
 
 /*
@@ -1754,6 +1858,7 @@ void ser_setup_config_box(struct controlbox *b, bool midsession,
  */
 char *ver; // TG
 extern const char commitid[];
+
 /*
  * Exports from unicode.c.
  */
@@ -1841,7 +1946,8 @@ bool is_interactive(void);
 void console_print_error_msg(const char *prefix, const char *msg);
 void console_print_error_msg_fmt_v(
     const char *prefix, const char *fmt, va_list ap);
-void console_print_error_msg_fmt(const char *prefix, const char *fmt, ...);
+void console_print_error_msg_fmt(const char *prefix, const char *fmt, ...)
+    PRINTF_LIKE(2, 3);
 
 /*
  * Exports from printing.c.
@@ -1879,7 +1985,7 @@ bool cmdline_host_ok(Conf *);
 #define TOOLTYPE_PORT_ARG 64
 extern int cmdline_tooltype;
 
-void cmdline_error(const char *, ...);
+void cmdline_error(const char *, ...) PRINTF_LIKE(1, 2);
 
 /*
  * Exports from config.c.
@@ -2144,14 +2250,6 @@ void request_callback_notifications(toplevel_callback_notify_fn_t notify,
 #define FROM_SURROGATES(wch1, wch2) \
     (0x10000 + (((wch1) & 0x3FF) << 10) + ((wch2) & 0x3FF))
 
-// TG 2019: define missing functions, possibly needed for some compilers
-/*
-int stricmp(const char *a, const char *b);
-int strnicmp(const char *a, const char *b, const int num);
-size_t wcrtomb(char *s, wchar_t wchar, void *pst);
-size_t mbrtowc(wchar_t* pwc, const char* s, size_t n, void* ps);
-*/
-
 // TG additions for DLL
 #ifdef TGDLL
 #ifdef _WINDOWS
@@ -2166,6 +2264,7 @@ typedef unsigned int UINT_PTR;
 typedef struct PacketQueueNode PacketQueueNode;
 struct PacketQueueNode {
     PacketQueueNode *next, *prev;
+    size_t formal_size;    /* contribution to PacketQueueBase's total_size */ // added in PuTTY 0.74
     bool on_free_queue;     /* is this packet scheduled for freeing? */
 };
 

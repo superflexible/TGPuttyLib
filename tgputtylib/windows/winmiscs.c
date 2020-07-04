@@ -21,7 +21,7 @@ void smemclr(void *b, size_t n) {
  * Minefield - a Windows equivalent for Electric Fence
  */
 
-ERROR NOT THREAD SAFE
+TG: ERROR NOT THREAD SAFE
 
 #define PAGESIZE 4096
 
@@ -40,7 +40,7 @@ ERROR NOT THREAD SAFE
  * involved, so stale pointers are caught as soon as possible.
  */
 
-ERROR NOT THREAD SAFE
+TG: ERROR NOT THREAD SAFE
 static int minefield_initialised = 0;
 static void *minefield_region = NULL;
 static long minefield_size = 0;

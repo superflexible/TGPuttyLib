@@ -48,7 +48,7 @@ char *psftp_lcd(char *dir)
                       NULL, GetLastError(),
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                       (LPTSTR)&message, 0, NULL);
-        i = (int) strcspn((char *)message, "\n");
+        i = (int) strcspn((char *)message, "\n"); // TG
         ret = dupprintf("%.*s", i, (LPCTSTR)message);
         LocalFree(message);
     }
@@ -66,7 +66,7 @@ char *psftp_getcwd(void)
     size_t len = GetCurrentDirectory(256, ret);
     if (len > 256)
         ret = sresize(ret, len, char);
-    GetCurrentDirectory((DWORD) len, ret);
+    GetCurrentDirectory((DWORD) len, ret); // TG
     return ret;
 }
 
@@ -274,7 +274,7 @@ DirHandle *open_directory(const char *name, const char **errmsg)
     DirHandle *ret;
 
     /* Enumerate files in dir `foo'. */
-    findfile = dupcat(name, "/*", NULL);
+    findfile = dupcat(name, "/*");
     h = FindFirstFile(findfile, &fdat);
     if (h == INVALID_HANDLE_VALUE) {
         *errmsg = win_strerror(GetLastError());
@@ -395,7 +395,7 @@ WildcardMatcher *begin_wildcard_matching(const char *name)
          (fdat.cFileName[1] == '.' && fdat.cFileName[2] == '\0')))
         ret->name = NULL;
     else
-        ret->name = dupcat(ret->srcpath, fdat.cFileName, NULL);
+        ret->name = dupcat(ret->srcpath, fdat.cFileName);
 
     return ret;
 }
@@ -413,7 +413,7 @@ char *wildcard_get_filename(WildcardMatcher *dir)
              (fdat.cFileName[1] == '.' && fdat.cFileName[2] == '\0')))
             dir->name = NULL;
         else
-            dir->name = dupcat(dir->srcpath, fdat.cFileName, NULL);
+            dir->name = dupcat(dir->srcpath, fdat.cFileName);
     }
 
     if (dir->name) {
@@ -455,7 +455,7 @@ char *dir_file_cat(const char *dir, const char *file)
     return dupcat(
         dir, (ptrlen_endswith(dir_pl, PTRLEN_LITERAL("\\"), NULL) ||
               ptrlen_endswith(dir_pl, PTRLEN_LITERAL("/"), NULL)) ? "" : "\\",
-        file, NULL);
+        file);
 }
 
 /* ----------------------------------------------------------------------
@@ -476,12 +476,12 @@ char *do_select(SOCKET skt, bool enable)
 {
     int events;
     if (enable)
-       sftp_ssh_socket = skt;
+        sftp_ssh_socket = skt;
     else
-       sftp_ssh_socket = INVALID_SOCKET;
+        sftp_ssh_socket = INVALID_SOCKET;
 
     if ((netevent==0) || // TG prefers this to be checked also
-        (netevent==INVALID_HANDLE_VALUE)) // TG fix event handle leak: psftp 0.73 can create thousands of these while downloading a file
+        (netevent==INVALID_HANDLE_VALUE))
     {
        // this event is never freed in psftp.exe
        // but it's freed in tgputtyfree when a TGPuttyLib context is freed
@@ -492,13 +492,10 @@ char *do_select(SOCKET skt, bool enable)
        ResetEvent(netevent); // TG prefers this being done too
     }
     if (p_WSAEventSelect) {
-        if (enable)
-        {
+        if (enable) {
             events = (FD_CONNECT | FD_READ | FD_WRITE |
                       FD_OOB | FD_CLOSE | FD_ACCEPT);
-        }
-        else
-        {
+        } else {
             events = 0;
         }
         if (p_WSAEventSelect(skt, netevent, events) == SOCKET_ERROR) {
@@ -516,33 +513,35 @@ char *do_select(SOCKET skt, bool enable)
 int do_eventsel_loop(HANDLE other_event)
 {
     int n, nhandles, nallhandles, netindex, otherindex;
+// TG
     long ticks;
     HANDLE *handles;
     SOCKET *sklist;
     int skcount;
+// TG
 
     if (toplevel_callback_pending())
     {
-        ticks = 0;
+        ticks = 0; // TG
     }
     else
     {
-      unsigned long next, then;
-      unsigned long now = GETTICKCOUNT();
+      unsigned long next, then; // TG
+      unsigned long now = GETTICKCOUNT(); // TG
       if (run_timers(now, &next))
       {
         then = now;
         now = GETTICKCOUNT();
-        if (now>next)
+        if (now>next) // TG
            ticks = 0;
         else
         {
-           ticks = next - now;
+           ticks = next - now; // TG
            if (ticks>1000)
               ticks = 1000; // TG 2019: never hang for more than one second
         }
       }
-      else
+      else // TG
       {
         // TG 2019: never hang for more than a second, need to be able to cancel job etc.
         // we also observed rare infinite hangs here after an Internet disconnection
@@ -563,7 +562,7 @@ int do_eventsel_loop(HANDLE other_event)
     else
         otherindex = -1;
 
-    // printf("Calling WaitForMultipleObjects with ticks: %ld\n",ticks);
+    // printf("Calling WaitForMultipleObjects with ticks: %ld\n",ticks); // TG - for debugging
     n = WaitForMultipleObjects(nallhandles, handles, false, ticks);
 
     if ((unsigned)(n - WAIT_OBJECT_0) < (unsigned)nhandles) {
@@ -612,7 +611,7 @@ int do_eventsel_loop(HANDLE other_event)
                 };
                 int e;
 
-                noise_ultralight(NOISE_SOURCE_IOID, (unsigned long) socket);
+                noise_ultralight(NOISE_SOURCE_IOID, (unsigned long) socket); // TG
 
                 for (e = 0; e < lenof(eventtypes); e++)
                     if (things.lNetworkEvents & eventtypes[e].mask) {
@@ -631,6 +630,13 @@ int do_eventsel_loop(HANDLE other_event)
 
     run_toplevel_callbacks();
 
+/* TG
+    if (n == WAIT_TIMEOUT) {
+        now = next;
+    } else {
+        now = GETTICKCOUNT();
+    }
+*/
     if (otherindex >= 0 && n == WAIT_OBJECT_0 + otherindex)
         return 1;
 
@@ -750,11 +756,11 @@ char *ssh_sftp_get_cmdline(const char *prompt, bool no_fds_ok)
     if (!hThread) {
         CloseHandle(ctx->event);
         fprintf(stderr, "Unable to create command input thread\n");
-        cleanup_exit(1,true);
+        cleanup_exit(1,true); // TG
     }
 
     do {
-        // printf("ssh_sftp_get_cmdline calling do_eventsel_loop\n");
+        // printf("ssh_sftp_get_cmdline calling do_eventsel_loop\n"); // TG
         ret = do_eventsel_loop(ctx->event);
 
         /* do_eventsel_loop can't return an error (unlike

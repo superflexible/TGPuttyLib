@@ -62,7 +62,7 @@ struct node234_Tag {
 /*
  * Create a 2-3-4 tree.
  */
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
 tree234 *realnewtree234(cmpfn234 cmp,const char *filename,const int line)
 {
   tree234 *ret = safemalloc(sizeof(tree234),1,0,filename,line);
@@ -1078,7 +1078,7 @@ int n_errors = 0;
 /*
  * Error reporting function.
  */
-void error(char *fmt, ...)
+PRINTF_LIKE(1, 2) void error(char *fmt, ...)
 {
     va_list ap;
     printf("ERROR: ");

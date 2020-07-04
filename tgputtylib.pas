@@ -95,6 +95,7 @@ const
    cPuttyConf_compression='compression'; // Boolean default FALSE
    cPuttyConf_ssh_kexlist='ssh_kexlist'; // Integer [Integer]
    cPuttyConf_ssh_hklist='ssh_hklist'; // Integer [Integer]
+   cPuttyConf_ssh_prefer_known_hostkeys='ssh_prefer_known_hostkeys'; // Boolean default TRUE - added in PuTTY v0.74
    cPuttyConf_ssh_rekey_time='ssh_rekey_time'; // Integer default 60
    cPuttyConf_ssh_rekey_data='ssh_rekey_data'; // AnsiString default '1G'
    cPuttyConf_tryagent='tryagent'; // Boolean default TRUE

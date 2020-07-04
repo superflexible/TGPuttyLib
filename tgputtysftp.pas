@@ -20,7 +20,7 @@ uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
 const MinimumLibraryBuildNum=8;
       cDummyClearedErrorCode=-1000; // this error code means there was no real error code
 
-      cConfCount=83;
+      cConfCount=84; // 84 since PuTTY version 0.74, previously 83
       cDumpSettingsFile=false;
 
 type TGPuttySFTPException=class(Exception);
