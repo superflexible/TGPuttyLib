@@ -16,10 +16,10 @@
 #include "sftp.h"
 #include "version.h" // TG
 
-__declspec(thread) TTGLibraryContext *curlibctx; // TG
+THREADVAR TTGLibraryContext *curlibctx; // TG
+THREADVAR int ThreadContextCounter=0; // TG
 
 static int ContextCounter=0; // TG
-__declspec(thread) int ThreadContextCounter=0; // TG
 
 char *appname = NORMALCODE("PSFTP") TGDLLCODE("tgputtylib"); // TG
 
@@ -55,6 +55,7 @@ Conf *conf;
 bool sent_eof = false;
 #endif
 
+#ifdef _WINDOWS
 // TG: emulate 64 bit tick counter
 uint64_t CurrentIncrement=0;
 uint64_t LastTickCount=0;
@@ -75,7 +76,15 @@ uint64_t TGGetTickCount64() // TG
    LastTickCount=result;
    return result;
 }
-
+#else
+// TG: TGGetTickCount64 on Linux
+uint64_t TGGetTickCount64()
+{
+	struct timespec ts;
+	clock_gettime( CLOCK_MONOTONIC, &ts );
+	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;;
+}
+#endif
 
 /* ------------------------------------------------------------
  * Seat vtable.
@@ -607,7 +616,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
     if (endtick-starttick==0) // TG
        endtick=starttick+1; // prevent divide by zero ;=)
 
-	printf("Downloaded %I64u Bytes in %I64u milliseconds, rate = %I64u MB/sec.\n", // TG
+	printf("Downloaded %" PRIu64 " Bytes in %" PRIu64 " milliseconds, rate = %" PRIu64 " MB/sec.\n", // TG
 	       TotalBytes,
 		   (endtick-starttick),
 		   (TotalBytes/1024) / (endtick-starttick)
@@ -830,10 +839,10 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
      */
     xfer = xfer_upload_init(fh, offset);
 #ifdef DEBUG_UPLOAD
-    printf("calling xfer_upload_init with offset %I64u\n",offset); // TG
+    printf("calling xfer_upload_init with offset %" PRIu64 "\n",offset); // TG
 #endif
 	eof = false;
-	const sftpbufsize=16384*4; // TG: much more is not possible, 1MB will definitely fail!
+	const int sftpbufsize=16384*4; // TG: much more is not possible, 1MB will definitely fail!
 	char *buffer=malloc(sftpbufsize); // TG
 	uint64_t starttick=TGGetTickCount64(); // TG
 	uint64_t TotalBytes=0; // TG
@@ -922,7 +931,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
 
     if (endtick-starttick==0) // TG
        endtick=starttick+1; // prevent divide by zero ;=)
-	printf("Uploaded %I64u Bytes in %I64u milliseconds, rate = %I64u MB/sec.\n", // TG
+	printf("Uploaded %" PRIu64 " Bytes in %" PRIu64 " milliseconds, rate = %" PRIu64 " MB/sec.\n", // TG
 	       TotalBytes,
 		   (endtick-starttick),
 		   (TotalBytes/1024) / (endtick-starttick)
@@ -2759,8 +2768,10 @@ static bufchain received_data;
 // TG 2019: cannot put this in the libctx because freeing would
 // cause crashes due to the totally C hacking implementation of sinks
 // but making it threadsafe should be good enough
-TGDLLCODE(__declspec(thread)) static BinarySink *stderr_bs;
-TGDLLCODE(__declspec(thread) static bool thread_vars_initialized;)
+
+static TGDLLCODE(THREADVAR) BinarySink *stderr_bs;
+TGDLLCODE(static THREADVAR bool thread_vars_initialized;)
+
 TGDLLCODE(static void init_thread_vars();)
 
 static size_t psftp_output(
@@ -2868,6 +2879,7 @@ size_t sftp_sendbuffer(void)
 /*
  *  Short description of parameters.
  */
+#ifdef WITHCMDLINEXXXX
 static void usage(void)
 {
     printf("PuTTY Secure File Transfer (SFTP) client\n");
@@ -2910,7 +2922,7 @@ static void version(void)
   sfree(buildinfo_text);
   exit(0);
 }
-
+#endif
 /*
  * Connect to a host.
  */
@@ -3076,7 +3088,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
                  "exec sftp-server");
     conf_set_bool(conf, CONF_ssh_subsys2, false);
 
-    if (psftp_logctx=NULL) // TG - might connect again after disconnecting
+    if (psftp_logctx==NULL) // TG - might connect again after disconnecting
     {
        psftp_logctx = log_init(default_logpolicy, conf);
 #ifdef DEBUG_MALLOC
@@ -3165,8 +3177,8 @@ const bool share_can_be_upstream = false;
 // TG 2019: cannot put these in the libctx because freeing would
 // cause crashes due to the totally C hacking implementations of sinks and StripCtrlChars
 // but making them threadsafe should be good enough
-TGDLLCODE(__declspec(thread)) static StripCtrlChars *stderr_scc;
-TGDLLCODE(__declspec(thread)) static stdio_sink stderr_ss;
+static TGDLLCODE(THREADVAR) StripCtrlChars *stderr_scc;
+static TGDLLCODE(THREADVAR) stdio_sink stderr_ss;
 
 static void init_thread_vars() // TG
 {
@@ -3176,27 +3188,54 @@ static void init_thread_vars() // TG
       stdio_sink_init(&stderr_ss, stderr);
       stderr_bs = BinarySink_UPCAST(&stderr_ss);
 
+      #ifndef _WINDOWS
+      uxsel_init();
+      #endif
+
       thread_vars_initialized=true;
    }
    //else
    //   printf("init_thread_vars() redundant call, Thread ID: %ud\n",GetCurrentThreadId());
+
+   #ifndef _WINDOWS
+   if (!curlibctx->fds) // just to double-check
+      uxsel_init();
+   #endif
 }
 
 static void free_thread_vars() // TG
 {
    if (thread_vars_initialized)
    {
-   	  //printf("calling stripctrl_free(stderr_scc)\n");
+	  //printf("calling stripctrl_free(stderr_scc)\n");
 	  stripctrl_free(stderr_scc);
-      thread_vars_initialized=false;
+	  thread_vars_initialized=false;
+
+	  #ifndef _WINDOWS
+	  uxsel_free();
+	  #endif
    }
 }
 
+#if defined(_MSC_VER)
+	//  Microsoft
+	#define EXPORT __declspec(dllexport)
+	#define IMPORT __declspec(dllimport)
+#elif defined(__GNUC__)
+	//  GCC
+	#define EXPORT __attribute__((visibility("default")))
+	#define IMPORT
+#else
+	//  do nothing and hope for the best?
+	#define EXPORT
+	#define IMPORT
+	#pragma warning Unknown dynamic link import/export semantics.
+#endif
 /*
  * Main program. Parse arguments etc.
  */
 #ifdef WITHCMDLINEXXXX
-TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 2019
+TGDLLCODE(EXPORT) int psftp_main(int argc, char *argv[]) // TG 2019
 {
     int i, ret;
     int portnumber = 0;
@@ -3214,7 +3253,7 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
     cmdline_tooltype = TOOLTYPE_FILETRANSFER;
     sk_init();
 
-    userhost = user = NULL;
+	userhost = user = NULL;
 
     /* Load Default Settings before doing anything else. */
     conf = conf_new();
@@ -3244,7 +3283,7 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
                    strcmp(argv[i], "--help") == 0) {
             usage();
         } else if (strcmp(argv[i], "-pgpfp") == 0) {
-            pgp_fingerprints();
+			pgp_fingerprints();
             return 1;
         } else if (strcmp(argv[i], "-V") == 0 ||
                    strcmp(argv[i], "--version") == 0) {
@@ -3274,7 +3313,7 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
     backend = NULL;
 
     stdio_sink_init(&stderr_ss, stderr);
-    stderr_bs = BinarySink_UPCAST(&stderr_ss);
+	stderr_bs = BinarySink_UPCAST(&stderr_ss);
     if (sanitise_stderr) {
         stderr_scc = stripctrl_new(stderr_bs, false, L'\0');
         stderr_bs = BinarySink_UPCAST(stderr_scc);
@@ -3304,7 +3343,7 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
         if (do_sftp_init())
             return 1;
     } else {
-        printf("psftp: no hostname specified\n"); // TG
+		printf("psftp: no hostname specified\n"); // TG
     }
 
     ret = do_sftp(mode, modeflags, batchfile);
@@ -3334,13 +3373,26 @@ TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]) // TG 20
 #endif
 
 // TG: functions for external programs
-__declspec(dllexport) int tggetlibrarycontextsize() // TG 2019
+EXPORT int tggetlibrarycontextsize() // TG 2019
 {
   TTGLibraryContext x;
   return sizeof x;
 }
 
-__declspec(dllexport) int tgputty_initcontext(const bool averbose,TTGLibraryContext *libctx)
+EXPORT void tggetstructsizes(int *Pulongsize,int *Pnamesize,int *Pattrsize,int *Pnamessize) // TG 2019
+{
+    struct fxp_attrs attrs;
+    struct fxp_names names;
+    struct fxp_name name;
+    unsigned long usl=0;
+
+    *Pulongsize = sizeof usl;
+    *Pnamesize =  sizeof name;
+    *Pattrsize =  sizeof attrs;
+    *Pnamessize = sizeof names;
+}
+
+EXPORT int tgputty_initcontext(const bool averbose,TTGLibraryContext *libctx)
 {
     curlibctx=libctx;
     ContextCounter++;
@@ -3363,8 +3415,10 @@ __declspec(dllexport) int tgputty_initcontext(const bool averbose,TTGLibraryCont
 	libctx->mode = 0;
 	libctx->modeflags = 0;
 	libctx->batchfile = NULL;
-    libctx->sftp_ssh_socket = INVALID_SOCKET;
-    libctx->netevent = INVALID_HANDLE_VALUE;
+#ifdef _WINDOWS
+	libctx->sftp_ssh_socket = INVALID_SOCKET;
+	libctx->netevent = INVALID_HANDLE_VALUE;
+#endif
 
 	flags = (verbose ? FLAG_VERBOSE : 0)
 #ifdef FLAG_SYNCAGENT
@@ -3386,13 +3440,14 @@ __declspec(dllexport) int tgputty_initcontext(const bool averbose,TTGLibraryCont
 
     libctx->ic_pktin_free.fn = pktin_free_queue_callback;
 
-	backend = NULL;
+    backend = NULL;
+
     return 0;
 }
 
 
 #ifdef WITHCMDLINEXXXX
-__declspec(dllexport) int tgputty_initwithcmdline(int argc, char *argv[], TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgputty_initwithcmdline(int argc, char *argv[], TTGLibraryContext *libctx) // TG 2019
 {
     int res=tgputty_initcontext(false,libctx);
     if (res!=0)
@@ -3492,13 +3547,13 @@ __declspec(dllexport) int tgputty_initwithcmdline(int argc, char *argv[], TTGLib
 }
 #endif
 
-__declspec(dllexport) int tgputtyrunpsftp(TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgputtyrunpsftp(TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   return do_sftp(libctx->mode, libctx->modeflags, libctx->batchfile);
 }
 
-__declspec(dllexport) void tgputtysetappname(const char *newappname,const char *appversion) // TG 2019
+EXPORT void tgputtysetappname(const char *newappname,const char *appversion) // TG 2019
 {
   appname = dupstr(newappname);
   ver = dupstr(appversion);
@@ -3511,7 +3566,7 @@ __declspec(dllexport) void tgputtysetappname(const char *newappname,const char *
        sshver[i]='-';
 }
 
-__declspec(dllexport) int tgputtysftpcommand(const char *line, TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgputtysftpcommand(const char *line, TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   // make a copy of the command line string
@@ -3533,10 +3588,16 @@ __declspec(dllexport) int tgputtysftpcommand(const char *line, TTGLibraryContext
   return ret;
 }
 
-__declspec(dllexport) int tgsftp_connect(const char *ahost,const char *auser,const int aport,const char *apassword,
+EXPORT int tgsftp_connect(const char *ahost,const char *auser,const int aport,const char *apassword,
 										 TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
+
+  #ifndef _WINDOWS
+  if (!thread_vars_initialized || !curlibctx->fds)
+     init_thread_vars(); // TG ... because Unix doesn't have a DLL_THREAD_ATTACH feature
+  #endif
+
   printf("Connecting with %s, port %d, as user %s.\n",ahost,aport,auser);
 
   libctx->caller_supplied_password = dupstr(apassword);
@@ -3578,7 +3639,7 @@ __declspec(dllexport) int tgsftp_connect(const char *ahost,const char *auser,con
 }
 
 
-__declspec(dllexport) int tgsftp_cd(const char *adir,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_cd(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
@@ -3597,7 +3658,7 @@ __declspec(dllexport) int tgsftp_cd(const char *adir,TTGLibraryContext *libctx) 
   return result;
 }
 
-__declspec(dllexport) int tgsftp_rm(const char *afile,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_rm(const char *afile,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   char *therealname = canonify(afile);
@@ -3606,7 +3667,7 @@ __declspec(dllexport) int tgsftp_rm(const char *afile,TTGLibraryContext *libctx)
   return result;
 }
 
-__declspec(dllexport) int tgsftp_rmdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_rmdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   char *therealname = canonify(adir);
@@ -3615,7 +3676,7 @@ __declspec(dllexport) int tgsftp_rmdir(const char *adir,TTGLibraryContext *libct
   return result;
 }
 
-__declspec(dllexport) int tgsftp_ls(const char *adir,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_ls(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
@@ -3636,7 +3697,7 @@ __declspec(dllexport) int tgsftp_ls(const char *adir,TTGLibraryContext *libctx) 
   return result;
 }
 
-__declspec(dllexport) int tgsftp_mkdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_mkdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
@@ -3654,7 +3715,7 @@ __declspec(dllexport) int tgsftp_mkdir(const char *adir,TTGLibraryContext *libct
 }
 
 
-__declspec(dllexport) int tgsftp_mv(const char *afrom,const char *ato,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_mv(const char *afrom,const char *ato,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
@@ -3672,7 +3733,7 @@ __declspec(dllexport) int tgsftp_mv(const char *afrom,const char *ato,TTGLibrary
   return result;
 }
 
-__declspec(dllexport) int tgsftp_mvex(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_mvex(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
@@ -3690,7 +3751,7 @@ __declspec(dllexport) int tgsftp_mvex(const char *afrom,const char *ato,const in
   return result;
 }
 
-__declspec(dllexport) int tgsftp_getstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_getstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   char *fname = canonify(afrom);
@@ -3701,7 +3762,7 @@ __declspec(dllexport) int tgsftp_getstat(const char *afrom,struct fxp_attrs *att
   return res;
 }
 
-__declspec(dllexport) int tgsftp_setstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_setstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   char *fname = canonify(afrom);
@@ -3712,7 +3773,7 @@ __declspec(dllexport) int tgsftp_setstat(const char *afrom,struct fxp_attrs *att
   return res;
 }
 
-__declspec(dllexport) int tgsftp_putfile(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_putfile(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   char *fromfile=dupstr(afromfile);
@@ -3726,7 +3787,7 @@ __declspec(dllexport) int tgsftp_putfile(const char *afromfile,const char *atofi
   return result;
 }
 
-__declspec(dllexport) int tgsftp_getfile(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx) // TG 2019
+EXPORT int tgsftp_getfile(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   char *tofile=dupstr(atofile);
@@ -3740,19 +3801,19 @@ __declspec(dllexport) int tgsftp_getfile(const char *afromfile,const char *atofi
   return result;
 }
 
-__declspec(dllexport) void tgsftp_close(TTGLibraryContext *libctx) // TG 2019
+EXPORT void tgsftp_close(TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   sftp_cmd_close(NULL);
 }
 
-__declspec(dllexport) void tgputty_setverbose(const bool averbose) // TG 2019
+EXPORT void tgputty_setverbose(const bool averbose) // TG 2019
 {
   verbose = averbose;
   flags = (verbose ? FLAG_VERBOSE : 0);
 }
 
-__declspec(dllexport) void tgputty_setkeyfile(const char *apathname,TTGLibraryContext *libctx) // TG 2019
+EXPORT void tgputty_setkeyfile(const char *apathname,TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   Filename *fn = filename_from_str(apathname);
@@ -3760,7 +3821,7 @@ __declspec(dllexport) void tgputty_setkeyfile(const char *apathname,TTGLibraryCo
   filename_free(fn);
 }
 
-__declspec(dllexport) struct fxp_handle *tgputty_openfile(const char *apathname,
+EXPORT struct fxp_handle *tgputty_openfile(const char *apathname,
                                                           const int anopenflags,
                                                           const struct fxp_attrs *attrs,
                                                           TTGLibraryContext *libctx) // TG 2019
@@ -3774,7 +3835,7 @@ __declspec(dllexport) struct fxp_handle *tgputty_openfile(const char *apathname,
    return fxp_open_recv(pktin, req);
 }
 
-__declspec(dllexport) int tgputty_closefile(struct fxp_handle **fh,TTGLibraryContext *libctx)
+EXPORT int tgputty_closefile(struct fxp_handle **fh,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    assert(fh != NULL);
@@ -3788,25 +3849,25 @@ __declspec(dllexport) int tgputty_closefile(struct fxp_handle **fh,TTGLibraryCon
    return fxp_close_recv(pktin, req);
 }
 
-__declspec(dllexport) void *tgputty_xfer_upload_init(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx)
+EXPORT void *tgputty_xfer_upload_init(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx)
 {
   curlibctx=libctx;
 #ifdef DEBUG_UPLOAD
-  printf("calling xfer_upload_init with offset %I64u\n",offset);
+  printf("calling xfer_upload_init with offset %" PRIu64 "\n",offset);
 #endif
   return xfer_upload_init(fh,offset);
 }
 
-__declspec(dllexport) bool tgputty_xfer_upload_ready(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
+EXPORT bool tgputty_xfer_upload_ready(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
   curlibctx=libctx;
   return xfer_upload_ready(xfer);
 }
 
-__declspec(dllexport) void tgputty_xfer_upload_data(struct fxp_xfer *xfer, char *buffer, int len, uint64_t anoffset,TTGLibraryContext *libctx)
+EXPORT void tgputty_xfer_upload_data(struct fxp_xfer *xfer, char *buffer, int len, uint64_t anoffset,TTGLibraryContext *libctx)
 {
   curlibctx=libctx;
-  //printf("calling xfer_set_offset, anoffset is %I64u\n",anoffset);
+  //printf("calling xfer_set_offset, anoffset is %" PRIu64 "\n",anoffset);
   xfer_set_offset(xfer,anoffset);
 #ifdef DEBUG_UPLOAD
   printf("calling xfer_upload_data, len is %d\n",len);
@@ -3814,7 +3875,7 @@ __declspec(dllexport) void tgputty_xfer_upload_data(struct fxp_xfer *xfer, char 
   xfer_upload_data(xfer,buffer,len);
 }
 
-__declspec(dllexport) bool tgputty_xfer_ensuredone(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
+EXPORT bool tgputty_xfer_ensuredone(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
   curlibctx=libctx;
   bool err=false;
@@ -3855,13 +3916,13 @@ __declspec(dllexport) bool tgputty_xfer_ensuredone(struct fxp_xfer *xfer,TTGLibr
   return !err;
 }
 
-__declspec(dllexport) bool tgputty_xfer_done(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
+EXPORT bool tgputty_xfer_done(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
   curlibctx=libctx;
   return xfer_done(xfer);
 }
 
-__declspec(dllexport) void tgputty_xfer_cleanup(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
+EXPORT void tgputty_xfer_cleanup(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
   curlibctx=libctx;
 #ifdef DEBUG_UPLOAD
@@ -3870,14 +3931,14 @@ __declspec(dllexport) void tgputty_xfer_cleanup(struct fxp_xfer *xfer,TTGLibrary
   xfer_cleanup(xfer);
 }
 
-__declspec(dllexport) void tgputtygetversions(double *puttyrelease,int *tgputtylibbuild) // TG 2019
+EXPORT void tgputtygetversions(double *puttyrelease,int *tgputtylibbuild) // TG 2019
 {
   *puttyrelease = RELEASE;
   *tgputtylibbuild = TGDLLBUILDNUM;
 }
 
 
-__declspec(dllexport) void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
+EXPORT void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
   if (backend && backend_connected(backend))
@@ -3909,8 +3970,10 @@ __declspec(dllexport) void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
      psftp_logctx = NULL;
   }
 
+#ifdef _WINDOWS
   if ((libctx->netevent!=0) && (libctx->netevent!=INVALID_HANDLE_VALUE))
-     CloseHandle(libctx->netevent);
+	 CloseHandle(libctx->netevent);
+#endif
 
   conf_free(conf);
   if (libctx->timers)
@@ -3924,13 +3987,15 @@ __declspec(dllexport) void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
      libctx->timer_contexts = NULL;
   }
 
+  free_thread_vars();
+
   ContextCounter--;
   ThreadContextCounter--;
   curlibctx=NULL;
   return;
 }
 
-__declspec(dllexport) bool tgputty_getconfigarrays(const void **types,const void **subtypes,const void **names,int *count)
+EXPORT bool tgputty_getconfigarrays(const void **types,const void **subtypes,const void **names,int *count)
 {
   (*types) = valuetypes;
   (*subtypes) = subkeytypes;
@@ -3939,61 +4004,61 @@ __declspec(dllexport) bool tgputty_getconfigarrays(const void **types,const void
   return true;
 }
 
-__declspec(dllexport) bool tgputty_conf_get_bool(int key,TTGLibraryContext *libctx)
+EXPORT bool tgputty_conf_get_bool(int key,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    return conf_get_bool(conf,key);
 }
 
-__declspec(dllexport) int tgputty_conf_get_int(int key,TTGLibraryContext *libctx)
+EXPORT int tgputty_conf_get_int(int key,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    return conf_get_int(conf,key);
 }
 
-__declspec(dllexport) int tgputty_conf_get_int_int(int key, int subkey,TTGLibraryContext *libctx)
+EXPORT int tgputty_conf_get_int_int(int key, int subkey,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    return conf_get_int_int(conf,key,subkey);
 }
 
-__declspec(dllexport) char *tgputty_conf_get_str(int key,TTGLibraryContext *libctx)   /* result still owned by conf */
+EXPORT char *tgputty_conf_get_str(int key,TTGLibraryContext *libctx)   /* result still owned by conf */
 {
    curlibctx=libctx;
    return conf_get_str(conf,key);
 }
 
-__declspec(dllexport) char *tgputty_conf_get_str_str(int key, const char *subkey,TTGLibraryContext *libctx)
+EXPORT char *tgputty_conf_get_str_str(int key, const char *subkey,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    return conf_get_str_str(conf,key,subkey);
 }
 
-__declspec(dllexport) void tgputty_conf_set_bool(int key, bool value,TTGLibraryContext *libctx)
+EXPORT void tgputty_conf_set_bool(int key, bool value,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    conf_set_bool(conf,key,value);
 }
 
-__declspec(dllexport) void tgputty_conf_set_int(int key, int value,TTGLibraryContext *libctx)
+EXPORT void tgputty_conf_set_int(int key, int value,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    conf_set_int(conf,key,value);
 }
 
-__declspec(dllexport) void tgputty_conf_set_int_int(int key, int subkey, int value,TTGLibraryContext *libctx)
+EXPORT void tgputty_conf_set_int_int(int key, int subkey, int value,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    conf_set_int_int(conf,key,subkey,value);
 }
 
-__declspec(dllexport) void tgputty_conf_set_str(int key, const char *value,TTGLibraryContext *libctx)
+EXPORT void tgputty_conf_set_str(int key, const char *value,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    conf_set_str(conf,key,value);
 }
 
-__declspec(dllexport) void tgputty_conf_set_str_str(int key,const char *subkey, const char *value,TTGLibraryContext *libctx)
+EXPORT void tgputty_conf_set_str_str(int key,const char *subkey, const char *value,TTGLibraryContext *libctx)
 {
    curlibctx=libctx;
    conf_set_str_str(conf,key,subkey,value);
@@ -4046,8 +4111,8 @@ static int tg_get_userpass_input(Seat *seat, prompts_t *p, bufchain *input)
 #undef fwrite
 
 #define printbufsize 300
-__declspec(thread) char printbuf[printbufsize];
-__declspec(thread) size_t printbufpos;
+THREADVAR char printbuf[printbufsize];
+THREADVAR size_t printbufpos;
 
 char *printnow(const char *msg,bool *needfree)
 {
@@ -4177,7 +4242,7 @@ void tgdll_assert(const char *msg,const char *filename,const int line)
      curlibctx->raise_exception_callback(msg,filename,line,curlibctx);
   else
   {
-     printf(msg);
+     printf("%s",msg);
      exit(999);
   }
 }
@@ -4248,8 +4313,9 @@ void *tgdlldebugrealloc(void *ptr, size_t new_size,const char *filename,const in
 
 #endif
 
+#ifdef _WINDOWS
 BOOL WINAPI DllMain( HMODULE hModule,
-                     DWORD  fdwReason,
+					 DWORD  fdwReason,
                      LPVOID lpReserved)
 {
     //printf("DllMain start, Reason: %ud.\n",fdwReason);
@@ -4277,11 +4343,12 @@ BOOL WINAPI DllMain( HMODULE hModule,
     case DLL_PROCESS_DETACH:
   	  //printf("PROCESS_DETACH\n");
       curlibctx=NULL; // surely no longer valid!
-      free_thread_vars();
+	  free_thread_vars();
       sk_cleanup(true);
-      break;
-    }
-    return TRUE;
+	  break;
+	}
+	return TRUE;
    //printf("DllMain END.\n");
 }
+#endif
 

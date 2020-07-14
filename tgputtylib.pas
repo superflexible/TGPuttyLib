@@ -8,7 +8,7 @@ unit tgputtylib;
 
 interface
 
-// Uses tgputtylib.dll, especially for SFTP functionality
+// Uses tgputtylib.dll or libtgputty.so, especially for SFTP functionality
 
 // Pascal Units Written and Copyright 2019 by Tobias Giesen
 
@@ -22,7 +22,16 @@ interface
 // nmake -f Makefile64.vc tgputtylib.dll   (64 bit)
 // (using the Developer Command Prompt in the "windows" subfolder)
 
-uses Classes, SysUtils, SyncObjs;
+// LINUX:
+// in "unix" subfolder of tgputtylib, do:
+// make -f Makefile.ux libtgputty.so
+
+
+uses Classes, SysUtils,
+     {$ifndef MSWINDOWS}
+     BaseUnix,
+     {$endif}
+     SyncObjs;
 
 {.$define USEMEMORYCALLBACKS}
 
@@ -34,7 +43,12 @@ uses Classes, SysUtils, SyncObjs;
 {$endif}
 {$endif}
 
-const tgputtydll='tgputtylib.dll';
+const
+{$ifdef MSWINDOWS}
+      tgputtydll='tgputtylib.dll';
+{$else}
+      tgputtydll='libtgputty.so';
+{$endif}
 
       cDefaultTimeoutTicks=60000;
 
@@ -163,12 +177,28 @@ type
 const
    txtProxyTypes:array[TProxyTypes] of string=('NONE','SOCKS4','SOCKS5','HTTP','TELNET','CMD','FUZZ');
 
-type fxp_attrs=record
-       flags:Cardinal;
+{$ifndef MSWINDOWS}
+{$ifdef CPU32}
+{$A4}
+{$endif}
+{$endif}
+
+type TUnsignedLong={$ifdef MSWINDOWS}
+                   Cardinal;
+                   {$else}
+                   {$ifdef CPU64}
+                   UInt64;
+                   {$else}
+                   Cardinal;
+                   {$endif}
+                   {$endif}
+
+     fxp_attrs=record
+       flags:TUnsignedLong;
        size: UInt64;
        uid,gid,
        permissions,
-       atime,mtime:Cardinal;
+       atime,mtime:TUnsignedLong;
        end;
      Pfxp_attrs=^fxp_attrs;
 
@@ -249,8 +279,10 @@ function psftp_main(argcparam: Longint; argvparam: ppchar):Integer; cdecl; exter
 function tgputty_initwithcmdline(argcparam: Longint; argvparam: ppchar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 {$endif}
 
+{$ifdef MSWINDOWS}
 // basic functions
 function tggetlibrarycontextsize:Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tggetstructsizes(const Pulongsize,Pnamesize,Pattrsize,Pnamessize:PInteger); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgputty_initcontext(const verbose:Boolean;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtysetappname(const newappname,appversion:PAnsiChar); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputty_setverbose(const averbose:Boolean); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
@@ -315,8 +347,190 @@ procedure tgputty_conf_set_int(key:Integer; Value: Integer; const libctx:PTGLibr
 procedure tgputty_conf_set_int_int(key,subkey:Integer; Value: Integer; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputty_conf_set_str(key:Integer; Value: PAnsiChar; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputty_conf_set_str_str(key:Integer;const subkey,Value:PAnsiChar; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+{$else}
+var
+  // basic functions
+  tggetlibrarycontextsize: function:Integer; cdecl;
+  tggetstructsizes:procedure (const Pulongsize,Pnamesize,Pattrsize,Pnamessize:PInteger); cdecl;
+  tgputty_initcontext: function (const verbose:Boolean;const libctx:PTGLibraryContext):Integer; cdecl;
+  tgputtysetappname: procedure (const newappname,appversion:PAnsiChar); cdecl;
+  tgputty_setverbose: procedure (const averbose:Boolean); cdecl;
+  tgputtyfree: procedure (const libctx:PTGLibraryContext); cdecl;
+  tgputtygetversions: procedure (puttyrelease:PDouble; tgputtylibbuild:PInteger); cdecl; // TG 2019
+  tgputty_getconfigarrays: function (types,subtypes,names:Pointer;count:PInteger):Boolean; cdecl;
+
+  // run the whole psftp interactive commmand prompt
+  // after calling tgputtyinit
+  tgputtyrunpsftp: function (const libctx:PTGLibraryContext):Integer; cdecl;
+
+  // run psftp command lines
+  tgputtysftpcommand: function (const line:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
+
+  // individual SFTP commands
+  tgputty_setkeyfile: procedure(const aPathname:PAnsiChar;const libctx:PTGLibraryContext); cdecl;
+  tgsftp_connect: function (const aHost,aUser:PAnsiChar;
+                        const aPort:Integer;
+                        const aPassword:PAnsiChar;const libctx:PTGLibraryContext):Integer; cdecl;
+  tgsftp_close: procedure (const libctx:PTGLibraryContext); cdecl;
+
+  tgsftp_cd: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
+  tgsftp_ls: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
+
+  tgsftp_rm: function (const afile:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
+  tgsftp_rmdir: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
+  tgsftp_mkdir: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
+  tgsftp_mv: function (const afrom,ato:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
+  tgsftp_mvex: function (const afrom,ato:PAnsiChar; const moveflags:Integer; const libctx:PTGLibraryContext):Integer; cdecl;
+
+  tgsftp_putfile: function (const afromfile,atofile:PAnsiChar; const anAppend:Boolean; const libctx:PTGLibraryContext):Integer; cdecl;
+  tgsftp_getfile: function (const afromfile,atofile:PAnsiChar; const anAppend:Boolean; const libctx:PTGLibraryContext):Integer; cdecl;
+
+  tgsftp_getstat: function (const afile:PAnsiChar; attrs:Pfxp_attrs; const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgsftp_setstat: function (const afile:PAnsiChar; attrs:Pfxp_attrs; const libctx:PTGLibraryContext):Boolean; cdecl;
+
+  tgputty_openfile: function (const apathname:PAnsiChar;
+                          const anopenflags:Integer;
+                          const attrs:Pfxp_attrs;
+                          const libctx:PTGLibraryContext):TSFTPFileHandle; cdecl;
+  tgputty_closefile: function (const fh:PSFTPFileHandle;
+                           const libctx:PTGLibraryContext):Integer; cdecl;
+
+  tgputty_xfer_upload_init: function (const fh:TSFTPFileHandle;const offset:UInt64; const libctx:PTGLibraryContext):TSFTPTransfer; cdecl;
+  tgputty_xfer_upload_ready: function (const xfer:TSFTPTransfer; const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgputty_xfer_upload_data: procedure (const xfer:TSFTPTransfer;const buffer:Pointer;
+                                   const len:Integer;const anoffset:UInt64;
+                                   const libctx:PTGLibraryContext); cdecl;
+  tgputty_xfer_ensuredone: function (const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgputty_xfer_done: function (const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgputty_xfer_cleanup: procedure (const xfer:TSFTPTransfer;const libctx:PTGLibraryContext); cdecl;
+
+  tgputty_conf_get_bool: function (key:Integer; const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgputty_conf_get_int: function (key:Integer; const libctx:PTGLibraryContext):Integer; cdecl;
+  tgputty_conf_get_int_int: function (key,subkey:Integer; const libctx:PTGLibraryContext):Integer; cdecl;
+  // PAnsiChar result still owned by conf
+  tgputty_conf_get_str: function (key:Integer; const libctx:PTGLibraryContext):PAnsiChar; cdecl;
+  tgputty_conf_get_str_str: function (key:Integer;const subkey:PAnsiChar; const libctx:PTGLibraryContext):PAnsiChar; cdecl;
+
+  tgputty_conf_set_bool: procedure (key:Integer; Value: Boolean; const libctx:PTGLibraryContext); cdecl;
+  tgputty_conf_set_int: procedure (key:Integer; Value: Integer; const libctx:PTGLibraryContext); cdecl;
+  tgputty_conf_set_int_int: procedure (key,subkey:Integer; Value: Integer; const libctx:PTGLibraryContext); cdecl;
+  tgputty_conf_set_str: procedure (key:Integer; Value: PAnsiChar; const libctx:PTGLibraryContext); cdecl;
+  tgputty_conf_set_str_str: procedure (key:Integer;const subkey,Value:PAnsiChar; const libctx:PTGLibraryContext); cdecl;
+{$endif}
+
+function TGPuttyLibAvailable:Boolean;
+
+var TGPuttyLibLoadError:string;
 
 implementation
+
+{$ifndef MSWINDOWS}
+uses dynlibs,dl;
+
+var TGPLH:TLibHandle;
+{$endif}
+
+function TGPuttyLibAvailable:Boolean;
+var libpath:string;
+    ulongsize,namesize,attrsize,namessize:Integer;
+begin
+  {$ifdef MSWINDOWS}
+  Result:=true;
+  {$else}
+  if TGPLH>0 then begin
+     Result:=Assigned(tgputty_initcontext);
+     Exit;
+     end;
+  libpath:=ExtractFilePath(ParamStr(0))+tgputtydll;
+  TGPLH:=TLibHandle(dlopen(PAnsiChar(libpath), RTLD_LAZY ));
+  // TGPLH:=LoadLibrary(libpath);
+  Result:=TGPLH>0;
+  if Result then begin
+     TGPuttyLibLoadError:='';
+     @tggetlibrarycontextsize:=GetProcedureAddress(TGPLH,'tggetlibrarycontextsize');
+     @tggetstructsizes:=GetProcedureAddress(TGPLH,'tggetstructsizes');
+     @tgputty_initcontext:=GetProcedureAddress(TGPLH,'tgputty_initcontext');
+     @tgputtysetappname:=GetProcedureAddress(TGPLH,'tgputtysetappname');
+     @tgputty_setverbose:=GetProcedureAddress(TGPLH,'tgputty_setverbose');
+     @tgputtyfree:=GetProcedureAddress(TGPLH,'tgputtyfree');
+     @tgputtygetversions:=GetProcedureAddress(TGPLH,'tgputtygetversions');
+     @tgputty_getconfigarrays:=GetProcedureAddress(TGPLH,'tgputty_getconfigarrays');
+
+     // run the whole psftp interactive commmand prompt
+     // after calling tgputtyinit
+     @tgputtyrunpsftp:=GetProcedureAddress(TGPLH,'tgputtyrunpsftp');
+
+     // run psftp command lines
+     @tgputtysftpcommand:=GetProcedureAddress(TGPLH,'tgputtysftpcommand');
+
+     // individual SFTP commands
+     @tgputty_setkeyfile:=GetProcedureAddress(TGPLH,'tgputty_setkeyfile');
+     @tgsftp_connect:=GetProcedureAddress(TGPLH,'tgsftp_connect');
+     @tgsftp_close:=GetProcedureAddress(TGPLH,'tgsftp_close');
+     @tgsftp_cd:=GetProcedureAddress(TGPLH,'tgsftp_cd');
+     @tgsftp_ls:=GetProcedureAddress(TGPLH,'tgsftp_ls');
+
+     @tgsftp_rm:=GetProcedureAddress(TGPLH,'tgsftp_rm');
+     @tgsftp_rmdir:=GetProcedureAddress(TGPLH,'tgsftp_rmdir');
+     @tgsftp_mkdir:=GetProcedureAddress(TGPLH,'tgsftp_mkdir');
+     @tgsftp_mv:=GetProcedureAddress(TGPLH,'tgsftp_mv');
+     @tgsftp_mvex:=GetProcedureAddress(TGPLH,'tgsftp_mvex');
+
+     @tgsftp_putfile:=GetProcedureAddress(TGPLH,'tgsftp_putfile');
+     @tgsftp_getfile:=GetProcedureAddress(TGPLH,'tgsftp_getfile');
+
+     @tgsftp_getstat:=GetProcedureAddress(TGPLH,'tgsftp_getstat');
+     @tgsftp_setstat:=GetProcedureAddress(TGPLH,'tgsftp_setstat');
+
+     @tgputty_openfile:=GetProcedureAddress(TGPLH,'tgputty_openfile');
+     @tgputty_closefile:=GetProcedureAddress(TGPLH,'tgputty_closefile');
+
+     @tgputty_xfer_upload_init:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_init');
+     @tgputty_xfer_upload_ready:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_ready');
+     @tgputty_xfer_upload_data:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_data');
+     @tgputty_xfer_ensuredone:=GetProcedureAddress(TGPLH,'tgputty_xfer_ensuredone');
+     @tgputty_xfer_done:=GetProcedureAddress(TGPLH,'tgputty_xfer_done');
+     @tgputty_xfer_cleanup:=GetProcedureAddress(TGPLH,'tgputty_xfer_cleanup');
+
+     @tgputty_conf_get_bool:=GetProcedureAddress(TGPLH,'tgputty_conf_get_bool');
+     @tgputty_conf_get_int:=GetProcedureAddress(TGPLH,'tgputty_conf_get_int');
+     @tgputty_conf_get_int_int:=GetProcedureAddress(TGPLH,'tgputty_conf_get_int_int');
+     // PAnsiChar result still owned by conf
+     @tgputty_conf_get_str:=GetProcedureAddress(TGPLH,'tgputty_conf_get_str');
+     @tgputty_conf_get_str_str:=GetProcedureAddress(TGPLH,'tgputty_conf_get_str_str');
+
+     @tgputty_conf_set_bool:=GetProcedureAddress(TGPLH,'tgputty_conf_set_bool');
+     @tgputty_conf_set_int:=GetProcedureAddress(TGPLH,'tgputty_conf_set_int');
+     @tgputty_conf_set_int_int:=GetProcedureAddress(TGPLH,'tgputty_conf_set_int_int');
+     @tgputty_conf_set_str:=GetProcedureAddress(TGPLH,'tgputty_conf_set_str');
+     @tgputty_conf_set_str_str:=GetProcedureAddress(TGPLH,'tgputty_conf_set_str_str');
+
+     if Assigned(tggetstructsizes) then begin
+        tggetstructsizes(@ulongsize,@namesize,@attrsize,@namessize);
+        if (ulongsize<>sizeof(TUnsignedLong)) or
+           (namesize<>sizeof(fxp_name)) or
+           (attrsize<>sizeof(fxp_attrs)) or
+           (namessize<>sizeof(fxp_names)) then begin
+           raise Exception.Create('Invalid '+tgputtydll+
+                       ': uses different struct sizes: '+
+                       'ulongsize='+IntToStr(ulongsize)+'/'+IntToStr(sizeof(TUnsignedLong))+
+                       ',namesize='+IntToStr(namesize)+'/'+IntToStr(sizeof(fxp_name))+
+                       ',attrsize='+IntToStr(attrsize)+'/'+IntToStr(sizeof(fxp_attrs))+
+                       ',namessize='+IntToStr(namessize)+'/'+IntToStr(sizeof(fxp_names)));
+           end
+        else
+           Result:=true;
+        end
+     else
+        Result:=Assigned(tggetlibrarycontextsize); // older DLL, that's OK
+     if Result then
+        if sizeof(TTGLibraryContext)<tggetlibrarycontextsize then
+           raise Exception.Create('Invalid '+tgputtydll+': uses incorrect TTGLibraryContext record size');
+     end
+  else
+     TGPuttyLibLoadError:=dlerror;
+  {$endif}
+  end;
 
 {
 const MaxCritSect=0; // not currently used

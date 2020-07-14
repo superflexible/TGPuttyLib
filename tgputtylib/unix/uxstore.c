@@ -59,6 +59,7 @@ static void make_session_filename(const char *in, strbuf *out)
     }
 }
 
+#ifndef TGDLL
 static void decode_session_filename(const char *in, strbuf *out)
 {
     while (*in) {
@@ -77,6 +78,7 @@ static void decode_session_filename(const char *in, strbuf *out)
         }
     }
 }
+#endif
 
 static char *make_filename(int index, const char *subname)
 {
@@ -214,6 +216,9 @@ struct settings_w {
 
 settings_w *open_settings_w(const char *sessionname, char **errmsg)
 {
+#ifdef TGDLL
+    return NULL;
+#else
     char *filename, *err;
     FILE *fp;
 
@@ -254,22 +259,29 @@ settings_w *open_settings_w(const char *sessionname, char **errmsg)
     settings_w *toret = snew(settings_w);
     toret->fp = fp;
     return toret;
+#endif    
 }
 
 void write_setting_s(settings_w *handle, const char *key, const char *value)
 {
+#ifdef TGDLL
     fprintf(handle->fp, "%s=%s\n", key, value);
+#endif
 }
 
 void write_setting_i(settings_w *handle, const char *key, int value)
 {
+#ifdef TGDLL
     fprintf(handle->fp, "%s=%d\n", key, value);
+#endif
 }
 
 void close_settings_w(settings_w *handle)
 {
+#ifdef TGDLL
     fclose(handle->fp);
     sfree(handle);
+#endif
 }
 
 /* ----------------------------------------------------------------------
@@ -292,8 +304,12 @@ struct skeyval {
     const char *value;
 };
 
+#ifdef TGDLL
+// I doubt that libtgputty uses the xrmtree, but anyway ... make it thread safe
+#define xrmtree (curlibctx->xrmtree)
+#else
 static tree234 *xrmtree = NULL;
-
+#endif
 static int keycmp(void *av, void *bv)
 {
     struct skeyval *a = (struct skeyval *)av;
@@ -359,6 +375,9 @@ struct settings_r {
 
 settings_r *open_settings_r(const char *sessionname)
 {
+#ifdef TGDLL
+    return NULL;
+#else
     char *filename;
     FILE *fp;
     char *line;
@@ -395,6 +414,7 @@ settings_r *open_settings_r(const char *sessionname)
     fclose(fp);
 
     return toret;
+#endif    
 }
 
 char *read_setting_s(settings_r *handle, const char *key)
@@ -449,7 +469,7 @@ FontSpec *read_setting_fontspec(settings_r *handle, const char *name)
      * provided name string (e.g. "Font") to a suffixed one
      * ("FontName").
      */
-    char *suffname = dupcat(name, "Name", NULL);
+    char *suffname = dupcat(name, "Name");
     char *tmp;
 
     if ((tmp = read_setting_s(handle, suffname)) != NULL) {
@@ -463,7 +483,7 @@ FontSpec *read_setting_fontspec(settings_r *handle, const char *name)
     /* Fall back to old-style name. */
     tmp = read_setting_s(handle, name);
     if (tmp && *tmp) {
-        char *tmp2 = dupcat("server:", tmp, NULL);
+        char *tmp2 = dupcat("server:", tmp);
         FontSpec *fs = fontspec_new(tmp2);
         sfree(tmp2);
         sfree(tmp);
@@ -491,7 +511,7 @@ void write_setting_fontspec(settings_w *handle, const char *name, FontSpec *fs)
      * writing our settings back out we simply always generate the
      * new-style name.
      */
-    char *suffname = dupcat(name, "Name", NULL);
+    char *suffname = dupcat(name, "Name");
     write_setting_s(handle, suffname, fs->name);
     sfree(suffname);
 }
@@ -531,6 +551,7 @@ struct settings_e {
     DIR *dp;
 };
 
+#ifndef TGDLL
 settings_e *enum_settings_start(void)
 {
     DIR *dp;
@@ -564,7 +585,7 @@ bool enum_settings_next(settings_e *handle, strbuf *out)
     size_t baselen = fullpath->len;
 
     while ( (de = readdir(handle->dp)) != NULL ) {
-        fullpath->len = baselen;
+        strbuf_shrink_to(fullpath, baselen);
         put_datapl(fullpath, ptrlen_from_asciz(de->d_name));
 
         if (stat(fullpath->s, &st) < 0 || !S_ISREG(st.st_mode))
@@ -585,6 +606,7 @@ void enum_settings_finish(settings_e *handle)
         closedir(handle->dp);
     sfree(handle);
 }
+#endif
 
 /*
  * Lines in the host keys file are of the form

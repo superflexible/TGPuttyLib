@@ -137,7 +137,11 @@ struct SockAddr {
     ((step).curraddr = 0)
 #endif
 
+#ifdef TGDLL
+#define sktree (curlibctx->sktree)
+#else
 static tree234 *sktree;
+#endif
 
 static void uxsel_tell(NetSocket *s);
 
@@ -169,11 +173,12 @@ static int cmpforsearch(void *av, void *bv)
 
 void sk_init(void)
 {
-    sktree = newtree234(cmpfortree);
+   sktree = newtree234(cmpfortree);
 }
 
-void sk_cleanup(void)
+void sk_cleanup(const bool cleanupglobalstoo) // TG
 {
+    // well, no globals here yet ... cleanupglobalstoo only for Windows?
     NetSocket *s;
     int i;
 
@@ -181,7 +186,9 @@ void sk_cleanup(void)
         for (i = 0; (s = index234(sktree, i)) != NULL; i++) {
             close(s->s);
         }
-    }
+	freetree234(sktree); // TG
+	sktree = NULL; // TG
+	}
 }
 
 SockAddr *sk_namelookup(const char *host, char **canonicalname, int address_family)
@@ -252,7 +259,7 @@ SockAddr *sk_namelookup(const char *host, char **canonicalname, int address_fami
             return ret;
         }
         /* This way we are always sure the h->h_name is valid :) */
-        realhost->len = 0;
+        strbuf_clear(realhost);
         strbuf_catf(realhost, "%s", h->h_name);
         for (n = 0; h->h_addr_list[n]; n++);
         ret->addresses = snewn(n, unsigned long);
@@ -267,7 +274,7 @@ SockAddr *sk_namelookup(const char *host, char **canonicalname, int address_fami
          * success return from inet_addr.
          */
         ret->superfamily = IP;
-        realhost->len = 0;
+        strbuf_clear(realhost);
         strbuf_catf(realhost, "%s", host);
         ret->addresses = snew(unsigned long);
         ret->naddresses = 1;

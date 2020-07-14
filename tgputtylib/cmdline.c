@@ -44,6 +44,7 @@ struct cmdline_saved_param_set {
  */
 static struct cmdline_saved_param_set saves[NPRIORITIES];
 
+#ifndef TGDLL
 static void cmdline_save_param(const char *p, const char *value, int pri)
 {
     sgrowarray(saves[pri].params, saves[pri].savesize, saves[pri].nsaved);
@@ -51,6 +52,7 @@ static void cmdline_save_param(const char *p, const char *value, int pri)
     saves[pri].params[saves[pri].nsaved].value = dupstr(value);
     saves[pri].nsaved++;
 }
+#endif
 
 static char *cmdline_password = NULL;
 
@@ -121,6 +123,7 @@ int cmdline_get_passwd_input(prompts_t *p)
  */
 int cmdline_tooltype = 0;
 
+#ifndef TGDLL
 static bool cmdline_check_unavailable(int flag, const char *p)
 {
     if (cmdline_tooltype & flag) {
@@ -129,10 +132,10 @@ static bool cmdline_check_unavailable(int flag, const char *p)
     }
     return false;
 }
-
 #define UNAVAILABLE_IN(flag) do { \
     if (cmdline_check_unavailable(flag, p)) return ret; \
 } while (0)
+#endif
 
 /*
  * Process a standard command-line parameter. `p' is the parameter
@@ -155,8 +158,10 @@ static bool cmdline_check_unavailable(int flag, const char *p)
     if (need_save < 0) return x; \
 } while (0)
 
+#ifndef TGDLL
 static bool seen_hostname_argument = false;
 static bool seen_port_argument = false;
+#endif
 
 int cmdline_process_param(const char *p, char *value,
                           int need_save, Conf *conf)
@@ -871,6 +876,7 @@ void cmdline_run_saved(Conf *conf)
     }
 }
 
+#ifndef TGDLL
 bool cmdline_host_ok(Conf *conf)
 {
     /*
@@ -902,3 +908,5 @@ bool cmdline_host_ok(Conf *conf)
 
     return true;
 }
+#endif
+

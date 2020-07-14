@@ -98,14 +98,16 @@ static int sftp_reqfind(void *av, void *bv)
     return 0;
 }
 
+// static tree234 *sftp_requests; // TG - moved into curlibctx
+
 static struct sftp_request *sftp_alloc_request(void)
 {
     unsigned low, high, mid;
     int tsize;
     struct sftp_request *r;
 
-	if (sftp_requests == NULL)
-       sftp_requests = newtree234(sftp_reqcmp);
+    if (sftp_requests == NULL)
+        sftp_requests = newtree234(sftp_reqcmp);
 
     /*
      * First-fit allocation of request IDs: always pick the lowest
@@ -158,8 +160,8 @@ void sftp_cleanup_request(void)
 
 void sftp_register(struct sftp_request *req)
 {
-   assert(req!=NULL); // TG 2019
-   req->registered = true;
+    assert(req!=NULL); // TG 2019
+    req->registered = true;
 }
 
 struct sftp_request *sftp_find_request(struct sftp_packet *pktin)
@@ -419,7 +421,7 @@ struct sftp_request *fxp_opendir_send(const char *path)
     struct sftp_request *req = sftp_alloc_request();
     struct sftp_packet *pktout;
 
-    assert(req!=NULL);
+    assert(req!=NULL); // TG
 
     pktout = sftp_pkt_init(SSH_FXP_OPENDIR);
     put_uint32(pktout, req->id);
@@ -455,7 +457,7 @@ struct fxp_handle *fxp_opendir_recv(struct sftp_packet *pktin,
 struct sftp_request *fxp_close_send(struct fxp_handle *handle)
 {
     assert(handle!=NULL); // TG: prevent AV when close_file is called multiple times for the same handle
-    assert(handle->hstring!=NULL);
+    assert(handle->hstring!=NULL); // TG
 
     struct sftp_request *req = sftp_alloc_request();
     struct sftp_packet *pktout;
@@ -1015,13 +1017,13 @@ bool xfer_done(struct fxp_xfer *xfer)
      * We're finished if we've seen EOF _and_ there are no
      * outstanding requests.
      */
-    bool result= (xfer->eof || xfer->err) && !xfer->head;
+    bool result= (xfer->eof || xfer->err) && !xfer->head; // TG
 
 #ifdef DEBUG_UPLOAD
-    printf("xfer_done=%d, offset=%I64u\n",result,xfer->offset);
+    printf("xfer_done=%d, offset=%" PRIu64 "\n",result,xfer->offset); // TG
 #endif
 
-    return result;
+    return result; // TG
 }
 
 void xfer_download_queue(struct fxp_xfer *xfer)
@@ -1223,20 +1225,20 @@ struct fxp_xfer *xfer_upload_init(struct fxp_handle *fh, uint64_t offset)
 
 bool xfer_upload_ready(struct fxp_xfer *xfer)
 {
-	size_t bufbytes=sftp_sendbuffer();
-	bool result=bufbytes < cBufferMaxFillSizeThresholdToAcceptMoreUploadData;
+	size_t bufbytes=sftp_sendbuffer(); // TG
+	bool result=bufbytes < cBufferMaxFillSizeThresholdToAcceptMoreUploadData; // TG
 
-#ifdef DEBUG_UPLOAD
-    printf("xfer_upload_ready =%d,  xfer->offset is %I64u, bufbytes is %I64u\n",result,xfer->offset,bufbytes);
+#ifdef DEBUG_UPLOAD // TG
+    printf("xfer_upload_ready =%d,  xfer->offset is %" PRIu64 ", bufbytes is %" PRIu64 "\n",result,xfer->offset,bufbytes);
 #endif
 
-    return result;
+    return result; // TG
 }
 
 
-void xfer_set_offset(struct fxp_xfer *xfer, uint64_t anoffset)
+void xfer_set_offset(struct fxp_xfer *xfer, uint64_t anoffset) // TG
 {
-  xfer->offset = anoffset;
+  xfer->offset = anoffset; // TG
 }
 
 void xfer_upload_data(struct fxp_xfer *xfer, char *buffer, int len)

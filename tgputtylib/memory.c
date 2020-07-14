@@ -11,7 +11,7 @@
 #include "misc.h"
 
 
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
 #undef malloc
 void *safemalloc(size_t factor1, size_t factor2, size_t addend,const char *filename,const int line)
 #else
@@ -35,7 +35,7 @@ void *safemalloc(size_t factor1, size_t factor2, size_t addend)
 #ifdef MINEFIELD
     p = minefield_c_malloc(size);
 #else
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
     p = tgdlldebugmalloc(size,filename,line);
 #else
     p = malloc(size);
@@ -49,9 +49,10 @@ void *safemalloc(size_t factor1, size_t factor2, size_t addend)
 
   fail:
     out_of_memory();
+    return NULL; // TG
 }
 
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
 #undef realloc
 void *saferealloc(void *ptr, size_t n, size_t size,const char *filename,const int line)
 #else
@@ -68,7 +69,7 @@ void *saferealloc(void *ptr, size_t n, size_t size)
 #ifdef MINEFIELD
             p = minefield_c_malloc(size);
 #else
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
             p = tgdlldebugmalloc(size,filename,line);
 #else
             p = malloc(size);
@@ -78,7 +79,7 @@ void *saferealloc(void *ptr, size_t n, size_t size)
 #ifdef MINEFIELD
             p = minefield_c_realloc(ptr, size);
 #else
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
             p = tgdlldebugrealloc(ptr,size,filename,line);
 #else
             p = realloc(ptr, size);
@@ -93,7 +94,7 @@ void *saferealloc(void *ptr, size_t n, size_t size)
     return p;
 }
 
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
 #undef free
 void safefree(void *ptr,const char *filename,const int line)
 #else
@@ -104,7 +105,7 @@ void safefree(void *ptr)
 #ifdef MINEFIELD
         minefield_c_free(ptr);
 #else
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
         tgdlldebugfree(ptr,filename,line);
 #else
         free(ptr);
@@ -113,7 +114,7 @@ void safefree(void *ptr)
     }
 }
 
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
 void *safegrowarray(void *ptr, size_t *allocated, size_t eltsize,
                     size_t oldlen, size_t extralen, bool secret,
                     const char *filename,const int line)
@@ -159,7 +160,7 @@ void *safegrowarray(void *ptr, size_t *allocated, size_t eltsize,
     void *toret;
     if (secret) {
         toret = safemalloc(newsize, eltsize, 0
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
         , filename, line
 #endif
         );
@@ -168,7 +169,7 @@ void *safegrowarray(void *ptr, size_t *allocated, size_t eltsize,
         sfree(ptr);
     } else {
         toret = saferealloc(ptr, newsize, eltsize
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
           , filename, line
 #endif
           );

@@ -22,6 +22,8 @@
 #include "network.h"
 #include "misc.h"
 #include "marshal.h"
+#include "tree234.h" // TG
+#include "sftp.h" // TG
 #include "tgmem.h" // TG
 // #define DEBUG_UPLOAD
 
@@ -1228,8 +1230,8 @@ static inline bool win_is_utf8(TermWin *win)
  * Global functions not specific to a connection instance.
  */
 void nonfatal(const char *, ...) PRINTF_LIKE(1, 2);
-NORETURN void modalfatalbox(const char *, ...) PRINTF_LIKE(1, 2);
-NORETURN void cleanup_exit(int,const bool cleanupglobalstoo); // TG
+void modalfatalbox(const char *, ...) PRINTF_LIKE(1, 2); // TG
+void cleanup_exit(int,const bool cleanupglobalstoo); // TG
 
 /*
  * Exports from conf.c, and a big enum (via parametric macro) of
@@ -2258,6 +2260,13 @@ typedef unsigned __int64 UINT_PTR;
 #else
 typedef unsigned int UINT_PTR;
 #endif
+#else
+#define __int64 long long
+#if UINTPTR_MAX == 0xffffffff
+typedef unsigned int UINT_PTR;
+#else
+typedef unsigned long long UINT_PTR;
+#endif
 #endif
 
 // moved here from ssh.h
@@ -2347,7 +2356,9 @@ typedef struct
   void *notify_ctx;
 
   // from winhandl.c
+#ifdef _WINDOWS
   tree234 *handles_by_evtomain;
+#endif
 
   // from winnet.c
   tree234 *sktree;
@@ -2365,11 +2376,25 @@ typedef struct
   // from timing.c
   tree234 *timers;
   tree234 *timer_contexts;
+
   unsigned long snow;
+
+#ifndef _WINDOWS
+  // from uxsel.c
+  tree234 *fds;
+  // from uxstore.c
+  tree234 *xrmtree;
+#endif
 
 } TTGLibraryContext;
 
-extern __declspec(thread) TTGLibraryContext *curlibctx;
+#ifdef __GNUC__
+#define THREADVAR __thread
+#else
+#define THREADVAR __declspec(thread)
+#endif
+
+extern THREADVAR TTGLibraryContext *curlibctx;
 
 #define printf(...) tgdll_printfree(dupprintf(__VA_ARGS__))
 #define fprintf(fp,...) tgdll_fprintfree(fp,dupprintf(__VA_ARGS__))

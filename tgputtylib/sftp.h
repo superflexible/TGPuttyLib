@@ -2,6 +2,9 @@
  * sftp.h: definitions for SFTP and the sftp.c routines.
  */
 
+#ifndef __SFTP_H__ // TG
+#define __SFTP_H__ // TG
+
 #include "defs.h"
 
 #define SSH_FXP_INIT                              1     /* 0x1 */
@@ -323,7 +326,7 @@ struct SftpServer {
 };
 struct SftpServerVtable {
     SftpServer *(*new)(const SftpServerVtable *vt);
-    void (*freefunc)(SftpServer *srv);
+    void (*freefunc)(SftpServer *srv); // TG
 
     /*
      * Handle actual filesystem requests.
@@ -516,7 +519,7 @@ struct ScpServer {
     const struct ScpServerVtable *vt;
 };
 struct ScpServerVtable {
-    void (*freefunc)(ScpServer *s);
+    void (*freefunc)(ScpServer *s); // TG
 
     size_t (*send)(ScpServer *s, const void *data, size_t length);
     void (*throttle)(ScpServer *s, bool throttled);
@@ -544,4 +547,6 @@ static inline void scp_eof(ScpServer *s)
  * the send method in its own vtable.
  */
 ScpServer *scp_recognise_exec(
-    SshChannel *sc, const SftpServerVtable *sftpserver_vt, ptrlen command);
+	SshChannel *sc, const SftpServerVtable *sftpserver_vt, ptrlen command);
+
+#endif  // TG

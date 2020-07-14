@@ -460,7 +460,7 @@ char *dir_file_cat(const char *dir, const char *file)
     ptrlen dir_pl = ptrlen_from_asciz(dir);
     return dupcat(
         dir, ptrlen_endswith(dir_pl, PTRLEN_LITERAL("/"), NULL) ? "" : "/",
-        file, NULL);
+        file);
 }
 
 /*
@@ -490,6 +490,7 @@ static int ssh_sftp_do_select(bool include_stdin, bool no_fds_ok)
 
         if (i < 1 && !no_fds_ok && !toplevel_callback_pending()) {
             pollwrap_free(pw);
+            sfree(fdlist);
             return -1;                 /* doom */
         }
 
@@ -635,6 +636,7 @@ void platform_psftp_pre_conn_setup(void) {}
 
 const bool buildinfo_gtk_relevant = false;
 
+#ifndef TGDLL
 /*
  * Main program: do platform-specific initialisation and then call
  * psftp_main().
@@ -644,3 +646,4 @@ int main(int argc, char *argv[])
     uxsel_init();
     return psftp_main(argc, argv);
 }
+#endif

@@ -17,6 +17,7 @@
 #include "putty.h"
 #include "storage.h"
 #include "ssh.h"
+#include "psftp.h" // TG for curlibctx
 
 bool console_batch_mode = false;
 
@@ -48,14 +49,14 @@ void postmsg(struct termios *cf)
 /*
  * Clean up and exit.
  */
-void cleanup_exit(int code)
+void cleanup_exit(int code,const bool cleanupglobalstoo) // TG
 {
     /*
      * Clean up.
      */
-    sk_cleanup();
+    sk_cleanup(cleanupglobalstoo); // TG
     random_save_seed();
-    exit(code);
+    NORMALCODE(exit(code);) // TG
 }
 
 /*
@@ -95,7 +96,7 @@ void modalfatalbox(const char *fmt, ...)
     va_start(ap, fmt);
     console_print_error_msg_fmt_v("FATAL ERROR", fmt, ap);
     va_end(ap);
-    cleanup_exit(1);
+    NORMALCODE(cleanup_exit(1);) // TG
 }
 
 void nonfatal(const char *fmt, ...)
@@ -109,7 +110,7 @@ void nonfatal(const char *fmt, ...)
 void console_connection_fatal(Seat *seat, const char *msg)
 {
     console_print_error_msg("FATAL ERROR", msg);
-    cleanup_exit(1);
+    NORMALCODE(cleanup_exit(1);) // TG
 }
 
 void timer_change_notify(unsigned long next)
@@ -215,6 +216,18 @@ int console_verify_ssh_host_key(
      */
     ret = verify_host_key(host, port, keytype, keystr);
 
+    if (curlibctx->verify_host_key_callback) // TG
+    {
+       bool storeit=false;
+       bool OK=curlibctx->verify_host_key_callback(host, port, keytype, keystr, fingerprint, ret, &storeit, curlibctx);
+       if (storeit)
+          store_host_key(host, port, keytype, keystr);
+       if (OK)
+          return 1;
+       else
+          return 0;
+    }
+
     if (ret == 0)                      /* success - key matched OK */
         return 1;
 
@@ -236,6 +249,9 @@ int console_verify_ssh_host_key(
         fflush(stderr);
     }
 
+    if (curlibctx->get_input_callback) // TG
+       curlibctx->get_input_callback(line,sizeof(line)-1,curlibctx);
+    else
     {
         struct termios oldmode, newmode;
         tcgetattr(0, &oldmode);
@@ -566,7 +582,6 @@ int console_get_userpass_input(prompts_t *p)
     for (curr_prompt = 0; curr_prompt < p->n_prompts; curr_prompt++) {
 
         struct termios oldmode, newmode;
-        int len;
         prompt_t *pr = p->prompts[curr_prompt];
 
         tcgetattr(infd, &oldmode);
@@ -580,21 +595,21 @@ int console_get_userpass_input(prompts_t *p)
 
         console_write(outfp, ptrlen_from_asciz(pr->prompt));
 
-        len = 0;
+        bool failed = false;
         while (1) {
-            int ret;
+            size_t toread = 65536;
+            size_t prev_result_len = pr->result->len;
+            void *ptr = strbuf_append(pr->result, toread);
+            int ret = read(infd, ptr, toread);
 
-            prompt_ensure_result_size(pr, len * 5 / 4 + 512);
-            ret = read(infd, pr->result + len, pr->resultsize - len - 1);
             if (ret <= 0) {
-                len = -1;
+                failed = true;
                 break;
             }
-            len += ret;
-            if (pr->result[len - 1] == '\n') {
-                len--;
+
+            strbuf_shrink_to(pr->result, prev_result_len + ret);
+            if (strbuf_chomp(pr->result, '\n'))
                 break;
-            }
         }
 
         tcsetattr(infd, TCSANOW, &oldmode);
@@ -602,12 +617,10 @@ int console_get_userpass_input(prompts_t *p)
         if (!pr->echo)
             console_write(outfp, PTRLEN_LITERAL("\n"));
 
-        if (len < 0) {
+        if (failed) {
             console_close(outfp, infd);
             return 0;                  /* failure due to read error */
         }
-
-        pr->result[len] = '\0';
     }
 
     console_close(outfp, infd);

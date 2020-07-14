@@ -58,7 +58,11 @@ begin
 procedure TTester.Go;
 var attrs:fxp_attrs;
 begin
-  tgputtysetappname('tgdelphisftp','0.10');
+  if not TGPuttyLibAvailable then begin
+     WriteLn('TGPuttyLib not available: ',TGPuttyLibLoadError);
+     Exit;
+     end;
+  tgputtysetappname('tgputtylibsftp','0.20');
 
   TGPSFTP:=TTGPuttySFTP.Create(true);
   try
@@ -110,6 +114,8 @@ begin
          except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
          end;
 
+       Write('Checking if uploaded file exists on server:');
+
        try
          TGPSFTP.ListDir('.');
          except on E:Exception do WriteLn('EXCEPTION: ',E.Message);
@@ -123,8 +129,8 @@ begin
             on E:Exception do WriteLn('Failed to get Stat, EXCEPTION: ',E.Message);
          end;
 
-       WriteLn('Setting timestamp to 03.10.2019');
-       attrs.mtime := DateTimeToUnix(StrToDate('03.10.2019'));
+       WriteLn('Setting timestamp to yesterday 6 AM');
+       attrs.mtime := DateTimeToUnix(Trunc(Now)-1+1/4);
        attrs.flags := SSH_FILEXFER_ATTR_ACMODTIME; // set only this
        try
          TGPSFTP.SetStat(Utf8Encode(ExtractFileName(FileToUpload)),attrs);

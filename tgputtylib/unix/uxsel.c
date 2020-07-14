@@ -22,7 +22,11 @@ struct fd {
     uxsel_id *id;                      /* for uxsel_input_remove */
 };
 
+#ifdef TGDLL
+#define fds (curlibctx->fds)
+#else
 static tree234 *fds;
+#endif
 
 static int uxsel_fd_cmp(void *av, void *bv)
 {
@@ -50,6 +54,13 @@ void uxsel_init(void)
     fds = newtree234(uxsel_fd_cmp);
 }
 
+void uxsel_free(void) // TG
+{
+   if (fds)
+	  freetree234(fds); // TG
+   fds = NULL; // TG
+}
+
 /*
  * Here is the interface to fd-supplying modules. They supply an
  * fd, a set of read/write/execute states, and a callback function
@@ -62,6 +73,9 @@ void uxsel_init(void)
 
 void uxsel_set(int fd, int rwx, uxsel_callback_fn callback)
 {
+    if (!fds)
+       uxsel_init(); // TG
+
     struct fd *newfd;
 
     assert(fd >= 0);
@@ -80,6 +94,9 @@ void uxsel_set(int fd, int rwx, uxsel_callback_fn callback)
 
 void uxsel_del(int fd)
 {
+    if (!fds)
+       uxsel_init(); // TG
+
     struct fd *oldfd = find234(fds, &fd, uxsel_fd_findcmp);
     if (oldfd) {
         if (oldfd->id)
