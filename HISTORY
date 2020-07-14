@@ -1,6 +1,26 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 11 - 14 Jul 2020
+
+Adds the Linux shared library libtgputty.so and adjusts tgputtylib.pas and the FPC Simple Demo 
+to work with FPC on Linux.
+
+---------------------
+
+Build 10 - 4 Jul 2020
+Updated to PuTTY 0.74
+
+---------------------
+
+Build 9 - 13 May 2020
+Fix for Windows XP and Server 2003, 32 bit: not depending on GetTickCount64
+
+---------------------
+Build 8.1 - 23 Mar 2020
+Contains a small PBoolean related fix.
+
+---------------------
 Build 8 - 23 Mar 2020
 
 Adds Proxy Support and includes various bug fixes.
