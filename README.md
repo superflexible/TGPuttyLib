@@ -61,4 +61,5 @@ tgputtylib             -   DLL source code based on PuTTY
 bpl                    -   compiled Delphi Package for XE 10.3
 
 Win32, Win64           -   compiled binaries for Windows
+
 Linux (Compiled Libs)  -   compiled binaries for Linux (various CPU types)
