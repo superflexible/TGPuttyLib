@@ -9,7 +9,7 @@ TGPuttyLib is based on PuTTY Release 0.74. Ready-to-use classes are currently av
 
 The library is now available for Windows and Linux. A MacOS adaptations will follow very soon.
 
-The compiled DLL can be found in the Win32/Win64/Linux (Compiled Libs) folders. There is no difference between a Debug and Release version.
+The compiled libraries can be found in the Win32/Win64/Linux (Compiled Libs) folders. There is no difference between a Debug and Release version.
 
 Compiled demos can be found in the Releases section, and on the project web site.
 
