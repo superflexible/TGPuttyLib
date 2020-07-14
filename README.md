@@ -1,5 +1,5 @@
 # TGPuttyLib
-A dynamic link library with Delphi and C++ bindings based on PuTTY
+A shared library / DLL with Delphi and C++ bindings based on PuTTY, for Windows and Linux (and soon Mac).
 
 The new TGPuttyLib SFTP Library is a DLL/.so conversion of the psftp program from the well-known PuTTY suite by Simon Tatham.
 
@@ -7,7 +7,7 @@ It allows developers to transfer files with the highest possible transfer rates 
 
 TGPuttyLib is based on PuTTY Release 0.74. Ready-to-use classes are currently available for C++, Delphi and Free Pascal.
 
-The library is now available for Windows and Linux. A MacOS adaptations will follow very soon.
+The library is now available for Windows and Linux. A MacOS adaptation will follow very soon.
 
 The compiled libraries can be found in the Win32/Win64/Linux (Compiled Libs) folders. There is no difference between a Debug and Release version.
 
