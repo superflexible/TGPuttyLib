@@ -177,9 +177,13 @@ type
 const
    txtProxyTypes:array[TProxyTypes] of string=('NONE','SOCKS4','SOCKS5','HTTP','TELNET','CMD','FUZZ');
 
-{$ifndef MSWINDOWS}
+{$ifdef MSWINDOWS}
+{$A8}
+{$else}
 {$ifdef CPU386}
 {$A4}
+{$else}
+{$A8}
 {$endif}
 {$endif}
 
@@ -433,9 +437,25 @@ var TGPLH:TLibHandle;
 function TGPuttyLibAvailable:Boolean;
 var libpath:string;
     ulongsize,namesize,attrsize,namessize:Integer;
+procedure CheckStructSizes;
+begin
+  tggetstructsizes(@ulongsize,@namesize,@attrsize,@namessize);
+  if (ulongsize<>sizeof(TUnsignedLong)) or
+     (namesize<>sizeof(fxp_name)) or
+     (attrsize<>sizeof(fxp_attrs)) or
+     (namessize<>sizeof(fxp_names)) then begin
+     raise Exception.Create('Invalid '+tgputtydll+
+                 ': uses different struct sizes: '+
+                 'ulongsize='+IntToStr(ulongsize)+'/'+IntToStr(sizeof(TUnsignedLong))+
+                 ',namesize='+IntToStr(namesize)+'/'+IntToStr(sizeof(fxp_name))+
+                 ',attrsize='+IntToStr(attrsize)+'/'+IntToStr(sizeof(fxp_attrs))+
+                 ',namessize='+IntToStr(namessize)+'/'+IntToStr(sizeof(fxp_names)));
+     end
+  end;
 begin
   {$ifdef MSWINDOWS}
   Result:=true;
+  CheckStructSizes;
   {$else}
   if TGPLH>0 then begin
      Result:=Assigned(tgputty_initcontext);
@@ -506,23 +526,12 @@ begin
      @tgputty_conf_set_str_str:=GetProcedureAddress(TGPLH,'tgputty_conf_set_str_str');
 
      if Assigned(tggetstructsizes) then begin
-        tggetstructsizes(@ulongsize,@namesize,@attrsize,@namessize);
-        if (ulongsize<>sizeof(TUnsignedLong)) or
-           (namesize<>sizeof(fxp_name)) or
-           (attrsize<>sizeof(fxp_attrs)) or
-           (namessize<>sizeof(fxp_names)) then begin
-           raise Exception.Create('Invalid '+tgputtydll+
-                       ': uses different struct sizes: '+
-                       'ulongsize='+IntToStr(ulongsize)+'/'+IntToStr(sizeof(TUnsignedLong))+
-                       ',namesize='+IntToStr(namesize)+'/'+IntToStr(sizeof(fxp_name))+
-                       ',attrsize='+IntToStr(attrsize)+'/'+IntToStr(sizeof(fxp_attrs))+
-                       ',namessize='+IntToStr(namessize)+'/'+IntToStr(sizeof(fxp_names)));
-           end
-        else
-           Result:=true;
+        CheckStructSizes;
+        Result:=true;
         end
      else
         Result:=Assigned(tggetlibrarycontextsize); // older DLL, that's OK
+
      if Result then
         if sizeof(TTGLibraryContext)<tggetlibrarycontextsize then
            raise Exception.Create('Invalid '+tgputtydll+': uses incorrect TTGLibraryContext record size');
