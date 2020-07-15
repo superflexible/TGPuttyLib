@@ -1,7 +1,7 @@
 # TGPuttyLib
 A shared library / DLL with Delphi and C++ bindings based on PuTTY, for Windows, macOS, and Linux.
 
-The new TGPuttyLib SFTP Library is a DLL/.so conversion of the psftp program from the well-known PuTTY suite by Simon Tatham.
+The new TGPuttyLib SFTP Library is a DLL/.so/.dylib conversion of the psftp program from the well-known PuTTY suite by Simon Tatham.
 
 It allows developers to transfer files with the highest possible transfer rates (over 100MB/sec). The rates are higher than with any other known library.
 
