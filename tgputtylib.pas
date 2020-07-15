@@ -178,7 +178,7 @@ const
    txtProxyTypes:array[TProxyTypes] of string=('NONE','SOCKS4','SOCKS5','HTTP','TELNET','CMD','FUZZ');
 
 {$ifndef MSWINDOWS}
-{$ifdef CPU32}
+{$ifdef CPU386}
 {$A4}
 {$endif}
 {$endif}
