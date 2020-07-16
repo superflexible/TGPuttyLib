@@ -80,9 +80,15 @@ uint64_t TGGetTickCount64() // TG
 // TG: TGGetTickCount64 on Linux
 uint64_t TGGetTickCount64()
 {
+#ifdef __APPLE__
+    struct timeval tp;
+    gettimeofday(&tp,NULL);
+    return ((uint64_t) 1000 * tp.tv_sec) + (tp.tv_usec / 1000);
+#else
 	struct timespec ts;
 	clock_gettime( CLOCK_MONOTONIC, &ts );
 	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;;
+#endif
 }
 #endif
 
