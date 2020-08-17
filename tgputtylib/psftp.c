@@ -78,6 +78,10 @@ uint64_t TGGetTickCount64() // TG
 }
 #else
 // TG: TGGetTickCount64 on Linux
+#ifdef __APPLE__
+#include <sys/time.h>
+#endif
+
 uint64_t TGGetTickCount64()
 {
 #ifdef __APPLE__
