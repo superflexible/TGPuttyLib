@@ -40,6 +40,8 @@ type TGPuttySFTPException=class(Exception);
      PConfIntArray=^TConfIntArray;
      PConfPAnsiCharArray=^TConfPAnsiCharArray;
 
+     { TTGPuttySFTP }
+
      TTGPuttySFTP=class(TObject)
        private
          Fcontext:TTGLibraryContext;
@@ -127,6 +129,8 @@ type TGPuttySFTPException=class(Exception);
          function xfer_ensuredone(const xfer:TSFTPTransfer):Boolean;
          function xfer_done(const xfer:TSFTPTransfer):Boolean;
          procedure xfer_cleanup(const xfer:TSFTPTransfer);
+
+         procedure SetBooleanConfigValue(const OptionName:AnsiString;const OptionValue:Boolean);
 
          property HostName:AnsiString read FHostName write FHostName;
          property UserName:AnsiString read FUserName write FUserName;
@@ -342,6 +346,8 @@ constructor TTGPuttySFTP.Create(const verbose:Boolean);
 var puttyversion:Double;
     tgputtylibbuild:Integer;
 begin
+  if not TGPuttyLibAvailable then
+     raise Exception.Create('TGPuttyLib is not available');
   tgputtygetversions(@puttyversion,@tgputtylibbuild);
   if tgputtylibbuild<MinimumLibraryBuildNum then
      raise Exception.Create('tgputtylib is too old, its build number is '+
@@ -784,6 +790,11 @@ begin
 procedure TTGPuttySFTP.xfer_cleanup(const xfer: TSFTPTransfer);
 begin
   tgputty_xfer_cleanup(xfer,@Fcontext);
+  end;
+
+procedure TTGPuttySFTP.SetBooleanConfigValue(const OptionName: AnsiString; const OptionValue: Boolean);
+begin
+  tgputty_conf_set_bool(GetPuttyConfIndex(OptionName),OptionValue,@FContext);
   end;
 
 function TTGPuttySFTP.xfer_done(const xfer: TSFTPTransfer): Boolean;

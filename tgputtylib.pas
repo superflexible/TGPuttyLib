@@ -464,9 +464,14 @@ begin
      Exit;
      end;
   libpath:=ExtractFilePath(ParamStr(0))+tgputtydll;
+  if not FileExists(libpath) then begin
+     TGPuttyLibLoadError:='File '+libpath+' does not exist.';
+     Result:=false;
+     Exit;
+     end;
   TGPLH:=TLibHandle(dlopen(PAnsiChar(libpath), RTLD_LAZY ));
   // TGPLH:=LoadLibrary(libpath);
-  Result:=TGPLH>0;
+  Result:=TGPLH<>0;
   if Result then begin
      TGPuttyLibLoadError:='';
      @tggetlibrarycontextsize:=GetProcedureAddress(TGPLH,'tggetlibrarycontextsize');
@@ -534,12 +539,18 @@ begin
      else
         Result:=Assigned(tggetlibrarycontextsize); // older DLL, that's OK
 
-     if Result then
+     if Result then begin
         if sizeof(TTGLibraryContext)<tggetlibrarycontextsize then
            raise Exception.Create('Invalid '+tgputtydll+': uses incorrect TTGLibraryContext record size');
+        end
+     else
+        TGPuttyLibLoadError:='Assigned(tggetlibrarycontextsize)='+IntToStr(ord(Assigned(tggetlibrarycontextsize)));
      end
-  else
+  else begin
      TGPuttyLibLoadError:=dlerror;
+     if TGPuttyLibLoadError='' then
+        TGPuttyLibLoadError:='dlopen failed, errno='+IntToStr(errno);
+     end;
   {$endif}
   end;
 
