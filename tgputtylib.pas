@@ -46,7 +46,7 @@ uses Classes, SysUtils,
 const
 {$if defined(MSWINDOWS)}
       tgputtydll='tgputtylib.dll';
-{$elseif defined(BSD)}
+{$elseif defined(MAC)}
       tgputtydll='libtgputty.dylib';
 {$else}
       tgputtydll='libtgputty.so';
