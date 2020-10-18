@@ -55,14 +55,14 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   end
   object Label6: TLabel
     Left = 376
-    Top = 127
+    Top = 147
     Width = 50
     Height = 13
     Caption = 'Password:'
   end
   object Label7: TLabel
     Left = 376
-    Top = 169
+    Top = 172
     Width = 59
     Height = 13
     Caption = 'Folder Path:'
@@ -80,6 +80,13 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
     Width = 17
     Height = 13
     Caption = 'Log'
+  end
+  object Label10: TLabel
+    Left = 376
+    Top = 122
+    Width = 71
+    Height = 13
+    Caption = 'Public Key File:'
   end
   object DirectoryListBox1: TDirectoryListBox
     Left = 24
@@ -130,7 +137,7 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   end
   object edPassword: TEdit
     Left = 473
-    Top = 124
+    Top = 144
     Width = 180
     Height = 21
     PasswordChar = '*'
@@ -138,7 +145,7 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   end
   object edFolderPath: TEdit
     Left = 473
-    Top = 166
+    Top = 169
     Width = 383
     Height = 21
     TabOrder = 7
@@ -214,7 +221,7 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   end
   object cbSavePassword: TCheckBox
     Left = 673
-    Top = 126
+    Top = 144
     Width = 123
     Height = 17
     Caption = 'Save (unencrypted)'
@@ -222,7 +229,7 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   end
   object ProgressBar1: TProgressBar
     Left = 376
-    Top = 195
+    Top = 201
     Width = 480
     Height = 17
     TabOrder = 16
@@ -271,5 +278,32 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
     Caption = 'Rename/Move'
     TabOrder = 21
     OnClick = btMoveClick
+  end
+  object edKeyFile: TEdit
+    Left = 473
+    Top = 119
+    Width = 216
+    Height = 21
+    TabOrder = 22
+  end
+  object btnSelectKeyFile: TButton
+    Left = 693
+    Top = 116
+    Width = 84
+    Height = 25
+    Caption = 'Select Key File...'
+    TabOrder = 23
+    OnClick = btnSelectKeyFileClick
+  end
+  object FileOpenDialog1: TFileOpenDialog
+    FavoriteLinks = <>
+    FileTypes = <
+      item
+        DisplayName = 'Putty Private Key File'
+        FileMask = '*.ppk'
+      end>
+    Options = []
+    Left = 736
+    Top = 72
   end
 end
