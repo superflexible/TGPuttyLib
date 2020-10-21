@@ -43,6 +43,10 @@ type
     btMkDir: TButton;
     btRemoveDir: TButton;
     btMove: TButton;
+    FileOpenDialog1: TFileOpenDialog;
+    edKeyFile: TEdit;
+    Label10: TLabel;
+    btnSelectKeyFile: TButton;
     procedure btConnectClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -63,6 +67,7 @@ type
     procedure btMkDirClick(Sender: TObject);
     procedure btRemoveDirClick(Sender: TObject);
     procedure btMoveClick(Sender: TObject);
+    procedure btnSelectKeyFileClick(Sender: TObject);
     procedure cbVerboseClick(Sender: TObject);
   private
     { Private declarations }
@@ -90,6 +95,7 @@ begin
     HostName:=Utf8Encode(edURL.Text);
     UserName:=Utf8Encode(edUserName.Text);
     Password:=Utf8Encode(edPassword.Text);
+    Keyfile:=Utf8Encode(edKeyFile.Text);
     Port:=StrToIntDef(edPort.Text,22);
     Connect;
 
@@ -265,6 +271,13 @@ begin
   GetListing;
   end;
 
+procedure TVCLSFTPClientDemoForm.btnSelectKeyFileClick(Sender: TObject);
+begin
+  if FileOpenDialog1.Execute then begin
+    edKeyFile.Text := FileOpenDialog1.FileName;
+  end;
+end;
+
 procedure TVCLSFTPClientDemoForm.edFolderPathExit(Sender: TObject);
 begin
   if PSFTP.Connected then begin
@@ -399,6 +412,7 @@ begin
          WriteInteger('Port',StrToIntDef(edPort.Text,22));
          WriteString('FolderPath',edFolderPath.Text);
          WriteString('LocalPath',DirectoryListBox1.Directory);
+         WriteString('PrivateKey', edKeyFile.Text);
          end;
       end;
     finally
