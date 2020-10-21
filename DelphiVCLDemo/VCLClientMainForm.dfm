@@ -84,9 +84,9 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   object Label10: TLabel
     Left = 376
     Top = 122
-    Width = 71
+    Width = 78
     Height = 13
-    Caption = 'Public Key File:'
+    Caption = 'Private Key File:'
   end
   object DirectoryListBox1: TDirectoryListBox
     Left = 24
@@ -137,8 +137,8 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
   end
   object edPassword: TEdit
     Left = 473
-    Top = 144
-    Width = 180
+    Top = 142
+    Width = 216
     Height = 21
     PasswordChar = '*'
     TabOrder = 6
@@ -220,8 +220,8 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
     OnClick = btDownloadClick
   end
   object cbSavePassword: TCheckBox
-    Left = 673
-    Top = 144
+    Left = 701
+    Top = 146
     Width = 123
     Height = 17
     Caption = 'Save (unencrypted)'
@@ -287,10 +287,10 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
     TabOrder = 22
   end
   object btnSelectKeyFile: TButton
-    Left = 693
-    Top = 116
-    Width = 84
-    Height = 25
+    Left = 695
+    Top = 121
+    Width = 138
+    Height = 22
     Caption = 'Select Key File...'
     TabOrder = 23
     OnClick = btnSelectKeyFileClick
@@ -303,7 +303,7 @@ object VCLSFTPClientDemoForm: TVCLSFTPClientDemoForm
         FileMask = '*.ppk'
       end>
     Options = []
-    Left = 736
-    Top = 72
+    Left = 752
+    Top = 48
   end
 end

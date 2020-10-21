@@ -94,8 +94,12 @@ begin
   with PSFTP do begin
     HostName:=Utf8Encode(edURL.Text);
     UserName:=Utf8Encode(edUserName.Text);
-    Password:=Utf8Encode(edPassword.Text);
-    Keyfile:=Utf8Encode(edKeyFile.Text);
+    if edKeyFile.Text='' then
+       Password:=Utf8Encode(edPassword.Text)
+    else begin
+       Keyfile:=Utf8Encode(edKeyFile.Text);
+       KeyPassword:=Utf8Encode(edPassword.Text);
+       end;
     Port:=StrToIntDef(edPort.Text,22);
     Connect;
 
@@ -375,6 +379,7 @@ begin
            end;
          edFolderPath.Text:=ReadString('FolderPath');
          DirectoryListBox1.Directory:=ReadString('LocalPath');
+         edKeyFile.Text:=ReadString('PrivateKey');
          end;
       end;
     finally

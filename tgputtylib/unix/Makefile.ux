@@ -99,8 +99,6 @@ CC = $(TOOLPATH)cc
 
 -include Makefile.local
 
-unexport CFLAGS # work around a weird issue with krb5-config
-
 # TG: removed -Werror
 
 CFLAGS = -O2 -fPIC -Wall -Wno-comment -Wno-unused-function -Wno-unused-const-variable -DTGDLL -std=gnu99 -Wvla -g -I.././ -I../charset/ \
