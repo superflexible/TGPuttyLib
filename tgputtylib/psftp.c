@@ -2940,8 +2940,8 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 {
     printf("psftp_connect connecting with %s, port %d, as user %s.\n",userhost,portnumber,user); // TG
 
-    char *host, *realhost;
-    const char *err;
+	char *host=NULL, *realhost=NULL; // TG 2021: fix crash when attempting to free invalid realhost
+	const char *err=NULL; // TG
 
     /* Separate host and username */
     host = userhost;
