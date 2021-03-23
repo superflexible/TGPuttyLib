@@ -26,6 +26,7 @@ const MinimumLibraryBuildNum=8;
 type TGPuttySFTPException=class(Exception);
 
      TOnMessage=procedure(const Msg:AnsiString;const isstderr:Boolean) of object;
+     TOnCheckpoint=procedure(const Msg:AnsiString;const kind:Byte) of object;
      TOnProgress=function(const bytescopied:Int64;const isupload:Boolean):Boolean of object;
      TOnListing=function(const names:Pfxp_names):Boolean of object;
      TOnGetInput=function(var cancel:Boolean):AnsiString of object;
@@ -45,10 +46,11 @@ type TGPuttySFTPException=class(Exception);
      TTGPuttySFTP=class(TObject)
        private
          Fcontext:TTGLibraryContext;
-         FVerbose:Boolean;
+         FVerbose,FCheckpoints:Boolean;
          FHostName,FUserName,FPassword,FKeyPassword:AnsiString;
          FPort:Integer;
          FOnMessage: TOnMessage;
+         FOnCheckpoint: TOnCheckpoint;
          FOnProgress: TOnProgress;
          FOnListing: TOnListing;
          FOnGetInput: TOnGetInput;
@@ -62,9 +64,12 @@ type TGPuttySFTPException=class(Exception);
          FConfTypes:PConfIntArray;
          FConfSubTypes:PConfIntArray;
          FConfCount:Integer;
+         FProgressIntervalMS:Integer;
+         FProgressAfterBytes:Int64;
          function GetHomeDir: AnsiString;
          function GetWorkDir: AnsiString;
          procedure SetVerbose(const Value: Boolean);
+         procedure SetCheckpoints(const Value: Boolean);
          procedure SetKeyfile(const Value: AnsiString);
          function GetLibVersion: AnsiString;
          function GetErrorCode: Integer;
@@ -87,7 +92,10 @@ type TGPuttySFTPException=class(Exception);
          procedure SetProxyPassword(const Value: AnsiString);
          procedure SetProxyUserName(const Value: AnsiString);
          procedure SetProxyPort(const Value: Integer);
+
+         procedure CP(const ACP:AnsiString);
        public
+         tgputtylibbuild:Integer;
          constructor Create(const verbose:Boolean);
          destructor Destroy; override;
 
@@ -116,6 +124,7 @@ type TGPuttySFTPException=class(Exception);
 
          procedure UploadStream(const ARemoteFilename:AnsiString;const AStream:TStream; const anAppend:Boolean);
          procedure DownloadStream(const ARemoteFilename:AnsiString;const AStream:TStream; const anAppend:Boolean);
+         procedure DownloadStreamP(const ARemoteFilename:AnsiString;const AStream:TStream; const anAppend:Boolean);
 
          function OpenFile(const apathname:AnsiString;
                            const anopenflags:Integer;
@@ -126,6 +135,12 @@ type TGPuttySFTPException=class(Exception);
          function xfer_upload_ready(const xfer:TSFTPTransfer):Boolean;
          procedure xfer_upload_data(const xfer:TSFTPTransfer;const buffer:Pointer;
                                     const len:Integer;const anoffset:UInt64);
+
+         function xfer_download_init(const fh:TSFTPFileHandle;const offset:UInt64):TSFTPTransfer;
+         function xfer_download_preparequeue(const xfer:TSFTPTransfer):Boolean;
+         function xfer_download_data(const xfer:TSFTPTransfer;var buffer:PByte; var len:Int32):Boolean;
+
+         procedure xfer_set_error(const xfer:TSFTPTransfer);
          function xfer_ensuredone(const xfer:TSFTPTransfer):Boolean;
          function xfer_done(const xfer:TSFTPTransfer):Boolean;
          procedure xfer_cleanup(const xfer:TSFTPTransfer);
@@ -144,6 +159,7 @@ type TGPuttySFTPException=class(Exception);
 
          property Connected:Boolean read FConnected;
          property Verbose:Boolean read FVerbose write SetVerbose;
+         property Checkpoints:Boolean read FCheckpoints write SetCheckpoints;
          property Keyfile:AnsiString write SetKeyfile;
          property LastMessages:AnsiString read FLastMessages write FLastMessages;
          property ErrorCode:Integer read GetErrorCode;
@@ -158,7 +174,11 @@ type TGPuttySFTPException=class(Exception);
          property ProxyUserName:AnsiString read GetProxyUserName write SetProxyUserName;
          property ProxyPassword:AnsiString read GetProxyPassword write SetProxyPassword;
 
+         property ProgressIntervalMS:Integer read FProgressIntervalMS write FProgressIntervalMS;
+         property ProgressAfterBytes:Int64 read FProgressAfterBytes write FProgressAfterBytes;
+
          property OnMessage:TOnMessage read FOnMessage write FOnMessage;
+         property OnCheckpoint:TOnCheckpoint read FOnCheckpoint write FOnCheckpoint;
          property OnProgress:TOnProgress read FOnProgress write FOnProgress;
          property OnListing:TOnListing read FOnListing write FOnListing;
          property OnGetInput:TOnGetInput read FOnGetInput write FOnGetInput;
@@ -200,13 +220,19 @@ begin
     end;
   end;
 
-procedure printmessage_callback(const msg:PAnsiChar;const isstderr:Boolean;const libctx:PTGLibraryContext); cdecl;
+procedure printmessage_callback(const msg:PAnsiChar;const kind:Byte;const libctx:PTGLibraryContext); cdecl;
 var TGPSFTP:TTGPuttySFTP;
 begin
   TGPSFTP:=TTGPuttySFTP(libctx.Tag);
-  if Assigned(TGPSFTP.OnMessage) then
-     TGPSFTP.OnMessage(msg,isstderr);
-  TGPSFTP.LastMessages:=TGPSFTP.LastMessages+msg;
+  if kind=2 then begin
+     if Assigned(TGPSFTP.OnCheckpoint) then
+        TGPSFTP.OnCheckpoint(msg,kind);
+     end
+  else begin
+     if Assigned(TGPSFTP.OnMessage) then
+        TGPSFTP.OnMessage(msg,kind=1);
+     TGPSFTP.LastMessages:=TGPSFTP.LastMessages+msg;
+	 end;
   end;
 
 function progress_callback(const bytescopied:Int64;const isupload:Boolean;const libctx:PTGLibraryContext):Boolean; cdecl;
@@ -272,7 +298,7 @@ begin
      TGPSFTP.FDownloadStream.Position:=Offset;
      Result:=TGPSFTP.FDownloadStream.Write(buffer^,bufsize);
      if Assigned(TGPSFTP.OnProgress) then
-        TGPSFTP.OnProgress(Offset+bufsize,false);
+        TGPSFTP.OnProgress(Int64(Offset)+bufsize,false);
      end
   else
      Result:=0;
@@ -282,11 +308,14 @@ procedure raise_exception_callback(const msg:PAnsiChar;const srcfile:PAnsiChar;c
 begin
 {$ifdef SFFS}
   if IndyLogging then begin
-     WriteLn(IndyLog,'NOW RAISING TTGPuttySFTP exception '+AnsiString(msg)+' at line '+IntToStr(line)+' in '+AnsiString(srcfile));
+     WriteLn(IndyLog,'NOW RAISING TTGPuttySFTP exception '+AnsiString(msg)+' at line '+
+                     AnsiString(IntToStr(line))+' in '+AnsiString(srcfile));
      CloseFile(IndyLog);
      Append(IndyLog);
      if Logging then begin
-        WriteLn(LogFile,'NOW RAISING TTGPuttySFTP exception '+AnsiString(msg)+' at line '+IntToStr(line)+' in '+AnsiString(srcfile));
+        WriteLn(LogFile,'NOW RAISING TTGPuttySFTP exception '+
+                        AnsiString(msg)+' at line '+
+                        AnsiString(IntToStr(line))+' in '+AnsiString(srcfile));
         CloseFile(LogFile);
         Append(LogFile);
         end;
@@ -314,6 +343,12 @@ begin
   end;
 
 { TTGPuttySFTP }
+
+procedure TTGPuttySFTP.CP(const ACP:AnsiString);
+begin
+  if Assigned(OnCheckpoint) then
+     OnCheckpoint(ACP,2);
+  end;
 
 procedure TTGPuttySFTP.ChangeDir(const ADirectory: AnsiString);
 var res:Integer;
@@ -344,7 +379,6 @@ begin
 
 constructor TTGPuttySFTP.Create(const verbose:Boolean);
 var puttyversion:Double;
-    tgputtylibbuild:Integer;
 begin
   if not TGPuttyLibAvailable then
      raise Exception.Create('TGPuttyLib is not available');
@@ -356,6 +390,7 @@ begin
 
   Fcontext.Init;
   FVerbose:=verbose;
+  FProgressIntervalMS:=1000;
 
   Fcontext.structsize:=sizeof(Fcontext);
   if Fcontext.structsize<tggetlibrarycontextsize then
@@ -371,7 +406,7 @@ begin
   Fcontext.raise_exception_callback:=raise_exception_callback;
   Fcontext.verify_host_key_callback:=verify_host_key_callback;
 
-  if tgputty_initcontext(verbose,@Fcontext)<>0 then
+  if tgputty_initcontext(ord(verbose),@Fcontext)<>0 then
      raise TGPuttySFTPException.Create('tgputty_initcontext failed - incorrect tgputtylib version?');
 
   if not tgputty_getconfigarrays(@FConfTypes,@FConfSubTypes,@FConfNames,@FConfCount) then
@@ -381,7 +416,7 @@ begin
      printmessage_callback(PAnsiChar(AnsiString('Possibly tgputtylib version mismatch, it has ')+
                             AnsiString(IntToStr(FConfCount))+
                             AnsiString(' config strings, but we expected ')+
-                            AnsiString(IntToStr(cConfCount))),false,@Fcontext);
+                            AnsiString(IntToStr(cConfCount))),0,@Fcontext);
 
   if cDumpSettingsFile then
      DumpSettingsFile;
@@ -453,6 +488,199 @@ begin
     finally
       FDownloadStream:=nil;
     end;
+  end;
+
+procedure TTGPuttySFTP.DownloadStreamP(const ARemoteFilename: AnsiString; const AStream: TStream; const anAppend: Boolean);
+var fh:TSFTPFileHandle;
+    pktin,req,xfer:Pointer;
+    offset:UInt64;
+    canceled, shown_err: Boolean;
+    attrs:fxp_attrs;
+    starttick,idlesincetick,TotalBytes,
+    LastProgressBytes,
+    lastprogresstick,endtick:UInt64;
+    buf,vbuf:PByte;
+    retd, wpos, wlen: Int64; // signed!
+    PrevTotalBytes: UInt64;
+    len: Integer;
+    ErrMsg:string;
+    Result,WriteException:Boolean;
+    EClass:ExceptClass;
+    ErrAddr:Pointer;
+begin
+  if (tgputtylibbuild<12)
+     {$ifndef MSWINDOWS}
+     or not Assigned(tgputty_xfer_download_init)
+     {$endif}
+     then begin
+     DownloadStream(ARemoteFileName,AStream,anAppend);
+     Exit;
+     end;
+
+	CP('psftp_getf');
+
+  ErrMsg:='';
+
+  Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
+  if not tgsftp_getstat(PAnsiChar(ARemoteFilename),@Attrs,@Fcontext) then
+		 attrs.flags := 0;
+
+  fh := tgputty_openfile(PAnsiChar(ARemoteFilename),SSH_FXF_READ,nil,@Fcontext);
+
+	if not Assigned(fh) then
+     raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('DownloadStreamP'));
+
+	CP('psgetf30');
+
+  if anAppend then
+     offset := AStream.Seek(0,soEnd)
+  else
+     offset := AStream.Position;
+
+	if Fcontext.timeoutticks<1000 then
+	   Fcontext.timeoutticks:=60000;
+
+	Result := true;
+	starttick:=GetTickCount64();
+	idlesincetick:=0;
+	TotalBytes:=0;
+	lastprogresstick:=starttick;
+  LastProgressBytes:=0;
+	canceled:=false;
+  WriteException:=false;
+
+	CP('psgetf60');
+	xfer := xfer_download_init(fh, offset);
+	CP('psgetf61');
+
+	while (Result and not xfer_done(xfer) and not canceled and not Fcontext.aborted) do begin
+		CP('psgetf62');
+		PrevTotalBytes := TotalBytes; // TG
+
+		CP('psgetf63');
+		Result:=xfer_download_preparequeue(xfer);
+
+		CP('psgetf70');
+
+		while Result and xfer_download_data(xfer, vbuf, len) do begin
+			CP('psgetf71');
+			buf := vbuf;
+
+			wpos := 0;
+			while wpos<len do begin
+		    CP('psgetf74');
+
+        if AStream.Position<>Offset then
+           AStream.Position:=Offset;
+        try
+          wlen:=AStream.Write((buf + wpos)^,len - wpos);
+          except
+            on E:Exception do begin
+               WriteException:=true;
+               EClass:=ExceptClass(E.ClassType);
+               ErrMsg:=E.Message;
+               ErrAddr:=ExceptAddr;
+               wlen:=0;
+               end;
+          end;
+
+				CP('psgetf75');
+				if wlen<=0 then begin
+           CP('psgetf76');
+           if ErrMsg='' then
+              ErrMsg := 'error while writing local stream';
+           Result := false;
+           xfer_set_error(xfer);
+           break;
+           end;
+				Inc(wpos,wlen);
+				Inc(offset,wlen);
+			  end;
+
+			if wpos<len then begin
+         if ErrMsg='' then
+            ErrMsg := 'error while writing local stream (B)';
+         CP('psgetf77');
+         Result := false;
+         xfer_set_error(xfer);
+         Result:=false;
+         break;
+         end;
+
+			if Result then begin
+         Inc(TotalBytes,len); // TG
+         CP('psgetf80');
+         if Assigned(OnProgress) and
+            ((TotalBytes-LastProgressBytes>FProgressAfterBytes) or
+             (GetTickCount64()-lastprogresstick>=FProgressIntervalMS)) then begin
+            CP('psgetf81');
+            if not OnProgress(TotalBytes,false) then begin
+               CP('psgetf82');
+               canceled:=true;
+               Result:=false;
+               printmessage_callback('Canceling ...'+sLineBreak,0,@Fcontext);
+               end;
+            lastprogresstick:=GetTickCount64();
+            LastProgressBytes:=TotalBytes;
+            end;
+         end;
+			CP('psgetf83');
+			tgputty_sfree(vbuf,@Fcontext);
+		  end;
+
+		if not Result then
+		   break;
+
+		CP('psgetf90');
+		// check if transfer still going
+    if TotalBytes>PrevTotalBytes then
+       idlesincetick := 0 // all good
+    else begin
+       if idlesincetick = 0 then
+          idlesincetick := GetTickCount64()
+       else
+          if GetTickCount64()-idlesincetick > Fcontext.timeoutticks then begin
+             CP('psgetf95');
+             printmessage_callback('Timeout error, no more data received.'+sLineBreak,0,@Fcontext);
+             Result := false;
+             xfer_set_error(xfer);
+             break;
+             end;
+       end;
+    end;
+
+  CP('psgetf96');
+
+	endtick:=GetTickCount64(); // TG
+  if endtick-starttick = 0 then // TG
+     endtick:=starttick+1; // prevent divide by zero ;=)
+
+	CP('psgetf97');
+  if Assigned(OnMessage) then
+     OnMessage(AnsiString('Downloaded '+IntToStr(TotalBytes)+
+               ' Bytes in '+IntToStr(endtick-starttick)+
+               ' milliseconds, rate = '+FloatToStr((TotalBytes/1024) / (endtick-starttick))+
+               ' MB/sec.'+sLineBreak),
+               false);
+
+	CP('psgetf98');
+
+	xfer_cleanup(xfer);
+
+  CP('psgetf100');
+
+  CloseFile(fh);
+
+  if not Result then
+     if WriteException then
+        raise EClass.Create(ErrMsg) at ErrAddr
+     else
+       if ErrMsg<>'' then
+          raise TGPuttySFTPException.Create(ErrMsg)
+       else
+          raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('DownloadStreamP'));
+
+	CP('psgetf103');
   end;
 
 procedure TTGPuttySFTP.DumpSettingsFile;
@@ -642,6 +870,12 @@ begin
   Fcontext.aborted:=Value;
   end;
 
+procedure TTGPuttySFTP.SetCheckpoints(const Value: Boolean);
+begin
+  FCheckpoints:=Value;
+  tgputty_setverbose(ord(FVerbose)+2*ord(FCheckpoints));
+  end;
+
 procedure TTGPuttySFTP.SetConnectionTimeoutTicks(const Value: Integer);
 begin
   Fcontext.connectiontimeoutticks:=Value;
@@ -758,8 +992,8 @@ begin
 
 procedure TTGPuttySFTP.SetVerbose(const Value: Boolean);
 begin
-  tgputty_setverbose(Value);
   FVerbose:=Value;
+  tgputty_setverbose(ord(FVerbose)+2*ord(FCheckpoints));
   end;
 
 procedure TTGPuttySFTP.UploadFile(const ALocalFilename, ARemoteFilename: AnsiString; const anAppend: Boolean);
@@ -794,7 +1028,7 @@ begin
 
 procedure TTGPuttySFTP.SetBooleanConfigValue(const OptionName: AnsiString; const OptionValue: Boolean);
 begin
-  tgputty_conf_set_bool(GetPuttyConfIndex(OptionName),OptionValue,@FContext);
+  tgputty_conf_set_bool(GetPuttyConfIndex(string(OptionName)),OptionValue,@FContext);
   end;
 
 function TTGPuttySFTP.xfer_done(const xfer: TSFTPTransfer): Boolean;
@@ -807,6 +1041,11 @@ begin
   Result:=tgputty_xfer_ensuredone(xfer,@Fcontext);
   end;
 
+procedure TTGPuttySFTP.xfer_set_error(const xfer:TSFTPTransfer);
+begin
+  tgputty_xfer_set_error(xfer,@Fcontext);
+  end;
+
 procedure TTGPuttySFTP.xfer_upload_data(const xfer: TSFTPTransfer; const buffer: Pointer; const len: Integer; const anoffset: UInt64);
 begin
   tgputty_xfer_upload_data(xfer,buffer,len,anoffset,@Fcontext);
@@ -815,6 +1054,21 @@ begin
 function TTGPuttySFTP.xfer_upload_init(const fh: TSFTPFileHandle; const offset: UInt64): TSFTPTransfer;
 begin
   Result:=tgputty_xfer_upload_init(fh,offset,@Fcontext);
+  end;
+
+function TTGPuttySFTP.xfer_download_init(const fh: TSFTPFileHandle; const offset: UInt64): TSFTPTransfer;
+begin
+  Result:=tgputty_xfer_download_init(fh,offset,@Fcontext);
+  end;
+
+function TTGPuttySFTP.xfer_download_preparequeue(const xfer:TSFTPTransfer):Boolean;
+begin
+  Result:=tgputty_xfer_download_preparequeue(xfer,@Fcontext);
+  end;
+
+function TTGPuttySFTP.xfer_download_data(const xfer:TSFTPTransfer;var buffer:PByte; var len:Int32):Boolean;
+begin
+  Result:=tgputty_xfer_download_data(xfer,@buffer,@len,@Fcontext);
   end;
 
 function TTGPuttySFTP.xfer_upload_ready(const xfer: TSFTPTransfer): Boolean;

@@ -18,7 +18,7 @@ int main()
 
 	TTGLibraryContext Ctx = { sizeof(TTGLibraryContext) };
 
-	int res = tgputty_initcontext(true, &Ctx);
+	int res = tgputty_initcontext(1, &Ctx);
 	if (res != 0)
 	{
 		std::cout << "Failure initializing context!\n";

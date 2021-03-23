@@ -25,7 +25,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
     TTGLibraryContext Ctx={sizeof(TTGLibraryContext)};
 
-    int res=tgputty_initcontext(true,&Ctx);
+    int res=tgputty_initcontext(1,&Ctx);
     if (res!=0)
     {
        printf("Failure initializing context!\n");

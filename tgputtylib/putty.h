@@ -1858,7 +1858,7 @@ void ser_setup_config_box(struct controlbox *b, bool midsession,
 /*
  * Exports from version.c.
  */
-char *ver; // TG
+extern char *ver; // TG
 extern const char commitid[];
 
 /*
@@ -2287,7 +2287,7 @@ typedef struct
 
   bool (*ls_callback)(const struct fxp_names *names,const void *libctx);
   const char* (*getpassword_callback)(const char *prompt, const bool echo, bool *cancel, const void *libctx);
-  void (*printmessage_callback)(const char *msg, const bool isstderr, const void *libctx);
+  void (*printmessage_callback)(const char *msg, const char kind, const void *libctx);
   bool (*progress_callback)(const uint64_t bytescopied, const bool isupload, const void *libctx);
   int (*read_from_stream)(const uint64_t offset,void *buffer,const int bufsize, const void *libctx);
   int (*write_to_stream)(const uint64_t offset,void *buffer,const int bufsize, const void *libctx);

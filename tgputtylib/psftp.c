@@ -23,6 +23,11 @@ static int ContextCounter=0; // TG
 
 char *appname = NORMALCODE("PSFTP") TGDLLCODE("tgputtylib"); // TG
 
+static bool verbose = false;
+bool checkpoints = false;
+
+#define CP(x) { if (checkpoints && curlibctx) curlibctx->printmessage_callback(x,2,curlibctx); }
+
 /*
  * Since SFTP is a request-response oriented protocol, it requires
  * no buffer management: when we send data, we stop and wait for an
@@ -293,25 +298,28 @@ static void not_connected(void)
  */
 bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
 {
-    struct fxp_handle *fh;
-    struct sftp_packet *pktin;
-    struct sftp_request *req;
-    struct fxp_xfer *xfer;
-    uint64_t offset;
-    WFile *file;
-    bool toret, shown_err = false;
-    struct fxp_attrs attrs;
+	struct fxp_handle *fh;
+	struct sftp_packet *pktin;
+	struct sftp_request *req;
+	struct fxp_xfer *xfer;
+	uint64_t offset;
+	WFile *file;
+	bool toret, shown_err = false;
+	struct fxp_attrs attrs;
+
+	CP("sftp_getf");
 
     /*
      * In recursive mode, see if we're dealing with a directory.
      * (If we're not in recursive mode, we need not even check: the
      * subsequent FXP_OPEN will return a usable error message.)
      */
-    if (recurse) {
-        bool result;
+	if (recurse) {
+		bool result;
 
-        req = fxp_stat_send(fname);
-        pktin = sftp_wait_for_reply(req);
+		CP("sgetfrec");
+		req = fxp_stat_send(fname);
+		pktin = sftp_wait_for_reply(req);
         result = fxp_stat_recv(pktin, req, &attrs);
 
         if (result &&
@@ -332,7 +340,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                 !create_directory(outfname)) {
                 with_stripctrl(san, outfname)
                     printf("%s: Cannot create directory\n", san);
-                return false;
+				return false;
             }
 
             /*
@@ -358,7 +366,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                 pktin = sftp_wait_for_reply(req);
                 names = fxp_readdir_recv(pktin, req);
 
-                if (names == NULL) {
+				if (names == NULL) {
                     if (fxp_error_type() == SSH_FX_EOF)
                         break;
                     with_stripctrl(san, fname)
@@ -384,7 +392,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                             with_stripctrl(san, names->names[i].filename)
                                 printf("ignoring potentially dangerous server-"
                                        "supplied filename '%s'\n", san);
-                        } else {
+						} else {
                             ournames[nnames++] =
                                 fxp_dup_name(&names->names[i]);
                         }
@@ -410,7 +418,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
              * this list that already exists. We may have to do a
              * reget on _that_ file, but shouldn't have to do
              * anything on the previous files.
-             *
+			 *
              * If none of them exists, of course, we start at 0.
              */
             i = 0;
@@ -436,7 +444,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
              * and continuing on to the end of the list, we
              * construct a new source and target file name, and
              * call sftp_get_file again.
-             */
+			 */
             for (; i < nnames; i++) {
                 char *nextfname, *nextoutfname;
                 bool retd;
@@ -462,149 +470,220 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
              */
             for (i = 0; i < nnames; i++) {
                 fxp_free_name(ournames[i]);
-            }
-            sfree(ournames);
+			}
+			sfree(ournames);
 
-            return true;
-        }
-    }
+			return true;
+		}
+	}
 
-    req = fxp_stat_send(fname);
-    pktin = sftp_wait_for_reply(req);
-    if (!fxp_stat_recv(pktin, req, &attrs))
-        attrs.flags = 0;
+	CP("sgetf10");
+	req = fxp_stat_send(fname);
+	pktin = sftp_wait_for_reply(req);
+	if (!fxp_stat_recv(pktin, req, &attrs))
+		attrs.flags = 0;
 
-    req = fxp_open_send(fname, SSH_FXF_READ, NULL);
-    pktin = sftp_wait_for_reply(req);
-    fh = fxp_open_recv(pktin, req);
+	CP("sgetf20");
+	req = fxp_open_send(fname, SSH_FXF_READ, NULL);
+	CP("sgetf21");
+	pktin = sftp_wait_for_reply(req);
+	CP("sgetf22");
+	fh = fxp_open_recv(pktin, req);
+	CP("sgetf23");
 
-    if (!fh) {
-        with_stripctrl(san, fname)
-            printf("%s: open for read: %s\n", san, fxp_error());
-        return false;
-    }
+	if (!fh) {
+        CP("sgetf29X");
+		with_stripctrl(san, fname)
+			printf("%s: open for read: %s\n", san, fxp_error());
+		return false;
+	}
 
-    if (outfname!=NULL) // TG
+	CP("sgetf30");
+	if (outfname!=NULL) // TG
     {
        if (restart) {
-           file = open_existing_wfile(outfname, NULL);
-       } else {
-           file = open_new_file(outfname, GET_PERMISSIONS(attrs, -1));
-       }
-       if (!file) {
-           with_stripctrl(san, outfname)
-               printf("local: unable to open %s\n", san);
+		   CP("sgetf33");
+		   file = open_existing_wfile(outfname, NULL);
+	   } else {
+		   CP("sgetf34");
+		   file = open_new_file(outfname, GET_PERMISSIONS(attrs, -1));
+	   }
+	   if (!file) {
+		   CP("sgetf35");
+		   with_stripctrl(san, outfname)
+			   printf("local: unable to open %s\n", san);
 
-           req = fxp_close_send(fh);
-           pktin = sftp_wait_for_reply(req);
-           fxp_close_recv(pktin, req);
+		   CP("sgetf36");
+		   req = fxp_close_send(fh);
+		   CP("sgetf37");
+		   pktin = sftp_wait_for_reply(req);
+		   CP("sgetf38");
+		   fxp_close_recv(pktin, req);
 
-           return false;
+		   CP("sgetf39X");
+		   return false;
        }
     }
     else
        file = NULL; // TG: use stream callbacks
 
     if (restart && file) { // TG
-        if (seek_file(file, 0, FROM_END) == -1) {
-            close_wfile(file);
-            with_stripctrl(san, outfname)
-                printf("reget: cannot restart %s - file too large\n", san);
-            req = fxp_close_send(fh);
-            pktin = sftp_wait_for_reply(req);
-            fxp_close_recv(pktin, req);
+		CP("sgetf40");
+		if (seek_file(file, 0, FROM_END) == -1) {
+			CP("sgetf41");
+			close_wfile(file);
+			with_stripctrl(san, outfname)
+				printf("reget: cannot restart %s - file too large\n", san);
+			CP("sgetf42");
+			req = fxp_close_send(fh);
+			CP("sgetf43");
+			pktin = sftp_wait_for_reply(req);
+			CP("sgetf44");
+			fxp_close_recv(pktin, req);
 
-            return false;
+			CP("sgetf49X");
+			return false;
         }
 
-        offset = get_file_posn(file);
-        printf("reget: restarting at file position %"PRIu64"\n", offset);
-    } else {
-        offset = 0;
-    }
+		CP("sgetf50");
+		offset = get_file_posn(file);
+		CP("sgetf51");
+		printf("reget: restarting at file position %"PRIu64"\n", offset);
+	} else {
+		CP("sgetf55");
+		offset = 0;
+	}
 
-    if (outfname) // TG
-       with_stripctrl(san, fname) {
-          with_stripctrl(sano, outfname)
-            printf("remote: %s => local:%s\n", san, sano);
-       }
-    else
-       printf("remote: %s => stream \n", fname); // TG
+	if (outfname) // TG
+	{
+	   CP("sgetf57");
+	   with_stripctrl(san, fname) {
+		  with_stripctrl(sano, outfname)
+			printf("remote: %s => local:%s\n", san, sano);
+	   }
+	}
+	else
+	{
+	   CP("sgetf58");
+	   printf("remote: %s => stream \n", fname); // TG
+	}
 
-    if (curlibctx->timeoutticks<1000) // TG
-       curlibctx->timeoutticks=60000;
+	if (curlibctx->timeoutticks<1000) // TG
+	   curlibctx->timeoutticks=60000;
 
-    /*
-     * FIXME: we can use FXP_FSTAT here to get the file size, and
-     * thus put up a progress bar.
-     */
-    toret = true;
+	/*
+	 * FIXME: we can use FXP_FSTAT here to get the file size, and
+	 * thus put up a progress bar.
+	 */
+	toret = true;
 	uint64_t starttick=TGGetTickCount64(); // TG
 	uint64_t idlesincetick=0; // TG
 	uint64_t TotalBytes=0; // TG
 	uint64_t lastprogresstick=starttick; // TG
-    bool canceled=false; // TG
-    xfer = xfer_download_init(fh, offset);
-    while (!xfer_done(xfer) && !canceled && !curlibctx->aborted) { // TG
-        void *vbuf;
-        int retd, len;
-        int wpos, wlen;
+	bool canceled=false; // TG
+	CP("sgetf60");
+	xfer = xfer_download_init(fh, offset);
+	CP("sgetf61");
 
-        uint64_t PrevTotalBytes = TotalBytes; // TG
+	while (!xfer_done(xfer) && !canceled && !curlibctx->aborted) // TG
+	{
+		CP("sgetf62");
+		void *vbuf;
+		int retd, len;
+		int wpos, wlen;
 
-        xfer_download_queue(xfer);
-        pktin = sftp_recv();
-        retd = xfer_download_gotpkt(xfer, pktin);
-        if (retd <= 0) {
-            if (!shown_err) {
-                printf("error while reading: %s\n", fxp_error());
-                shown_err = true;
-            }
-            if (retd == INT_MIN)        /* pktin not even freed */
-                sfree(pktin);
-            toret = false;
-        }
+		uint64_t PrevTotalBytes = TotalBytes; // TG
 
-        while (xfer_download_data(xfer, &vbuf, &len)) {
-            unsigned char *buf = (unsigned char *)vbuf;
-
-            wpos = 0;
-            while (wpos < len) {
-                if (file) // TG
-                   wlen = write_to_file(file, buf + wpos, len - wpos);
-                else // TG
-                   wlen = curlibctx->write_to_stream(offset, buf + wpos, len - wpos, curlibctx); // TG
-                if (wlen <= 0) {
-                    printf("error while writing local file\n");
-                    toret = false;
-                    xfer_set_error(xfer);
-                    break;
-                }
-                wpos += wlen;
-                offset += wlen; // TG
-            }
-            if (wpos < len) {          /* we had an error */
-                toret = false;
-                xfer_set_error(xfer);
-            }
-  		    TotalBytes+=len; // TG
-			if ((curlibctx->progress_callback!=NULL) && // TG
-				((TotalBytes % (1024*1024))==0) &&
-				(TGGetTickCount64()-lastprogresstick>=1000))
-			{
-			   if (!curlibctx->progress_callback(TotalBytes,false,curlibctx)) // TG
-			   {
-				 canceled=true;
-  				 //eof = true;
-                 printf("Canceling ...\n"); // TG
-			   }
-			   lastprogresstick=TGGetTickCount64(); // TG
+		//CP("sgetf63");
+		xfer_download_queue(xfer);
+		//CP("sgetf64");
+		pktin = sftp_recv();
+		CP("sgetf65");
+		retd = xfer_download_gotpkt(xfer, pktin);
+		//CP("sgetf66");
+		if (retd <= 0) {
+			CP("sgetf67");
+			if (!shown_err) {
+				printf("error while reading: %s\n", fxp_error());
+				shown_err = true;
 			}
+			if (retd == INT_MIN)        /* pktin not even freed */
+			{
+				CP("sgetf69");
+				sfree(pktin);
+			}
+			toret = false;
+		}
 
-            sfree(vbuf);
-        }
+		CP("sgetf70");
+        bool stopdownload=false;
+		while (!stopdownload && xfer_download_data(xfer, &vbuf, &len))
+		{
+			//CP("sgetf71");
+			unsigned char *buf = (unsigned char *)vbuf;
 
-        // check if transfer still going
+			wpos = 0;
+			while (wpos < len)
+			{
+				//CP("sgetf72");
+				if (file) // TG
+				{
+				   CP("sgetf73");
+				   wlen = write_to_file(file, buf + wpos, len - wpos);
+				}
+				else // TG
+				{
+				   CP("sgetf74");
+				   wlen = curlibctx->write_to_stream(offset, buf + wpos, len - wpos, curlibctx); // TG
+				}
+				CP("sgetf75");
+				if (wlen <= 0)
+				{
+					CP("sgetf76");
+					printf("error while writing local file\n");
+					toret = false;
+					xfer_set_error(xfer);
+					stopdownload=true;
+					break;
+				}
+				wpos += wlen;
+				offset += wlen; // TG
+			}
+			if (wpos < len)
+			{          /* we had an error */
+				CP("sgetf77");
+				toret = false;
+				xfer_set_error(xfer);
+				stopdownload=true;
+			}
+			if (!stopdownload)
+			{
+				TotalBytes+=len; // TG
+				//CP("sgetf80");
+				if ((curlibctx->progress_callback!=NULL) && // TG
+					((TotalBytes % (1024*1024))==0) &&
+					(TGGetTickCount64()-lastprogresstick>=1000))
+				{
+				   CP("sgetf81");
+				   if (!curlibctx->progress_callback(TotalBytes,false,curlibctx)) // TG
+				   {
+					 CP("sgetf82");
+					 canceled=true;
+					 //eof = true;
+					 printf("Canceling ...\n"); // TG
+				   }
+				   lastprogresstick=TGGetTickCount64(); // TG
+				}
+			}
+			//CP("sgetf83");
+			sfree(vbuf);
+		}
+
+		if (stopdownload)
+		   break;
+
+		CP("sgetf90");
+		// check if transfer still going
         if (TotalBytes>PrevTotalBytes) // TG
            idlesincetick = 0; // all good
         else
@@ -614,34 +693,45 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
            else
               if (TGGetTickCount64()-idlesincetick > curlibctx->timeoutticks)
               {
-                 printf("Timeout error, no more data received.\n"); // TG
+		         CP("sgetf95");
+				 printf("Timeout error, no more data received.\n"); // TG
                  toret = false;
                  xfer_set_error(xfer);
                  break;
               }
         }
     }
+    CP("sgetf96");
 
 	uint64_t endtick=TGGetTickCount64(); // TG
     if (endtick-starttick==0) // TG
        endtick=starttick+1; // prevent divide by zero ;=)
 
+	CP("sgetf97");
 	printf("Downloaded %" PRIu64 " Bytes in %" PRIu64 " milliseconds, rate = %" PRIu64 " MB/sec.\n", // TG
-	       TotalBytes,
+		   TotalBytes,
 		   (endtick-starttick),
 		   (TotalBytes/1024) / (endtick-starttick)
 		   );
 
-    xfer_cleanup(xfer);
+	CP("sgetf98");
+	xfer_cleanup(xfer);
 
-    if (file) // TG
-       close_wfile(file);
+	if (file) // TG
+	{
+	   CP("sgetf99");
+	   close_wfile(file);
+	}
 
-    req = fxp_close_send(fh);
-    pktin = sftp_wait_for_reply(req);
-    fxp_close_recv(pktin, req);
+    CP("sgetf100");
+	req = fxp_close_send(fh);
+	CP("sgetf101");
+	pktin = sftp_wait_for_reply(req);
+	CP("sgetf102");
+	fxp_close_recv(pktin, req);
 
-    return toret;
+	CP("sgetf103");
+	return toret;
 }
 
 bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
@@ -2751,8 +2841,6 @@ int do_sftp(int mode, int modeflags, char *batchfile)
  * Dirty bits: integration with PuTTY.
  */
 
-static bool verbose = false;
-
 void ldisc_echoedit_update(Ldisc *ldisc) { }
 
 void agent_schedule_callback(void (*callback)(void *, void *, int),
@@ -2938,236 +3026,275 @@ static void version(void)
  */
 static int psftp_connect(char *userhost, char *user, int portnumber)
 {
-    printf("psftp_connect connecting with %s, port %d, as user %s.\n",userhost,portnumber,user); // TG
+	CP("psftp_c1");
+	printf("psftp_connect connecting with %s, port %d, as user %s.\n",userhost,portnumber,user); // TG
 
 	char *host=NULL, *realhost=NULL; // TG 2021: fix crash when attempting to free invalid realhost
 	const char *err=NULL; // TG
 
-    /* Separate host and username */
-    host = userhost;
-    host = strrchr(host, '@');
-    if (host == NULL) {
-        host = userhost;
-    } else {
-        *host++ = '\0';
-        if (user) {
-            printf("psftp: multiple usernames specified; using \"%s\"\n",
-                   user);
-        } else
-            user = userhost;
-    }
+	/* Separate host and username */
+	host = userhost;
+	host = strrchr(host, '@');
+	if (host == NULL) {
+		host = userhost;
+	} else {
+		*host++ = '\0';
+		if (user) {
+			printf("psftp: multiple usernames specified; using \"%s\"\n",
+				   user);
+		} else
+			user = userhost;
+	}
 
-    /*
-     * If we haven't loaded session details already (e.g., from -load),
-     * try looking for a session called "host".
-     */
-    if (!loaded_session) {
-        /* Try to load settings for `host' into a temporary config */
-        Conf *conf2 = conf_new();
-        conf_set_str(conf2, CONF_host, "");
-        do_defaults(host, conf2);
-        if (conf_get_str(conf2, CONF_host)[0] != '\0') {
-            /* Settings present and include hostname */
-            /* Re-load data into the real config. */
-            do_defaults(host, conf);
-        } else {
-            /* Session doesn't exist or mention a hostname. */
-            /* Use `host' as a bare hostname. */
-            conf_set_str(conf, CONF_host, host);
-        }
-        conf_free(conf2);
-    } else {
-        /* Patch in hostname `host' to session details. */
-        conf_set_str(conf, CONF_host, host);
-    }
+	CP("psftp_c2");
 
-    /*
-     * Force use of SSH. (If they got the protocol wrong we assume the
-     * port is useless too.)
-     */
-    if (conf_get_int(conf, CONF_protocol) != PROT_SSH) {
-        conf_set_int(conf, CONF_protocol, PROT_SSH);
-        conf_set_int(conf, CONF_port, 22);
-    }
+	/*
+	 * If we haven't loaded session details already (e.g., from -load),
+	 * try looking for a session called "host".
+	 */
+	if (!loaded_session)
+	{
+		CP("psftp_c3");
+		/* Try to load settings for `host' into a temporary config */
+		Conf *conf2 = conf_new();
+		conf_set_str(conf2, CONF_host, "");
+		do_defaults(host, conf2);
+		if (conf_get_str(conf2, CONF_host)[0] != '\0') {
+			/* Settings present and include hostname */
+			/* Re-load data into the real config. */
+			do_defaults(host, conf);
+		} else {
+			/* Session doesn't exist or mention a hostname. */
+			/* Use `host' as a bare hostname. */
+			conf_set_str(conf, CONF_host, host);
+		}
+		conf_free(conf2);
+	}
+	else
+	{
+		CP("psftp_c4");
+		/* Patch in hostname `host' to session details. */
+		conf_set_str(conf, CONF_host, host);
+	}
 
-    /*
-     * If saved session / Default Settings says SSH-1 (`1 only' or `1'),
-     * then change it to SSH-2, on the grounds that that's more likely to
-     * work for SFTP. (Can be overridden with `-1' option.)
-     * But if it says `2 only' or `2', respect which.
-     */
-    if ((conf_get_int(conf, CONF_sshprot) & ~1) != 2)   /* is it 2 or 3? */
-        conf_set_int(conf, CONF_sshprot, 2);
+	/*
+	 * Force use of SSH. (If they got the protocol wrong we assume the
+	 * port is useless too.)
+	 */
+	CP("psftp_c5");
+	if (conf_get_int(conf, CONF_protocol) != PROT_SSH)
+	{
+		CP("psftp_c6");
+		conf_set_int(conf, CONF_protocol, PROT_SSH);
+		conf_set_int(conf, CONF_port, 22);
+	}
 
-    /*
-     * Enact command-line overrides.
-     */
-    cmdline_run_saved(conf);
+	/*
+	 * If saved session / Default Settings says SSH-1 (`1 only' or `1'),
+	 * then change it to SSH-2, on the grounds that that's more likely to
+	 * work for SFTP. (Can be overridden with `-1' option.)
+	 * But if it says `2 only' or `2', respect which.
+	 */
+	CP("psftp_c7");
+	if ((conf_get_int(conf, CONF_sshprot) & ~1) != 2)   /* is it 2 or 3? */
+		conf_set_int(conf, CONF_sshprot, 2);
 
-    /*
-     * Muck about with the hostname in various ways.
-     */
-    {
-        char *hostbuf = dupstr(conf_get_str(conf, CONF_host));
-        char *host = hostbuf;
-        char *p, *q;
+	/*
+	 * Enact command-line overrides.
+	 */
+	CP("psftp_c8");
+	cmdline_run_saved(conf);
 
-        /*
-         * Trim leading whitespace.
-         */
-        host += strspn(host, " \t");
+	/*
+	 * Muck about with the hostname in various ways.
+	 */
+	{
+		CP("psftp_c9");
+		char *hostbuf = dupstr(conf_get_str(conf, CONF_host));
+		char *host = hostbuf;
+		char *p, *q;
 
-        /*
-         * See if host is of the form user@host, and separate out
-         * the username if so.
-         */
-        if (host[0] != '\0') {
-            char *atsign = strrchr(host, '@');
-            if (atsign) {
-                *atsign = '\0';
-                conf_set_str(conf, CONF_username, host);
-                host = atsign + 1;
-            }
-        }
+		/*
+		 * Trim leading whitespace.
+		 */
+		host += strspn(host, " \t");
 
-        /*
-         * Remove any remaining whitespace.
-         */
-        p = hostbuf;
-        q = host;
-        while (*q) {
-            if (*q != ' ' && *q != '\t')
-                *p++ = *q;
-            q++;
-        }
-        *p = '\0';
+		/*
+		 * See if host is of the form user@host, and separate out
+		 * the username if so.
+		 */
+		if (host[0] != '\0') {
+			char *atsign = strrchr(host, '@');
+			if (atsign) {
+				*atsign = '\0';
+				conf_set_str(conf, CONF_username, host);
+				host = atsign + 1;
+			}
+		}
 
-        conf_set_str(conf, CONF_host, hostbuf);
-        sfree(hostbuf);
-    }
+		/*
+		 * Remove any remaining whitespace.
+		 */
+		p = hostbuf;
+		q = host;
+		while (*q) {
+			if (*q != ' ' && *q != '\t')
+				*p++ = *q;
+			q++;
+		}
+		*p = '\0';
 
-    /* Set username */
-    if (user != NULL && user[0] != '\0') {
-        conf_set_str(conf, CONF_username, user);
-    }
+		conf_set_str(conf, CONF_host, hostbuf);
+		sfree(hostbuf);
+	}
 
-    if (portnumber)
-        conf_set_int(conf, CONF_port, portnumber);
+	/* Set username */
+	CP("psftp_c10");
+	if (user != NULL && user[0] != '\0') {
+		conf_set_str(conf, CONF_username, user);
+	}
 
-    /*
-     * Disable scary things which shouldn't be enabled for simple
-     * things like SCP and SFTP: agent forwarding, port forwarding,
-     * X forwarding.
-     */
-    NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);) // TG
-    conf_set_bool(conf, CONF_agentfwd, false);
-    conf_set_bool(conf, CONF_ssh_simple, true);
-    {
-        char *key;
-        while ((key = conf_get_str_nthstrkey(conf, CONF_portfwd, 0)) != NULL)
-            conf_del_str_str(conf, CONF_portfwd, key);
-    }
+	if (portnumber)
+		conf_set_int(conf, CONF_port, portnumber);
 
-    /* Set up subsystem name. */
-    conf_set_str(conf, CONF_remote_cmd, "sftp");
-    conf_set_bool(conf, CONF_ssh_subsys, true);
-    conf_set_bool(conf, CONF_nopty, true);
+	/*
+	 * Disable scary things which shouldn't be enabled for simple
+	 * things like SCP and SFTP: agent forwarding, port forwarding,
+	 * X forwarding.
+	 */
+	CP("psftp_c11");
+	NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);) // TG
+	conf_set_bool(conf, CONF_agentfwd, false);
+	conf_set_bool(conf, CONF_ssh_simple, true);
+	{
+		char *key;
+		while ((key = conf_get_str_nthstrkey(conf, CONF_portfwd, 0)) != NULL)
+			conf_del_str_str(conf, CONF_portfwd, key);
+	}
 
-    /*
-     * Set up fallback option, for SSH-1 servers or servers with the
-     * sftp subsystem not enabled but the server binary installed
-     * in the usual place. We only support fallback on Unix
-     * systems, and we use a kludgy piece of shellery which should
-     * try to find sftp-server in various places (the obvious
-     * systemwide spots /usr/lib and /usr/local/lib, and then the
-     * user's PATH) and finally give up.
-     *
-     *   test -x /usr/lib/sftp-server && exec /usr/lib/sftp-server
-     *   test -x /usr/local/lib/sftp-server && exec /usr/local/lib/sftp-server
-     *   exec sftp-server
-     *
-     * the idea being that this will attempt to use either of the
-     * obvious pathnames and then give up, and when it does give up
-     * it will print the preferred pathname in the error messages.
-     */
-    conf_set_str(conf, CONF_remote_cmd2,
-                 "test -x /usr/lib/sftp-server &&"
-                 " exec /usr/lib/sftp-server\n"
-                 "test -x /usr/local/lib/sftp-server &&"
-                 " exec /usr/local/lib/sftp-server\n"
-                 "exec sftp-server");
-    conf_set_bool(conf, CONF_ssh_subsys2, false);
+	/* Set up subsystem name. */
+	CP("psftp_c12");
+	conf_set_str(conf, CONF_remote_cmd, "sftp");
+	conf_set_bool(conf, CONF_ssh_subsys, true);
+	conf_set_bool(conf, CONF_nopty, true);
 
-    if (psftp_logctx==NULL) // TG - might connect again after disconnecting
-    {
-       psftp_logctx = log_init(default_logpolicy, conf);
+	/*
+	 * Set up fallback option, for SSH-1 servers or servers with the
+	 * sftp subsystem not enabled but the server binary installed
+	 * in the usual place. We only support fallback on Unix
+	 * systems, and we use a kludgy piece of shellery which should
+	 * try to find sftp-server in various places (the obvious
+	 * systemwide spots /usr/lib and /usr/local/lib, and then the
+	 * user's PATH) and finally give up.
+	 *
+	 *   test -x /usr/lib/sftp-server && exec /usr/lib/sftp-server
+	 *   test -x /usr/local/lib/sftp-server && exec /usr/local/lib/sftp-server
+	 *   exec sftp-server
+	 *
+	 * the idea being that this will attempt to use either of the
+	 * obvious pathnames and then give up, and when it does give up
+	 * it will print the preferred pathname in the error messages.
+	 */
+	conf_set_str(conf, CONF_remote_cmd2,
+				 "test -x /usr/lib/sftp-server &&"
+				 " exec /usr/lib/sftp-server\n"
+				 "test -x /usr/local/lib/sftp-server &&"
+				 " exec /usr/local/lib/sftp-server\n"
+				 "exec sftp-server");
+	conf_set_bool(conf, CONF_ssh_subsys2, false);
+
+	CP("psftp_c13");
+	if (psftp_logctx==NULL) // TG - might connect again after disconnecting
+	{
+	   psftp_logctx = log_init(default_logpolicy, conf);
 #ifdef DEBUG_MALLOC
-       printf("Created new logctx.\n"); // TG
+	   printf("Created new logctx.\n"); // TG
 #endif
-    }
+	}
 #ifdef DEBUG_MALLOC
-    else
-       printf("Reusing logctx.\n"); // TG
+	else
+	   printf("Reusing logctx.\n"); // TG
 #endif
 
-    platform_psftp_pre_conn_setup();
+	CP("psftp_c14");
+	platform_psftp_pre_conn_setup();
 
-    err = backend_init(&ssh_backend, psftp_seat, &backend, psftp_logctx, conf,
-                       conf_get_str(conf, CONF_host),
-                       conf_get_int(conf, CONF_port),
-                       &realhost, 0,
-                       conf_get_bool(conf, CONF_tcp_keepalives));
-    if (err != NULL)
-    {
-        fprintf(stderr, "ssh_init: %s\n", err);
-        if (realhost != NULL) // TG
-           sfree(realhost); // TG
-        return 1;
-    }
+	CP("psftp_c15");
+	err = backend_init(&ssh_backend, psftp_seat, &backend, psftp_logctx, conf,
+					   conf_get_str(conf, CONF_host),
+					   conf_get_int(conf, CONF_port),
+					   &realhost, 0,
+					   conf_get_bool(conf, CONF_tcp_keepalives));
+	if (err != NULL)
+	{
+		CP("psftp_c16");
+		fprintf(stderr, "ssh_init: %s\n", err);
+		if (realhost != NULL) // TG
+		   sfree(realhost); // TG
+		return 1;
+	}
 
+	CP("psftp_c17");
 	uint64_t starttick=TGGetTickCount64(); // TG
-    if (curlibctx->connectiontimeoutticks<1000) // TG
-       curlibctx->connectiontimeoutticks=60000; // TG
+	if (curlibctx->connectiontimeoutticks<1000) // TG
+	   curlibctx->connectiontimeoutticks=60000; // TG
 
-    while (!backend_sendok(backend))
-    {
-        if (curlibctx->aborted) // TG
-        {
-            fprintf(stderr, "ssh_init: aborted by program\n"); // TG
-            if (realhost != NULL)
-               sfree(realhost);
-            return 1;
-        }
-        // recalculate on every pass because
-        // curlibctx->connectiontimeoutticks may be changed ad hoc by host program
-        uint64_t maxtick = starttick + (curlibctx->connectiontimeoutticks / 1000 * TICKSPERSEC); // TG
-        if (TGGetTickCount64()>maxtick)
-        {
-            int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC); // TG
-            fprintf(stderr, "ssh_init: timeout, no connection after %d seconds\n",elapsedseconds);
-            if (realhost != NULL)
-               sfree(realhost);
-            return 1;
-        }
-        if (backend_exitcode(backend) >= 0)
-        {
-            if (realhost != NULL) // TG
-               sfree(realhost);
-            return 1;
-        }
-        if (ssh_sftp_loop_iteration() < 0)
-        {
-            fprintf(stderr, "ssh_init: error during SSH connection setup\n");
-            if (realhost != NULL) // TG
-               sfree(realhost);
-            return 1;
-        }
-    }
-    if (verbose && realhost != NULL)
-        printf("Connected to %s\n", realhost);
-    if (realhost != NULL)
-        sfree(realhost);
-    return 0;
+	CP("psftp_c18");
+	while (!backend_sendok(backend))
+	{
+		CP("psftp_c20");
+		if (curlibctx->aborted) // TG
+		{
+			CP("psftp_c21");
+			fprintf(stderr, "ssh_init: aborted by program\n"); // TG
+			if (realhost != NULL)
+			   sfree(realhost);
+			CP("psftp_c22");
+			return 1;
+		}
+		// recalculate on every pass because
+		// curlibctx->connectiontimeoutticks may be changed ad hoc by host program
+		CP("psftp_c23");
+		uint64_t maxtick = starttick + (curlibctx->connectiontimeoutticks / 1000 * TICKSPERSEC); // TG
+		if (TGGetTickCount64()>maxtick)
+		{
+			CP("psftp_c24");
+			int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC); // TG
+			fprintf(stderr, "ssh_init: timeout, no connection after %d seconds\n",elapsedseconds);
+			if (realhost != NULL)
+			   sfree(realhost);
+			return 1;
+		}
+		CP("psftp_c25");
+		if (backend_exitcode(backend) >= 0)
+		{
+			CP("psftp_c26");
+			if (realhost != NULL) // TG
+			   sfree(realhost);
+			CP("psftp_c27");
+			return 1;
+		}
+		CP("psftp_c28");
+		if (ssh_sftp_loop_iteration() < 0)
+		{
+			CP("psftp_c29");
+			fprintf(stderr, "ssh_init: error during SSH connection setup\n");
+			if (realhost != NULL) // TG
+			   sfree(realhost);
+			CP("psftp_c30");
+			return 1;
+		}
+	}
+	CP("psftp_c31");
+	if (verbose && realhost != NULL)
+		printf("Connected to %s\n", realhost);
+	if (realhost != NULL)
+	{
+	    CP("psftp_c35");
+		sfree(realhost);
+	}
+	CP("psftp_c40");
+	return 0;
 }
 
 void cmdline_error(const char *p, ...)
@@ -3402,14 +3529,15 @@ EXPORT void tggetstructsizes(int *Pulongsize,int *Pnamesize,int *Pattrsize,int *
     *Pnamessize = sizeof names;
 }
 
-EXPORT int tgputty_initcontext(const bool averbose,TTGLibraryContext *libctx)
+EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
 {
     curlibctx=libctx;
     ContextCounter++;
     ThreadContextCounter++;
-    verbose=averbose;
+	verbose=(averbose & 1) == 1;
+	checkpoints=(averbose & 2) == 2;
 
-    if (ThreadContextCounter==1)
+	if (ThreadContextCounter==1)
        init_thread_vars();
 
     libctx->bufchainlength = sizeof received_data;
@@ -3459,7 +3587,7 @@ EXPORT int tgputty_initcontext(const bool averbose,TTGLibraryContext *libctx)
 #ifdef WITHCMDLINEXXXX
 EXPORT int tgputty_initwithcmdline(int argc, char *argv[], TTGLibraryContext *libctx) // TG 2019
 {
-    int res=tgputty_initcontext(false,libctx);
+    int res=tgputty_initcontext(0,libctx);
     if (res!=0)
        return res;
 
@@ -3602,27 +3730,37 @@ EXPORT int tgsftp_connect(const char *ahost,const char *auser,const int aport,co
 										 TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
+  CP("tgsftp_connect");
 
   #ifndef _WINDOWS
   if (!thread_vars_initialized || !curlibctx->fds)
-     init_thread_vars(); // TG ... because Unix doesn't have a DLL_THREAD_ATTACH feature
+  {
+     CP("sftpcn10");
+	 init_thread_vars(); // TG ... because Unix doesn't have a DLL_THREAD_ATTACH feature
+     CP("sftpcn11");
+  }
   #endif
 
+  CP("sftpcn12");
   printf("Connecting with %s, port %d, as user %s.\n",ahost,aport,auser);
 
+  CP("sftpcn13");
   libctx->caller_supplied_password = dupstr(apassword);
 
   char *ourhost=dupstr(ahost);
   char *ouruser=dupstr(auser);
 
+  CP("sftpcn20");
   int result=psftp_connect(ourhost,ouruser,aport);
+  CP("sftpcn21");
   printf("psftp_connect result is %d\n",result);
 
   if (ourhost)
 	 sfree(ourhost);
   if (ouruser)
-     sfree(ouruser);
+	 sfree(ouruser);
 
+  CP("sftpcn22");
   if (libctx->caller_supplied_password!=NULL)
   {
 	 sfree(libctx->caller_supplied_password);
@@ -3631,20 +3769,25 @@ EXPORT int tgsftp_connect(const char *ahost,const char *auser,const int aport,co
 
   if (result==0)
   {
+	 CP("sftpcn30");
 	 result=do_sftp_init();
+	 CP("sftpcn31");
 	 printf("do_sftp_init result is %d\n",result);
   }
   else
   {
+	CP("sftpcn40");
 #ifdef DEBUG_MALLOC
-    printf("connect failed, calling do_sftp_cleanup, backend=%p, connected=%d\n",
-           backend,
-           backend ? backend_connected(backend): false);
+	printf("connect failed, calling do_sftp_cleanup, backend=%p, connected=%d\n",
+		   backend,
+		   backend ? backend_connected(backend): false);
 #endif
-    do_sftp_cleanup();
+	do_sftp_cleanup();
+	CP("sftpcn45");
   }
 
   printf("tgsftp_connect final result is %d\n",result);
+  CP("sftpcn49X");
   return result;
 }
 
@@ -3817,9 +3960,10 @@ EXPORT void tgsftp_close(TTGLibraryContext *libctx) // TG 2019
   sftp_cmd_close(NULL);
 }
 
-EXPORT void tgputty_setverbose(const bool averbose) // TG 2019
+EXPORT void tgputty_setverbose(const char averbose) // TG 2019
 {
-  verbose = averbose;
+  verbose = (averbose & 1) == 1;
+  checkpoints = (averbose & 2) == 2;
   flags = (verbose ? FLAG_VERBOSE : 0);
 }
 
@@ -3868,6 +4012,34 @@ EXPORT void *tgputty_xfer_upload_init(struct fxp_handle *fh, uint64_t offset,TTG
   return xfer_upload_init(fh,offset);
 }
 
+EXPORT void *tgputty_xfer_download_init(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx)
+{
+  curlibctx=libctx;
+#ifdef DEBUG_DOWNLOAD
+  printf("calling xfer_download_init with offset %" PRIu64 "\n",offset);
+#endif
+  return xfer_download_init(fh,offset);
+}
+
+EXPORT bool tgputty_xfer_download_preparequeue(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
+{
+  curlibctx=libctx;
+  xfer_download_queue(xfer);
+  struct sftp_packet *pktin = sftp_recv();
+
+  int retd = xfer_download_gotpkt(xfer, pktin);
+
+  if (retd <= 0)
+  {
+	 printf("error while reading: %s\n", fxp_error());
+	 if (retd == INT_MIN)        /* pktin not even freed */
+		sfree(pktin);
+	 return false;
+  }
+
+  return true;
+}
+
 EXPORT bool tgputty_xfer_upload_ready(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
   curlibctx=libctx;
@@ -3883,6 +4055,21 @@ EXPORT void tgputty_xfer_upload_data(struct fxp_xfer *xfer, char *buffer, int le
   printf("calling xfer_upload_data, len is %d\n",len);
 #endif
   xfer_upload_data(xfer,buffer,len);
+}
+
+EXPORT bool tgputty_xfer_download_data(struct fxp_xfer *xfer, void **buffer, int *len, TTGLibraryContext *libctx)
+{
+  curlibctx=libctx;
+#ifdef DEBUG_DOWNLOAD
+  printf("calling xfer_download_data\n");
+#endif
+  return xfer_download_data(xfer,buffer,len);
+}
+
+EXPORT void tgputty_xfer_set_error(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
+{
+  curlibctx=libctx;
+  xfer_set_error(xfer);
 }
 
 EXPORT bool tgputty_xfer_ensuredone(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
@@ -3940,6 +4127,13 @@ EXPORT void tgputty_xfer_cleanup(struct fxp_xfer *xfer,TTGLibraryContext *libctx
 #endif
   xfer_cleanup(xfer);
 }
+
+EXPORT void tgputty_sfree(void *p,TTGLibraryContext *libctx)
+{
+  curlibctx=libctx;
+  sfree(p);
+}
+
 
 EXPORT void tgputtygetversions(double *puttyrelease,int *tgputtylibbuild) // TG 2019
 {
@@ -4177,7 +4371,7 @@ int tgdll_print(const char *msg)
       char *pr=printnow(msg,&needfree);
       if (pr)
       {
-   	     curlibctx->printmessage_callback(pr,false,curlibctx);
+   	     curlibctx->printmessage_callback(pr,0,curlibctx);
          if (needfree)
             free(pr);
       }
@@ -4202,8 +4396,8 @@ int tgdll_fprint(FILE *stream,const char *msg)
       char *pr=printnow(msg,&needfree);
       if (pr)
       {
-         curlibctx->printmessage_callback(pr,stream==stderr,curlibctx);
-         if (needfree)
+		 curlibctx->printmessage_callback(pr,stream==stderr ? 1 : 0,curlibctx);
+		 if (needfree)
             free(pr);
       }
 	  return (int)strlen(msg);

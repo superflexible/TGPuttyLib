@@ -11,7 +11,7 @@ int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext *libctx
 
 int (*tggetlibrarycontextsize)();
 
-int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
+int (*tgputty_initcontext)(const char averbose,TTGLibraryContext *libctx);
 
 int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
 

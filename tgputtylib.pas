@@ -199,6 +199,8 @@ type TUnsignedLong={$ifdef MSWINDOWS}
                    {$endif}
                    {$endif}
 
+     PPByte=^PByte;
+
      fxp_attrs=record
        flags:TUnsignedLong;
        size: UInt64;
@@ -232,7 +234,7 @@ type TUnsignedLong={$ifdef MSWINDOWS}
        Tag:UInt64;
        ls_callback:function(const names:Pfxp_names;const libctx:PTGLibraryContext):Boolean; cdecl;
        getpassword_callback:function(const prompt:PAnsiChar;const echo:Boolean;const cancel:PBoolean;const libctx:PTGLibraryContext):PAnsiChar; cdecl;
-       printmessage_callback:procedure(const msg:PAnsiChar;const isstderr:Boolean;const libctx:PTGLibraryContext); cdecl;
+       printmessage_callback:procedure(const msg:PAnsiChar;const kind:Byte;const libctx:PTGLibraryContext); cdecl;
        progress_callback:function(const bytescopied:Int64;const isupload:Boolean;const libctx:PTGLibraryContext):Boolean; cdecl;
        read_from_stream:function(const offset:UInt64;const buffer:Pointer;const bufsize:Integer;const libctx:PTGLibraryContext):Integer; cdecl;
        write_to_stream:function(const offset:UInt64;const buffer:Pointer;const bufsize:Integer;const libctx:PTGLibraryContext):Integer; cdecl;
@@ -289,9 +291,9 @@ function tgputty_initwithcmdline(argcparam: Longint; argvparam: ppchar; const li
 // basic functions
 function tggetlibrarycontextsize:Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tggetstructsizes(const Pulongsize,Pnamesize,Pattrsize,Pnamessize:PInteger); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
-function tgputty_initcontext(const verbose:Boolean;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgputty_initcontext(const verbose:Byte;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtysetappname(const newappname,appversion:PAnsiChar); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
-procedure tgputty_setverbose(const averbose:Boolean); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgputty_setverbose(const averbose:Byte); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtyfree(const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtygetversions(puttyrelease:PDouble; tgputtylibbuild:PInteger); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif}; // TG 2019
 function tgputty_getconfigarrays(types,subtypes,names:Pointer;count:PInteger):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
@@ -337,9 +339,17 @@ function tgputty_xfer_upload_ready(const xfer:TSFTPTransfer; const libctx:PTGLib
 procedure tgputty_xfer_upload_data(const xfer:TSFTPTransfer;const buffer:Pointer;
                                    const len:Integer;const anoffset:UInt64;
                                    const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+function tgputty_xfer_download_init(const fh:TSFTPFileHandle;const offset:UInt64; const libctx:PTGLibraryContext):TSFTPTransfer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgputty_xfer_download_preparequeue(const xfer:TSFTPTransfer; const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgputty_xfer_download_data(const xfer:TSFTPTransfer;const buffer:PPByte;const len:PInteger; const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+procedure tgputty_xfer_set_error(const xfer:TSFTPTransfer; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgputty_xfer_ensuredone(const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgputty_xfer_done(const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputty_xfer_cleanup(const xfer:TSFTPTransfer;const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+procedure tgputty_sfree(const p:Pointer; const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 
 function tgputty_conf_get_bool(key:Integer; const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgputty_conf_get_int(key:Integer; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
@@ -358,9 +368,9 @@ var
   // basic functions
   tggetlibrarycontextsize: function:Integer; cdecl;
   tggetstructsizes:procedure (const Pulongsize,Pnamesize,Pattrsize,Pnamessize:PInteger); cdecl;
-  tgputty_initcontext: function (const verbose:Boolean;const libctx:PTGLibraryContext):Integer; cdecl;
+  tgputty_initcontext: function (const verbose:Byte;const libctx:PTGLibraryContext):Integer; cdecl;
   tgputtysetappname: procedure (const newappname,appversion:PAnsiChar); cdecl;
-  tgputty_setverbose: procedure (const averbose:Boolean); cdecl;
+  tgputty_setverbose: procedure (const averbose:Byte); cdecl;
   tgputtyfree: procedure (const libctx:PTGLibraryContext); cdecl;
   tgputtygetversions: procedure (puttyrelease:PDouble; tgputtylibbuild:PInteger); cdecl; // TG 2019
   tgputty_getconfigarrays: function (types,subtypes,names:Pointer;count:PInteger):Boolean; cdecl;
@@ -406,9 +416,17 @@ var
   tgputty_xfer_upload_data: procedure (const xfer:TSFTPTransfer;const buffer:Pointer;
                                    const len:Integer;const anoffset:UInt64;
                                    const libctx:PTGLibraryContext); cdecl;
+
+  tgputty_xfer_download_init: function (const fh:TSFTPFileHandle;const offset:UInt64; const libctx:PTGLibraryContext):TSFTPTransfer; cdecl;
+  tgputty_xfer_download_preparequeue: function (const xfer:TSFTPTransfer; const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgputty_xfer_download_data: function (const xfer:TSFTPTransfer;const buffer:PPByte;const len:PInt32; const libctx:PTGLibraryContext):Boolean; cdecl;
+
+  tgputty_xfer_set_error: procedure (const xfer:TSFTPTransfer; const libctx:PTGLibraryContext); cdecl;
   tgputty_xfer_ensuredone: function (const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl;
   tgputty_xfer_done: function (const xfer:TSFTPTransfer;const libctx:PTGLibraryContext):Boolean; cdecl;
   tgputty_xfer_cleanup: procedure (const xfer:TSFTPTransfer;const libctx:PTGLibraryContext); cdecl;
+
+  tgputty_sfree: procedure (const p:Pointer; const libctx:PTGLibraryContext); cdecl;
 
   tgputty_conf_get_bool: function (key:Integer; const libctx:PTGLibraryContext):Boolean; cdecl;
   tgputty_conf_get_int: function (key:Integer; const libctx:PTGLibraryContext):Integer; cdecl;
@@ -515,9 +533,17 @@ begin
      @tgputty_xfer_upload_init:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_init');
      @tgputty_xfer_upload_ready:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_ready');
      @tgputty_xfer_upload_data:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_data');
+
+     @tgputty_xfer_download_init:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_init');
+     @tgputty_xfer_download_preparequeue:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_preparequeue');
+     @tgputty_xfer_download_data:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_data');
+
+     @tgputty_xfer_set_error:=GetProcedureAddress(TGPLH,'tgputty_xfer_set_error');
      @tgputty_xfer_ensuredone:=GetProcedureAddress(TGPLH,'tgputty_xfer_ensuredone');
      @tgputty_xfer_done:=GetProcedureAddress(TGPLH,'tgputty_xfer_done');
      @tgputty_xfer_cleanup:=GetProcedureAddress(TGPLH,'tgputty_xfer_cleanup');
+
+     @tgputty_sfree:=GetProcedureAddress(TGPLH,'tgputty_sfree');
 
      @tgputty_conf_get_bool:=GetProcedureAddress(TGPLH,'tgputty_conf_get_bool');
      @tgputty_conf_get_int:=GetProcedureAddress(TGPLH,'tgputty_conf_get_int');

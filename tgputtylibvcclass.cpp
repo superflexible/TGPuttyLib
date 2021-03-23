@@ -39,11 +39,11 @@ const char* getpassword_callback(const char* prompt, const bool echo, bool* canc
 	}
 }
 
-void printmessage_callback(const char* msg, const bool isstderr, const void* libctx)
+void printmessage_callback(const char* msg, const char kind, const void* libctx)
 {
 	TTGPuttySFTP* TGPSFTP = (TTGPuttySFTP*)((TTGLibraryContext*)libctx)->tag;
 	if (TGPSFTP->OnMessage != NULL)
-		TGPSFTP->OnMessage(msg, isstderr);
+		TGPSFTP->OnMessage(msg, kind==1);
 
 	TGPSFTP->LastMessages += msg;
 }
@@ -141,7 +141,7 @@ TTGPuttySFTP::TTGPuttySFTP(const bool verbose)
 	Fcontext.raise_exception_callback = raise_exception_callback;
 	Fcontext.verify_host_key_callback = verify_host_key_callback;
 	
-	if (tgputty_initcontext(verbose, &Fcontext) != 0)
+	if (tgputty_initcontext(verbose ? 1 : 0, &Fcontext) != 0)
 		throw TTGPuttySFTPException("tgputty_initcontext failed - incorrect DLL version?");
 }
 

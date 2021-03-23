@@ -110,6 +110,11 @@ void __fastcall TFVCLAppMain::btConnectClick(TObject *Sender)
   }
 
   GetListing();
+
+  if (TGPuttySFTPClient1->Connected)
+     memLog->Lines->Add("Connected");
+  else
+     memLog->Lines->Add("Connected=false?");
 }
 //---------------------------------------------------------------------------
 
@@ -131,9 +136,17 @@ void __fastcall TFVCLAppMain::FormShow(TObject *Sender)
 
 void __fastcall TFVCLAppMain::btDisconnectClick(TObject *Sender)
 {
+  if (TGPuttySFTPClient1->Connected)
+     memLog->Lines->Add("Connected");
+  else
+     memLog->Lines->Add("Connected=false?");
   TGPuttySFTPClient1->Disconnect();
   sgRemoteFiles->RowCount=0;
   sgRemoteFiles->ColCount=0;
+  if (TGPuttySFTPClient1->Connected)
+     memLog->Lines->Add("Connected");
+  else
+     memLog->Lines->Add("Connected=false?");
 }
 //---------------------------------------------------------------------------
 
@@ -182,6 +195,11 @@ void __fastcall TFVCLAppMain::sgRemoteFilesDblClick(TObject *Sender)
 
 void __fastcall TFVCLAppMain::btUploadClick(TObject *Sender)
 {
+  if (TGPuttySFTPClient1->Connected)
+     memLog->Lines->Add("Connected");
+  else
+     memLog->Lines->Add("Connected=false?");
+
   TDateTimeInfoRec LDateTime;
 
   for (int i=0;i<FileListBox1->Count;i++)
@@ -212,6 +230,10 @@ void __fastcall TFVCLAppMain::btUploadClick(TObject *Sender)
        }
      }
   }
+  if (TGPuttySFTPClient1->Connected)
+     memLog->Lines->Add("Connected");
+  else
+     memLog->Lines->Add("Connected=false?");
 }
 //---------------------------------------------------------------------------
 

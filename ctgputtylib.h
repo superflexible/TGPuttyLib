@@ -57,7 +57,7 @@ typedef struct
 
   bool (*ls_callback)(const struct fxp_names *names,const void *libctx);
   const char* (*getpassword_callback)(const char *prompt, const bool echo, bool *cancel, const void *libctx);
-  void (*printmessage_callback)(const char *msg, const bool isstderr, const void *libctx);
+  void (*printmessage_callback)(const char *msg, const char kind, const void *libctx);
   bool (*progress_callback)(const uint64_t bytescopied, const bool isupload, const void *libctx);
   int (*read_from_stream)(const uint64_t offset,void *buffer,const int bufsize, const void *libctx);
   int (*write_to_stream)(const uint64_t offset,void *buffer,const int bufsize, const void *libctx);
@@ -112,7 +112,7 @@ extern int (*tgputty_initwithcmdline)(int argc, char *argv[], TTGLibraryContext 
 
 extern int (*tggetlibrarycontextsize)();
 
-extern int (*tgputty_initcontext)(const bool averbose,TTGLibraryContext *libctx);
+extern int (*tgputty_initcontext)(const char averbose,TTGLibraryContext *libctx);
 
 
 extern int (*tgputtyrunpsftp)(TTGLibraryContext *libctx);
