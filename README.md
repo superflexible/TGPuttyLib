@@ -23,8 +23,10 @@ DIRECTORIES AND FILES
 tgputtylib.pas         -   Delphi Unit interfacing with the DLL
 
 tgputtysftp.pas        -   Delphi SFTP Client Class (using 8-bit strings)
+                             (recommended)
 
 tgputtysftpclient.pas  -   Delphi SFTP Client Component (using UnicodeStrings)
+                             (not needed, see note at the end of this document)
 
 ctgputtylib.cpp,h      -   C++ DLL bindings
 
@@ -65,3 +67,25 @@ Win32, Win64           -   compiled binaries for Windows
 Linux (Compiled Libs)  -   compiled binaries for Linux (various CPU types)
 
 macOS (Compiled Libs)  -   compiled binaries for macOS (Intel 32 and 64 bits)
+
+
+---------------------
+
+DELPHI RECOMMENDATION
+
+Please consider just using the TTGPuttySFTP class in tgputtysftp.pas
+rather than the TTGPuttySFTPClient component in tgputtysftpclient.pas.
+Just include the folder with thePascal source files in your compiler path.
+
+The class has many advantages! You don't have to install anything into the IDE.
+Much easier when you switch to a newer Delphi version in the future.
+
+You can just create the class and assign properties in Delphi code, rather than using
+the component.
+
+Take a look at the DelphiVCLDemo example, rather than DelphiVCLComponentDemo.
+
+Note that the TTGPuttySFTP class uses AnsiStrings, so you need to work with Utf8Encode and Utf8Decode or Utf8ToString.
+
+The component, on the other hand, uses UnicodeStrings.
+
