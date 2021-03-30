@@ -22,11 +22,9 @@ DIRECTORIES AND FILES
 
 tgputtylib.pas         -   Delphi Unit interfacing with the DLL
 
-tgputtysftp.pas        -   Delphi SFTP Client Class (using 8-bit strings)
-                             (recommended)
+tgputtysftp.pas        -   Delphi SFTP Client Class (recommended, but uses 8-bit strings)
 
-tgputtysftpclient.pas  -   Delphi SFTP Client Component (using UnicodeStrings)
-                             (not needed, see note at the end of this document)
+tgputtysftpclient.pas  -   Delphi SFTP Client Component (not needed, see note at the end of this document)
 
 ctgputtylib.cpp,h      -   C++ DLL bindings
 
