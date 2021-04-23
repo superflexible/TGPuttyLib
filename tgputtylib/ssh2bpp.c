@@ -9,6 +9,8 @@
 #include "sshbpp.h"
 #include "sshcr.h"
 
+#include "tglibcver.h"
+
 struct ssh2_bpp_direction {
     unsigned long sequence;
     ssh_cipher *cipher;

@@ -4,6 +4,8 @@
 #include <stddef.h>                    /* for wchar_t */
 #include <limits.h>                    /* for INT_MAX */
 
+#include "tglibcver.h"
+
 /*
  * Global variables. Most modules declare these `extern', but
  * window.c will do `#define PUTTY_DO_GLOBALS' before including this

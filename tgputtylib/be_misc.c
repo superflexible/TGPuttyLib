@@ -8,6 +8,8 @@
 #include "putty.h"
 #include "network.h"
 
+#include "tglibcver.h"
+
 void backend_socket_log(Seat *seat, LogContext *logctx,
                         int type, SockAddr *addr, int port,
                         const char *error_msg, int error_code, Conf *conf,

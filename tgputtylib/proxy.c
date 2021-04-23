@@ -18,6 +18,8 @@
          (conf_get_int(conf, CONF_proxy_dns) == AUTO && \
               conf_get_int(conf, CONF_proxy_type) != PROXY_SOCKS4))
 
+#include "tglibcver.h"
+
 /*
  * Call this when proxy negotiation is complete, so that this
  * socket can begin working normally.

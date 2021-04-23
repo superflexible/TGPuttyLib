@@ -7,6 +7,8 @@
 
 #ifndef NO_GSSAPI
 
+#include "tglibcver.h"
+
 static Ssh_gss_stat ssh_gssapi_indicate_mech(struct ssh_gss_library *lib,
                                              Ssh_gss_buf *mech)
 {

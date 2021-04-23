@@ -12,6 +12,8 @@
 #include "sshcr.h"
 #include "pageant.h"
 
+#include "tglibcver.h"
+
 /*
  * We need this to link with the RSA code, because rsa_ssh1_encrypt()
  * pads its data with random bytes. Since we only use rsa_ssh1_decrypt()

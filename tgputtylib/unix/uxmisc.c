@@ -16,6 +16,8 @@
 
 #include "putty.h"
 
+#include "tglibcver.h"
+
 unsigned long getticks(void)
 {
     /*
@@ -25,6 +27,7 @@ unsigned long getticks(void)
      * can be used for keepalives.
      */
 #if defined HAVE_CLOCK_GETTIME && defined HAVE_DECL_CLOCK_MONOTONIC
+#ifndef AVOID_CLOCK_GETTIME
     {
         /* Use CLOCK_MONOTONIC if available, so as to be unconfused if
          * the system clock changes. */
@@ -33,6 +36,7 @@ unsigned long getticks(void)
             return ts.tv_sec * TICKSPERSEC +
                 ts.tv_nsec / (1000000000 / TICKSPERSEC);
     }
+#endif
 #endif
     {
         struct timeval tv;

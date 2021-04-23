@@ -19,6 +19,8 @@
 
 #include <ws2tcpip.h>
 
+#include "tglibcver.h"
+
 #ifndef NO_IPV6
 #ifdef __clang__
 #pragma clang diagnostic push

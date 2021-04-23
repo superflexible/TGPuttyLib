@@ -11,6 +11,8 @@
 #include "defs.h"
 #include "tgmem.h"
 
+#include "tglibcver.h"
+
 #ifdef DEBUG_MALLOC // TG
 
 #define smalloc(z) safemalloc(z,1,0,__FILE__,__LINE__)

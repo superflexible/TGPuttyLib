@@ -48,6 +48,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "tglibcver.h"
+
 #if !defined __APPLE__ && !defined TEST_COMPILE_ON_LINUX
 /* When we're not compiling for OS X, it's easier to just turn this
  * program into a trivial hello-world by ifdef in the source than it

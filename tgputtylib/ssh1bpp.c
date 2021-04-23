@@ -9,6 +9,8 @@
 #include "sshbpp.h"
 #include "sshcr.h"
 
+#include "tglibcver.h"
+
 struct ssh1_bpp_state {
     int crState;
     long len, pad, biglen, length, maxlen;

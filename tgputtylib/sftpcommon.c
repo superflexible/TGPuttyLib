@@ -11,6 +11,8 @@
 #include "misc.h"
 #include "sftp.h"
 
+#include "tglibcver.h"
+
 static void sftp_pkt_BinarySink_write(
     BinarySink *bs, const void *data, size_t length)
 {

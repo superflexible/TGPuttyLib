@@ -55,6 +55,8 @@
 
 #define has_compat(x) ( ((CL_##x)&term->compatibility_level) != 0 )
 
+#include "tglibcver.h"
+
 const char *EMPTY_WINDOW_TITLE = "";
 
 const char sco2ansicolour[] = { 0, 4, 2, 6, 1, 5, 3, 7 };

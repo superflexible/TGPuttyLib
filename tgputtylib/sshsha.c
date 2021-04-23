@@ -68,6 +68,8 @@
 #   define HW_SHA1 HW_SHA1_NONE
 #endif
 
+#include "tglibcver.h"
+
 /*
  * The actual query function that asks if hardware acceleration is
  * available.

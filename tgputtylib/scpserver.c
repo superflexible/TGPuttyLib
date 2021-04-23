@@ -12,6 +12,8 @@
 #include "sshchan.h"
 #include "sftp.h"
 
+#include "tglibcver.h"
+
 /*
  * I think it's worth actually documenting my understanding of what
  * this protocol _is_, since I don't know of any other documentation

@@ -15,6 +15,8 @@
 #include "proxy.h"
 #include "marshal.h"
 
+#include "tglibcver.h"
+
 static void hmacmd5_chap(const unsigned char *challenge, int challen,
                          const char *passwd, unsigned char *response)
 {

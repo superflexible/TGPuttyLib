@@ -89,6 +89,8 @@
  * instance of.
  */
 
+#include "tglibcver.h"
+
 static ssh_cipher *aes_select(const ssh_cipheralg *alg);
 static ssh_cipher *aes_sw_new(const ssh_cipheralg *alg);
 static void aes_sw_free(ssh_cipher *);

@@ -11,6 +11,8 @@
 
 #define BLKSIZE 128
 
+#include "tglibcver.h"
+
 typedef struct {
     uint64_t h[8];
     unsigned char block[BLKSIZE];

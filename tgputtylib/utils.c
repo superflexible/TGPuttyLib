@@ -18,6 +18,8 @@
 #include "defs.h"
 #include "misc.h"
 
+#include "tglibcver.h"
+
 /*
  * Parse a string block size specification. This is approximately a
  * subset of the block size specs supported by GNU fileutils:

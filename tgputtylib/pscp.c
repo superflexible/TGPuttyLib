@@ -26,6 +26,8 @@
 #include "sftp.h"
 #include "storage.h"
 
+#include "tglibcver.h"
+
 static bool list = false;
 static bool verbose = false;
 static bool recursive = false;

@@ -8,6 +8,8 @@
 #include "terminal.h"
 #include "misc.h"
 
+#include "tglibcver.h"
+
 /* Character conversion arrays; they are usually taken from windows,
  * the xterm one has the four scanlines that have no unicode 2.0
  * equivalents mapped to their unicode 3.0 locations.

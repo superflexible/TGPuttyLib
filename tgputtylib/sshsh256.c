@@ -7,6 +7,8 @@
 #include "ssh.h"
 #include <assert.h>
 
+#include "tglibcver.h"
+
 /*
  * Start by deciding whether we can support hardware SHA at all.
  */

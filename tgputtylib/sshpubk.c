@@ -14,6 +14,8 @@
 #include "ssh.h"
 #include "misc.h"
 
+#include "tglibcver.h"
+
 #define rsa_signature "SSH PRIVATE KEY FILE FORMAT 1.1\n"
 
 #define BASE64_TOINT(x) ( (x)-'A'<26 ? (x)-'A'+0 :\

@@ -11,6 +11,8 @@
 #include "ssh.h"
 #include "sshblowf.h"
 
+#include "tglibcver.h"
+
 BlowfishContext *bcrypt_setup(const unsigned char *key, int keybytes,
                               const unsigned char *salt, int saltbytes)
 {

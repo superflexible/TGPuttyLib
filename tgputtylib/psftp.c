@@ -16,6 +16,8 @@
 #include "sftp.h"
 #include "version.h" // TG
 
+#include "tglibcver.h"
+
 THREADVAR TTGLibraryContext *curlibctx; // TG
 THREADVAR int ThreadContextCounter=0; // TG
 
@@ -90,6 +92,10 @@ uint64_t TGGetTickCount64() // TG
 uint64_t TGGetTickCount64()
 {
 #ifdef __APPLE__
+#define AVOID_CLOCK_GETTIME
+#endif
+
+#ifdef AVOID_CLOCK_GETTIME
     struct timeval tp;
     gettimeofday(&tp,NULL);
     return ((uint64_t) 1000 * tp.tv_sec) + (tp.tv_usec / 1000);

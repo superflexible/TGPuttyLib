@@ -12,6 +12,8 @@
 #include "sshcr.h"
 #include "sshserver.h"
 
+#include "tglibcver.h"
+
 struct ssh1_login_server_state {
     int crState;
 

@@ -23,6 +23,8 @@
 #define NORMALCODE(x) x
 #endif
 
+#include "tglibcver.h"
+
 #if defined _MSC_VER && _MSC_VER < 1800
 /* Work around lack of inttypes.h and strtoumax in older MSVC */
 #define PRIx32 "x"

@@ -32,6 +32,8 @@
 # define X11_UNIX_PATH "/tmp/.X11-unix/X"
 #endif
 
+#include "tglibcver.h"
+
 /*
  * Access to sockaddr types without breaking C strict aliasing rules.
  */

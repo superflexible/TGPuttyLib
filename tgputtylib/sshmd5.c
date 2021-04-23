@@ -6,6 +6,8 @@
  * Simon Tatham.
  */
 
+#include "tglibcver.h"
+
 typedef struct {
     uint32_t h[4];
 } MD5_Core_State;

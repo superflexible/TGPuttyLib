@@ -13,6 +13,8 @@
 #include "sshppl.h"
 #include "sshchan.h"
 
+#include "tglibcver.h"
+
 /* ----------------------------------------------------------------------
  * Implementation of PacketQueue.
  */

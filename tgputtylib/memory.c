@@ -10,6 +10,7 @@
 #include "puttymem.h"
 #include "misc.h"
 
+#include "tglibcver.h"
 
 #ifdef DEBUG_MALLOC // TG
 #undef malloc

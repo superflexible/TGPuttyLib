@@ -26,6 +26,8 @@
 #define FNLEN 1024 /* XXX */
 #endif
 
+#include "tglibcver.h"
+
 enum {
     INDEX_DIR, INDEX_HOSTKEYS, INDEX_HOSTKEYS_TMP, INDEX_RANDSEED,
     INDEX_SESSIONDIR, INDEX_SESSION,

@@ -6,6 +6,8 @@
 
 #include "putty.h"
 
+#include "tglibcver.h"
+
 #ifndef NO_SECUREZEROMEMORY
 /*
  * Windows implementation of smemclr (see misc.c) using SecureZeroMemory.

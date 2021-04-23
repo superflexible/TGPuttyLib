@@ -35,6 +35,8 @@
 #include "mpint.h"
 #include "ecc.h"
 
+#include "tglibcver.h"
+
 static NORETURN PRINTF_LIKE(1, 2) void fatal_error(const char *p, ...)
 {
     va_list ap;

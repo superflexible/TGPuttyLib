@@ -15,6 +15,8 @@
 
 #define AGENT_COPYDATA_ID 0x804e50ba   /* random goop */
 
+#include "tglibcver.h"
+
 bool agent_exists(void)
 {
     HWND hwnd;
