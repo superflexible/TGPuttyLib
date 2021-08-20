@@ -23,7 +23,7 @@ int random_active = 0;
  */
 void random_add_noise(NoiseSourceId source, const void *noise, int length) { }
 void random_ref(void) { }
-void random_setup_special(void) { }
+void random_setup_custom(const ssh_hashalg *hash) { }
 void random_unref(void) { }
 void random_read(void *out, size_t size)
 {
@@ -70,7 +70,7 @@ static void random_seed_callback(void *noise, int length)
 
 static void random_create(const ssh_hashalg *hashalg)
 {
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
     printf("random_create\n");
 #endif
     assert(!global_prng);
@@ -108,15 +108,15 @@ void random_ref(void)
 {
     if (!random_active++)
         random_create(&ssh_sha256);
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
   printf("random_ref: random_active is now %d\n",random_active);
 #endif
 }
 
-void random_setup_special()
+void random_setup_custom(const ssh_hashalg *hash)
 {
     random_active++;
-    random_create(&ssh_sha512);
+    random_create(hash);
 }
 
 void random_reseed(ptrlen seed)
@@ -128,7 +128,7 @@ void random_reseed(ptrlen seed)
 
 void random_clear(void)
 {
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
     printf("random_clear\n");
 #endif
     if (global_prng) {
@@ -145,7 +145,7 @@ void random_unref(void)
     assert(random_active > 0);
     if (--random_active == 0)
         random_clear();
-#ifdef DEBUG_MALLOC
+#ifdef DEBUG_MALLOC // TG
     printf("random_unref: random_active is now %d\n",random_active);
 #endif
 }

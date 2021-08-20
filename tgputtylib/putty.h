@@ -6,19 +6,6 @@
 
 #include "tglibcver.h"
 
-/*
- * Global variables. Most modules declare these `extern', but
- * window.c will do `#define PUTTY_DO_GLOBALS' before including this
- * module, and so will get them properly defined.
- */
-#ifndef GLOBAL
-#ifdef PUTTY_DO_GLOBALS
-#define GLOBAL
-#else
-#define GLOBAL extern
-#endif
-#endif
-
 #include "defs.h"
 #include "puttyps.h"
 #include "network.h"
@@ -55,6 +42,11 @@
 #define PGP_PREV_MASTER_KEY_DETAILS "RSA, 4096-bit"
 #define PGP_PREV_MASTER_KEY_FP                                  \
     "440D E3B5 B7A1 CA85 B3CC  1718 AB58 5DC6 0467 6F7C"
+
+#define CONF_NCOLOURS 22               /* 16 + 6 special ones */
+#define OSCP_NCOLOURS 22               /* same as CONF, but different order */
+#define OSC4_NCOLOURS 262              /* 256 + the same 6 special ones */
+
 
 /* Three attribute types:
  * The ATTRs (normal attributes) are stored with the characters in
@@ -97,9 +89,9 @@
 
 #define ATTR_INVALID 0x03FFFFU
 
-/* Like Linux use the F000 page for direct to font. */
-#define CSET_OEMCP   0x0000F000UL      /* OEM Codepage DTF */
-#define CSET_ACP     0x0000F100UL      /* Ansi Codepage DTF */
+/* Use the DC00 page for direct to font. */
+#define CSET_OEMCP   0x0000DC00UL      /* OEM Codepage DTF */
+#define CSET_ACP     0x0000DD00UL      /* Ansi Codepage DTF */
 
 /* These are internal use overlapping with the UTF-16 surrogates */
 #define CSET_ASCII   0x0000D800UL      /* normal ASCII charset ESC ( B */
@@ -109,7 +101,7 @@
 #define CSET_MASK    0xFFFFFF00UL      /* Character set mask */
 
 #define DIRECT_CHAR(c) ((c&0xFFFFFC00)==0xD800)
-#define DIRECT_FONT(c) ((c&0xFFFFFE00)==0xF000)
+#define DIRECT_FONT(c) ((c&0xFFFFFE00)==0xDC00)
 
 #define UCSERR       (CSET_LINEDRW|'a') /* UCS Format error character. */
 /*
@@ -128,34 +120,16 @@
 #define ATTR_UNDER   0x0080000U
 #define ATTR_REVERSE 0x0100000U
 #define ATTR_BLINK   0x0200000U
-#define ATTR_FGMASK  0x00001FFU
-#define ATTR_BGMASK  0x003FE00U
+#define ATTR_FGMASK  0x00001FFU /* stores a colour in OSC 4 indexing */
+#define ATTR_BGMASK  0x003FE00U /* stores a colour in OSC 4 indexing */
 #define ATTR_COLOURS 0x003FFFFU
 #define ATTR_DIM     0x1000000U
+#define ATTR_STRIKE  0x2000000U
 #define ATTR_FGSHIFT 0
 #define ATTR_BGSHIFT 9
 
-/*
- * The definitive list of colour numbers stored in terminal
- * attribute words is kept here. It is:
- *
- *  - 0-7 are ANSI colours (KRGYBMCW).
- *  - 8-15 are the bold versions of those colours.
- *  - 16-255 are the remains of the xterm 256-colour mode (a
- *    216-colour cube with R at most significant and B at least,
- *    followed by a uniform series of grey shades running between
- *    black and white but not including either on grounds of
- *    redundancy).
- *  - 256 is default foreground
- *  - 257 is default bold foreground
- *  - 258 is default background
- *  - 259 is default bold background
- *  - 260 is cursor foreground
- *  - 261 is cursor background
- */
-
-#define ATTR_DEFFG   (256 << ATTR_FGSHIFT)
-#define ATTR_DEFBG   (258 << ATTR_BGSHIFT)
+#define ATTR_DEFFG   (OSC4_COLOUR_fg << ATTR_FGSHIFT)
+#define ATTR_DEFBG   (OSC4_COLOUR_bg << ATTR_BGSHIFT)
 #define ATTR_DEFAULT (ATTR_DEFFG | ATTR_DEFBG)
 
 struct sesslist {
@@ -337,6 +311,7 @@ enum {
     HK_DSA,
     HK_ECDSA,
     HK_ED25519,
+    HK_ED448,
     HK_MAX
 };
 
@@ -390,11 +365,19 @@ enum {
 };
 
 enum {
+    /* SUPDUP character set options */
+    SUPDUP_CHARSET_ASCII, SUPDUP_CHARSET_ITS, SUPDUP_CHARSET_WAITS
+};
+
+enum {
     /* Protocol back ends. (CONF_protocol) */
-    PROT_RAW, PROT_TELNET, PROT_RLOGIN, PROT_SSH,
+    PROT_RAW, PROT_TELNET, PROT_RLOGIN, PROT_SSH, PROT_SSHCONN,
     /* PROT_SERIAL is supported on a subset of platforms, but it doesn't
      * hurt to define it globally. */
-    PROT_SERIAL
+    PROT_SERIAL,
+    /* PROT_SUPDUP is the historical RFC 734 protocol. */
+    PROT_SUPDUP,
+    PROTOCOL_LIMIT, /* upper bound on number of protocols */
 };
 
 enum {
@@ -503,14 +486,19 @@ enum {
     ADDRTYPE_NAME      /* SockAddr storing an unresolved host name */
 };
 
+/* Backend flags */
+#define BACKEND_RESIZE_FORBIDDEN    0x01   /* Backend does not allow
+                                              resizing terminal */
+#define BACKEND_NEEDS_TERMINAL      0x02   /* Backend must have terminal */
+
 struct Backend {
     const BackendVtable *vt;
 };
 struct BackendVtable {
-    const char *(*init) (Seat *seat, Backend **backend_out,
-                         LogContext *logctx, Conf *conf,
-                         const char *host, int port,
-                         char **realhost, bool nodelay, bool keepalive);
+    char *(*init) (const BackendVtable *vt, Seat *seat,
+                   Backend **backend_out, LogContext *logctx, Conf *conf,
+                   const char *host, int port, char **realhost,
+                   bool nodelay, bool keepalive);
 
     void (*freefunc) (Backend *be); // TG: allow to use #define free
     /* Pass in a replacement configuration. */
@@ -537,16 +525,31 @@ struct BackendVtable {
     /* Only implemented in the SSH protocol: check whether a
      * connection-sharing upstream exists for a given configuration. */
     bool (*test_for_upstream)(const char *host, int port, Conf *conf);
+    /* Special-purpose function to return additional information to put
+     * in a "are you sure you want to close this session" dialog;
+     * return NULL if no such info, otherwise caller must free.
+     * Only implemented in the SSH protocol, to warn about downstream
+     * connections that would be lost if this one were terminated. */
+    char *(*close_warn_text)(Backend *be);
 
-    const char *name;
+    /* 'id' is a machine-readable name for the backend, used in
+     * saved-session storage. 'displayname' is a human-readable name
+     * for error messages. */
+    const char *id, *displayname;
+
     int protocol;
     int default_port;
+    unsigned flags;
+
+    /* Only relevant for the serial protocol: bit masks of which
+     * parity and flow control settings are supported. */
+    unsigned serial_parity_mask, serial_flow_mask;
 };
 
-static inline const char *backend_init(
+static inline char *backend_init(
     const BackendVtable *vt, Seat *seat, Backend **out, LogContext *logctx,
     Conf *conf, const char *host, int port, char **rhost, bool nd, bool ka)
-{ return vt->init(seat, out, logctx, conf, host, port, rhost, nd, ka); }
+{ return vt->init(vt, seat, out, logctx, conf, host, port, rhost, nd, ka); }
 static inline void backend_free(Backend *be)
 { be->vt->freefunc(be); } // TG
 static inline void backend_reconfig(Backend *be, Conf *conf)
@@ -578,6 +581,12 @@ static inline int backend_cfg_info(Backend *be)
 { return be->vt->cfg_info(be); }
 
 extern const struct BackendVtable *const backends[];
+/*
+ * In programs with a config UI, only the first few members of
+ * backends[] will be displayed at the top-level; the others will be
+ * relegated to a drop-down.
+ */
+extern const size_t n_ui_backends;
 
 /*
  * Suggested default protocol provided by the backend link module.
@@ -591,44 +600,6 @@ extern const int be_default_protocol;
  */
 extern NORMALCODE(const) char * NORMALCODE(const) appname; // TG: make it variable and settable in DLL
 
-/*
- * Some global flags denoting the type of application.
- *
- * FLAG_VERBOSE is set when the user requests verbose details.
- *
- * FLAG_INTERACTIVE is set when a full interactive shell session is
- * being run, _either_ because no remote command has been provided
- * _or_ because the application is GUI and can't run non-
- * interactively.
- *
- * These flags describe the type of _application_ - they wouldn't
- * vary between individual sessions - and so it's OK to have this
- * variable be GLOBAL.
- *
- * Note that additional flags may be defined in platform-specific
- * headers. It's probably best if those ones start from 0x1000, to
- * avoid collision.
- */
-#define FLAG_VERBOSE     0x0001
-#define FLAG_INTERACTIVE 0x0002
-GLOBAL int flags;
-
-/*
- * Likewise, these two variables are set up when the application
- * initialises, and inform all default-settings accesses after
- * that.
- */
-GLOBAL int default_protocol;
-GLOBAL int default_port;
-
-/*
- * This is set true by cmdline.c iff a session is loaded with "-load".
- */
-GLOBAL bool loaded_session;
-/*
- * This is set to the name of the loaded session.
- */
-GLOBAL char *cmdline_session_name;
 
 /*
  * Mechanism for getting text strings such as usernames and passwords
@@ -881,8 +852,8 @@ struct SeatVtable {
      *    or +1'.
      */
     int (*verify_ssh_host_key)(
-        Seat *seat, const char *host, int port,
-        const char *keytype, char *keystr, char *key_fingerprint,
+        Seat *seat, const char *host, int port, const char *keytype,
+        char *keystr, const char *keydisp, char **key_fingerprints,
         void (*callback)(void *ctx, int result), void *ctx);
 
     /*
@@ -967,6 +938,23 @@ struct SeatVtable {
      * prompts by malicious servers.
      */
     bool (*set_trust_status)(Seat *seat, bool trusted);
+
+    /*
+     * Ask the seat whether it would like verbose messages.
+     */
+    bool (*verbose)(Seat *seat);
+
+    /*
+     * Ask the seat whether it's an interactive program.
+     */
+    bool (*interactive)(Seat *seat);
+
+    /*
+     * Return the seat's current idea of where the output cursor is.
+     *
+     * Returns true if the seat has a cursor. Returns false if not.
+     */
+    bool (*get_cursor_position)(Seat *seat, int *x, int *y);
 };
 
 static inline size_t seat_output(
@@ -987,8 +975,9 @@ static inline void seat_set_busy_status(Seat *seat, BusyStatus status)
 { seat->vt->set_busy_status(seat, status); }
 static inline int seat_verify_ssh_host_key(
     Seat *seat, const char *h, int p, const char *ktyp, char *kstr,
-    char *fp, void (*cb)(void *ctx, int result), void *ctx)
-{ return seat->vt->verify_ssh_host_key(seat, h, p, ktyp, kstr, fp, cb, ctx); }
+    const char *kdsp, char **fps, void (*cb)(void *ctx, int result), void *ctx)
+{ return seat->vt->verify_ssh_host_key(seat, h, p, ktyp, kstr, kdsp, fps,
+                                       cb, ctx); }
 static inline int seat_confirm_weak_crypto_primitive(
     Seat *seat, const char *atyp, const char *aname,
     void (*cb)(void *ctx, int result), void *ctx)
@@ -1012,6 +1001,12 @@ static inline StripCtrlChars *seat_stripctrl_new(
 { return seat->vt->stripctrl_new(seat, bs, sic); }
 static inline bool seat_set_trust_status(Seat *seat, bool trusted)
 { return  seat->vt->set_trust_status(seat, trusted); }
+static inline bool seat_verbose(Seat *seat)
+{ return seat->vt->verbose(seat); }
+static inline bool seat_interactive(Seat *seat)
+{ return seat->vt->interactive(seat); }
+static inline bool seat_get_cursor_position(Seat *seat, int *x, int *y)
+{ return  seat->vt->get_cursor_position(seat, x, y); }
 
 /* Unlike the seat's actual method, the public entry point
  * seat_connection_fatal is a wrapper function with a printf-like API,
@@ -1045,8 +1040,8 @@ void nullseat_update_specials_menu(Seat *seat);
 char *nullseat_get_ttymode(Seat *seat, const char *mode);
 void nullseat_set_busy_status(Seat *seat, BusyStatus status);
 int nullseat_verify_ssh_host_key(
-    Seat *seat, const char *host, int port,
-    const char *keytype, char *keystr, char *key_fingerprint,
+    Seat *seat, const char *host, int port, const char *keytype,
+    char *keystr, const char *keydisp, char **key_fingerprints,
     void (*callback)(void *ctx, int result), void *ctx);
 int nullseat_confirm_weak_crypto_primitive(
     Seat *seat, const char *algtype, const char *algname,
@@ -1064,6 +1059,11 @@ StripCtrlChars *nullseat_stripctrl_new(
         Seat *seat, BinarySink *bs_out, SeatInteractionContext sic);
 bool nullseat_set_trust_status(Seat *seat, bool trusted);
 bool nullseat_set_trust_status_vacuously(Seat *seat, bool trusted);
+bool nullseat_verbose_no(Seat *seat);
+bool nullseat_verbose_yes(Seat *seat);
+bool nullseat_interactive_no(Seat *seat);
+bool nullseat_interactive_yes(Seat *seat);
+bool nullseat_get_cursor_position(Seat *seat, int *x, int *y);
 
 /*
  * Seat functions provided by the platform's console-application
@@ -1072,8 +1072,8 @@ bool nullseat_set_trust_status_vacuously(Seat *seat, bool trusted);
 
 void console_connection_fatal(Seat *seat, const char *message);
 int console_verify_ssh_host_key(
-    Seat *seat, const char *host, int port,
-    const char *keytype, char *keystr, char *key_fingerprint,
+    Seat *seat, const char *host, int port, const char *keytype,
+    char *keystr, const char *keydisp, char **key_fingerprints,
     void (*callback)(void *ctx, int result), void *ctx);
 int console_confirm_weak_crypto_primitive(
     Seat *seat, const char *algtype, const char *algname,
@@ -1089,6 +1089,11 @@ bool console_set_trust_status(Seat *seat, bool trusted);
  * Other centralised seat functions.
  */
 int filexfer_get_userpass_input(Seat *seat, prompts_t *p, bufchain *input);
+bool cmdline_seat_verbose(Seat *seat);
+
+typedef struct rgb {
+    uint8_t r, g, b;
+} rgb;
 
 /*
  * Data type 'TermWin', which is a vtable encapsulating all the
@@ -1128,7 +1133,13 @@ struct TermWinVtable {
 
     void (*set_cursor_pos)(TermWin *, int x, int y);
 
+    /* set_raw_mouse_mode instructs the front end to start sending mouse events
+     * in raw mode suitable for translating into mouse-tracking terminal data
+     * (e.g. include scroll-wheel events and don't bother to identify double-
+     * and triple-clicks). set_raw_mouse_mode_pointer instructs the front end
+     * to change the mouse pointer shape to *indicate* raw mouse mode. */
     void (*set_raw_mouse_mode)(TermWin *, bool enable);
+    void (*set_raw_mouse_mode_pointer)(TermWin *, bool enable);
 
     void (*set_scrollbar)(TermWin *, int total, int start, int page);
 
@@ -1150,19 +1161,20 @@ struct TermWinVtable {
      * the window it remembers whether to go back to normal or
      * maximised. */
     void (*set_minimised)(TermWin *, bool minimised);
-    bool (*is_minimised)(TermWin *);
     void (*set_maximised)(TermWin *, bool maximised);
     void (*move)(TermWin *, int x, int y);
     void (*set_zorder)(TermWin *, bool top);
 
-    bool (*palette_get)(TermWin *, int n, int *r, int *g, int *b);
-    void (*palette_set)(TermWin *, int n, int r, int g, int b);
-    void (*palette_reset)(TermWin *);
+    /* Set the colour palette that the TermWin will use to display
+     * text. One call to this function sets 'ncolours' consecutive
+     * colours in the OSC 4 sequence, starting at 'start'. */
+    void (*palette_set)(TermWin *, unsigned start, unsigned ncolours,
+                        const rgb *colours);
 
-    void (*get_pos)(TermWin *, int *x, int *y);
-    void (*get_pixels)(TermWin *, int *x, int *y);
-    const char *(*get_title)(TermWin *, bool icon);
-    bool (*is_utf8)(TermWin *);
+    /* Query the front end for any OS-local overrides to the default
+     * colours stored in Conf. The front end should set any it cares
+     * about by calling term_palette_override. */
+    void (*palette_get_overrides)(TermWin *);
 };
 
 static inline bool win_setup_draw_ctx(TermWin *win)
@@ -1185,6 +1197,8 @@ static inline void win_set_cursor_pos(TermWin *win, int x, int y)
 { win->vt->set_cursor_pos(win, x, y); }
 static inline void win_set_raw_mouse_mode(TermWin *win, bool enable)
 { win->vt->set_raw_mouse_mode(win, enable); }
+static inline void win_set_raw_mouse_mode_pointer(TermWin *win, bool enable)
+{ win->vt->set_raw_mouse_mode_pointer(win, enable); }
 static inline void win_set_scrollbar(TermWin *win, int t, int s, int p)
 { win->vt->set_scrollbar(win, t, s, p); }
 static inline void win_bell(TermWin *win, int mode)
@@ -1205,28 +1219,17 @@ static inline void win_set_icon_title(TermWin *win, const char *icontitle)
 { win->vt->set_icon_title(win, icontitle); }
 static inline void win_set_minimised(TermWin *win, bool minimised)
 { win->vt->set_minimised(win, minimised); }
-static inline bool win_is_minimised(TermWin *win)
-{ return win->vt->is_minimised(win); }
 static inline void win_set_maximised(TermWin *win, bool maximised)
 { win->vt->set_maximised(win, maximised); }
 static inline void win_move(TermWin *win, int x, int y)
 { win->vt->move(win, x, y); }
 static inline void win_set_zorder(TermWin *win, bool top)
 { win->vt->set_zorder(win, top); }
-static inline bool win_palette_get(TermWin *win, int n, int *r, int *g, int *b)
-{ return win->vt->palette_get(win, n, r, g, b); }
-static inline void win_palette_set(TermWin *win, int n, int r, int g, int b)
-{ win->vt->palette_set(win, n, r, g, b); }
-static inline void win_palette_reset(TermWin *win)
-{ win->vt->palette_reset(win); }
-static inline void win_get_pos(TermWin *win, int *x, int *y)
-{ win->vt->get_pos(win, x, y); }
-static inline void win_get_pixels(TermWin *win, int *x, int *y)
-{ win->vt->get_pixels(win, x, y); }
-static inline const char *win_get_title(TermWin *win, bool icon)
-{ return win->vt->get_title(win, icon); }
-static inline bool win_is_utf8(TermWin *win)
-{ return win->vt->is_utf8(win); }
+static inline void win_palette_set(
+    TermWin *win, unsigned start, unsigned ncolours, const rgb *colours)
+{ win->vt->palette_set(win, start, ncolours, colours); }
+static inline void win_palette_get_overrides(TermWin *win)
+{ win->vt->palette_get_overrides(win); }
 
 /*
  * Global functions not specific to a connection instance.
@@ -1324,6 +1327,11 @@ void cleanup_exit(int,const bool cleanupglobalstoo); // TG
 	X(INT, NONE, serstopbits) \
 	X(INT, NONE, serparity) /* SER_PAR_NONE, SER_PAR_ODD, ... */ \
 /* TG    X(INT, NONE, serflow) /* SER_FLOW_NONE, SER_FLOW_XONXOFF, ... */ \
+    /* Supdup options */ \
+/* TG    X(STR, NONE, supdup_location) \
+    X(INT, NONE, supdup_ascii_set) \
+    X(BOOL, NONE, supdup_more) \
+    X(BOOL, NONE, supdup_scroll) \
 	/* Keyboard options */ \
 /* TG    X(BOOL, NONE, bksp_is_delete) \
 	X(BOOL, NONE, rxvt_homeend) \
@@ -1607,6 +1615,8 @@ void load_open_settings(settings_r *sesskey, Conf *conf);
 void get_sesslist(struct sesslist *, bool allocate);
 bool do_defaults(const char *, Conf *);
 void registry_cleanup(void);
+void settings_set_default_protocol(int);
+void settings_set_default_port(int);
 
 /*
  * Functions used by settings.c to provide platform-specific
@@ -1652,6 +1662,7 @@ void term_blink(Terminal *, bool set_cursor);
 void term_do_paste(Terminal *, const wchar_t *, int);
 void term_nopaste(Terminal *);
 void term_copyall(Terminal *, const int *, int);
+void term_pre_reconfig(Terminal *, Conf *);
 void term_reconfig(Terminal *, Conf *);
 void term_request_copy(Terminal *, const int *clipboards, int n_clipboards);
 void term_request_paste(Terminal *, int clipboard);
@@ -1665,6 +1676,13 @@ int term_get_userpass_input(Terminal *term, prompts_t *p, bufchain *input);
 void term_set_trust_status(Terminal *term, bool trusted);
 void term_keyinput(Terminal *, int codepage, const void *buf, int len);
 void term_keyinputw(Terminal *, const wchar_t * widebuf, int len);
+void term_get_cursor_position(Terminal *term, int *x, int *y);
+void term_setup_window_titles(Terminal *term, const char *title_hostname);
+void term_notify_minimised(Terminal *term, bool minimised);
+void term_notify_palette_overrides_changed(Terminal *term);
+void term_notify_window_pos(Terminal *term, int x, int y);
+void term_notify_window_size_pixels(Terminal *term, int x, int y);
+void term_palette_override(Terminal *term, unsigned osc4_index, rgb rgb);
 
 typedef enum SmallKeypadKey {
     SKK_HOME, SKK_END, SKK_INSERT, SKK_DELETE, SKK_PGUP, SKK_PGDN,
@@ -1714,6 +1732,11 @@ struct LogPolicyVtable {
      * file :-)
      */
     void (*logging_error)(LogPolicy *lp, const char *event);
+
+    /*
+     * Ask whether extra verbose log messages are required.
+     */
+    bool (*verbose)(LogPolicy *lp);
 };
 struct LogPolicy {
     const LogPolicyVtable *vt;
@@ -1727,6 +1750,19 @@ static inline int lp_askappend(
 { return lp->vt->askappend(lp, filename, callback, ctx); }
 static inline void lp_logging_error(LogPolicy *lp, const char *event)
 { lp->vt->logging_error(lp, event); }
+static inline bool lp_verbose(LogPolicy *lp)
+{ return lp->vt->verbose(lp); }
+
+/* Defined in conscli.c, used in several console command-line tools */
+extern LogPolicy console_cli_logpolicy[];
+
+int console_askappend(LogPolicy *lp, Filename *filename,
+                      void (*callback)(void *ctx, int result), void *ctx);
+void console_logging_error(LogPolicy *lp, const char *string);
+void console_eventlog(LogPolicy *lp, const char *string);
+bool null_lp_verbose_yes(LogPolicy *lp);
+bool null_lp_verbose_no(LogPolicy *lp);
+bool cmdline_lp_verbose(LogPolicy *lp);
 
 LogContext *log_init(LogPolicy *lp, Conf *conf);
 void log_free(LogContext *logctx);
@@ -1758,10 +1794,6 @@ void log_packet(LogContext *logctx, int direction, int type,
                 const unsigned long *sequence,
                 unsigned downstream_id, const char *additional_log_text);
 
-/* This is defined by applications that have an obvious logging
- * destination like standard error or the GUI. */
-extern LogPolicy default_logpolicy[1];
-
 /*
  * Exports from testback.c
  */
@@ -1791,6 +1823,12 @@ extern const struct BackendVtable telnet_backend;
  * Exports from ssh.c.
  */
 extern const struct BackendVtable ssh_backend;
+extern const struct BackendVtable sshconn_backend;
+
+/*
+ * Exports from supdup.c.
+ */
+extern const struct BackendVtable supdup_backend;
 
 /*
  * Exports from ldisc.c.
@@ -1821,9 +1859,14 @@ void random_unref(void);
  * logical main() no matter whether it needed random numbers or
  * not. */
 void random_clear(void);
-/* random_setup_special is used by PuTTYgen. It makes an extra-big
- * random number generator. */
-void random_setup_special();
+/* random_setup_custom sets up the process-global random number
+ * generator specially, with a hash function of your choice. */
+void random_setup_custom(const ssh_hashalg *hash);
+/* random_setup_special() is a macro wrapper on that, which makes an
+ * extra-big one based on the largest hash function we have. It's
+ * defined this way to avoid what would otherwise be an unnecessary
+ * module dependency from sshrand.c to a hash function implementation. */
+#define random_setup_special() random_setup_custom(&ssh_shake256_114bytes)
 /* Manually drop a random seed into the random number generator, e.g.
  * just before generating a key. */
 void random_reseed(ptrlen seed);
@@ -1922,6 +1965,9 @@ void agent_cancel_query(agent_pending_query *);
 void agent_query_synchronous(strbuf *in, void **out, int *outlen);
 bool agent_exists(void);
 
+/* For stream-oriented agent connections, if available. */
+Socket *agent_connect(Plug *plug);
+
 /*
  * Exports from wildcard.c
  */
@@ -1980,14 +2026,36 @@ void cmdline_run_saved(Conf *);
 void cmdline_cleanup(void);
 int cmdline_get_passwd_input(prompts_t *p);
 bool cmdline_host_ok(Conf *);
-#define TOOLTYPE_FILETRANSFER 1
-#define TOOLTYPE_NONNETWORK 2
-#define TOOLTYPE_HOST_ARG 4
-#define TOOLTYPE_HOST_ARG_CAN_BE_SESSION 8
-#define TOOLTYPE_HOST_ARG_PROTOCOL_PREFIX 16
-#define TOOLTYPE_HOST_ARG_FROM_LAUNCHABLE_LOAD 32
-#define TOOLTYPE_PORT_ARG 64
-extern int cmdline_tooltype;
+bool cmdline_verbose(void);
+bool cmdline_loaded_session(void);
+
+/*
+ * Here we have a flags word provided by each tool, which describes
+ * the capabilities of that tool that cmdline.c needs to know about.
+ * It will refuse certain command-line options if a particular tool
+ * inherently can't do anything sensible. For example, the file
+ * transfer tools (psftp, pscp) can't do a great deal with protocol
+ * selections (ever tried running scp over telnet?) or with port
+ * forwarding (even if it wasn't a hideously bad idea, they don't have
+ * the select/poll infrastructure to make them work).
+ */
+extern const unsigned cmdline_tooltype;
+
+/* Bit flags for the above */
+#define TOOLTYPE_LIST(X)                        \
+    X(TOOLTYPE_FILETRANSFER)                    \
+    X(TOOLTYPE_NONNETWORK)                      \
+    X(TOOLTYPE_HOST_ARG)                        \
+    X(TOOLTYPE_HOST_ARG_CAN_BE_SESSION)         \
+    X(TOOLTYPE_HOST_ARG_PROTOCOL_PREFIX)        \
+    X(TOOLTYPE_HOST_ARG_FROM_LAUNCHABLE_LOAD)   \
+    X(TOOLTYPE_PORT_ARG)                        \
+    X(TOOLTYPE_NO_VERBOSE_OPTION)               \
+    /* end of list */
+#define BITFLAG_INDEX(val) val ## _bitflag_index,
+enum { TOOLTYPE_LIST(BITFLAG_INDEX) };
+#define BITFLAG_DEF(val) val = 1U << (val ## _bitflag_index),
+enum { TOOLTYPE_LIST(BITFLAG_DEF) };
 
 void cmdline_error(const char *, ...) PRINTF_LIKE(1, 2);
 
@@ -2007,8 +2075,6 @@ void conf_filesel_handler(union control *ctrl, dlgparam *dlg,
                           void *data, int event);
 void conf_fontsel_handler(union control *ctrl, dlgparam *dlg,
                           void *data, int event);
-/* Much more special-purpose function needed by sercfg.c */
-void config_protocolbuttons_handler(union control *, dlgparam *, void *, int);
 
 void setup_config_box(struct controlbox *b, bool midsession,
                       int protocol, int protcfginfo);
@@ -2343,10 +2409,6 @@ typedef struct
   __int64 bufchainlength;
   bufchain received_data;
 
-  // static items from winsftp.c
-  UINT_PTR sftp_ssh_socket;
-  void *netevent;
-
   // TG stuff
   char *caller_supplied_password;
   bool tried_caller_supplied_password_once;
@@ -2386,6 +2448,12 @@ typedef struct
   tree234 *fds;
   // from uxstore.c
   tree234 *xrmtree;
+#endif
+
+#ifdef _WINDOWS
+  // from winselcli.c
+  tree234 *winselcli_sockets;
+  HANDLE winselcli_event;
 #endif
 
 } TTGLibraryContext;

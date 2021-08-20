@@ -8,14 +8,17 @@
  * to do here is to drop it into variables of the right names.
  */
 
+#include "putty.h"
+#include "ssh.h"
+
 #ifdef SOURCE_COMMIT
 #include "empty.h"
 #endif
 
 #include "version.h"
 
-char *ver = TEXTVER;
-char *sshver = SSHVER;
+char *ver = TEXTVER; // TG
+char *sshver = SSHVER; // TG
 const char commitid[] = SOURCE_COMMIT;
 
 /*

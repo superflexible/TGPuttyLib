@@ -8,7 +8,6 @@
 #include <assert.h>
 #include <limits.h>
 
-#define PUTTY_DO_GLOBALS
 #include "putty.h"
 #include "psftp.h"
 #include "storage.h"
@@ -17,7 +16,7 @@
 #include "version.h" // TG
 
 #include "tglibcver.h"
-
+// const char *const appname = "PSFTP"; // TG
 THREADVAR TTGLibraryContext *curlibctx; // TG
 THREADVAR int ThreadContextCounter=0; // TG
 
@@ -115,24 +114,27 @@ static size_t psftp_output(Seat *, bool is_stderr, const void *, size_t);
 static bool psftp_eof(Seat *);
 
 static const SeatVtable psftp_seat_vt = {
-    psftp_output,
-    psftp_eof,
-	NORMALCODE(filexfer_get_userpass_input)TGDLLCODE(tg_get_userpass_input), // TG 2019, for DLL use
-    nullseat_notify_remote_exit,
-    console_connection_fatal,
-    nullseat_update_specials_menu,
-    nullseat_get_ttymode,
-    nullseat_set_busy_status,
-    console_verify_ssh_host_key,
-    console_confirm_weak_crypto_primitive,
-    console_confirm_weak_cached_hostkey,
-    nullseat_is_never_utf8,
-    nullseat_echoedit_update,
-    nullseat_get_x_display,
-    nullseat_get_windowid,
-    nullseat_get_window_pixel_size,
-    console_stripctrl_new,
-    nullseat_set_trust_status_vacuously,
+    .output = psftp_output,
+    .eof = psftp_eof,
+    .get_userpass_input = NORMALCODE(filexfer_get_userpass_input)TGDLLCODE(tg_get_userpass_input), // TG 2019, for DLL use
+    .notify_remote_exit = nullseat_notify_remote_exit,
+    .connection_fatal = console_connection_fatal,
+    .update_specials_menu = nullseat_update_specials_menu,
+    .get_ttymode = nullseat_get_ttymode,
+    .set_busy_status = nullseat_set_busy_status,
+    .verify_ssh_host_key = console_verify_ssh_host_key,
+    .confirm_weak_crypto_primitive = console_confirm_weak_crypto_primitive,
+    .confirm_weak_cached_hostkey = console_confirm_weak_cached_hostkey,
+    .is_utf8 = nullseat_is_never_utf8,
+    .echoedit_update = nullseat_echoedit_update,
+    .get_x_display = nullseat_get_x_display,
+    .get_windowid = nullseat_get_windowid,
+    .get_window_pixel_size = nullseat_get_window_pixel_size,
+    .stripctrl_new = console_stripctrl_new,
+    .set_trust_status = nullseat_set_trust_status_vacuously,
+    .verbose = cmdline_seat_verbose,
+    .interactive = nullseat_interactive_yes,
+    .get_cursor_position = nullseat_get_cursor_position,
 };
 static Seat psftp_seat[1] = {{ &psftp_seat_vt }};
 
@@ -205,8 +207,8 @@ char *canonify(const char *name)
     canonname = fxp_realpath_recv(pktin, req);
 
     if (canonname) {
-        sfree(fullname);
-        if (flags & FLAG_VERBOSE) printf("Canonified %s to %s\n",name,canonname); // TG
+		sfree(fullname);
+		if (verbose) printf("Canonified %s to %s\n",name,canonname); // TG
         return canonname;
     } else {
         /*
@@ -269,7 +271,7 @@ char *canonify(const char *name)
             /* Even that failed. Restore our best guess at the
              * constructed filename and give up */
             fullname[i] = '/';  /* restore slash and last component */
-            if (flags & FLAG_VERBOSE) printf("Canonifying %s failed, returning %s\n",name,fullname); // TG
+			if (verbose) printf("Canonifying %s failed, returning %s\n",name,fullname); // TG
             return fullname;
         }
 
@@ -282,7 +284,7 @@ char *canonify(const char *name)
                             fullname + i + 1);
         sfree(fullname);
         sfree(canonname);
-        if (flags & FLAG_VERBOSE) printf("Canonified %s to %s\n",name,returnname); // TG
+		if (verbose) printf("Canonified %s to %s\n",name,returnname); // TG
         return returnname;
     }
 }
@@ -304,14 +306,14 @@ static void not_connected(void)
  */
 bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
 {
-	struct fxp_handle *fh;
-	struct sftp_packet *pktin;
-	struct sftp_request *req;
-	struct fxp_xfer *xfer;
-	uint64_t offset;
-	WFile *file;
-	bool toret, shown_err = false;
-	struct fxp_attrs attrs;
+    struct fxp_handle *fh;
+    struct sftp_packet *pktin;
+    struct sftp_request *req;
+    struct fxp_xfer *xfer;
+    uint64_t offset;
+    WFile *file;
+    bool toret, shown_err = false;
+    struct fxp_attrs attrs;
 
 	CP("sftp_getf");
 
@@ -320,12 +322,12 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
      * (If we're not in recursive mode, we need not even check: the
      * subsequent FXP_OPEN will return a usable error message.)
      */
-	if (recurse) {
-		bool result;
+    if (recurse) {
+        bool result;
 
 		CP("sgetfrec");
-		req = fxp_stat_send(fname);
-		pktin = sftp_wait_for_reply(req);
+        req = fxp_stat_send(fname);
+        pktin = sftp_wait_for_reply(req);
         result = fxp_stat_recv(pktin, req, &attrs);
 
         if (result &&
@@ -346,7 +348,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                 !create_directory(outfname)) {
                 with_stripctrl(san, outfname)
                     printf("%s: Cannot create directory\n", san);
-				return false;
+                return false;
             }
 
             /*
@@ -372,7 +374,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                 pktin = sftp_wait_for_reply(req);
                 names = fxp_readdir_recv(pktin, req);
 
-				if (names == NULL) {
+                if (names == NULL) {
                     if (fxp_error_type() == SSH_FX_EOF)
                         break;
                     with_stripctrl(san, fname)
@@ -398,7 +400,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
                             with_stripctrl(san, names->names[i].filename)
                                 printf("ignoring potentially dangerous server-"
                                        "supplied filename '%s'\n", san);
-						} else {
+                        } else {
                             ournames[nnames++] =
                                 fxp_dup_name(&names->names[i]);
                         }
@@ -424,7 +426,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
              * this list that already exists. We may have to do a
              * reget on _that_ file, but shouldn't have to do
              * anything on the previous files.
-			 *
+             *
              * If none of them exists, of course, we start at 0.
              */
             i = 0;
@@ -450,7 +452,7 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
              * and continuing on to the end of the list, we
              * construct a new source and target file name, and
              * call sftp_get_file again.
-			 */
+             */
             for (; i < nnames; i++) {
                 char *nextfname, *nextoutfname;
                 bool retd;
@@ -476,33 +478,33 @@ bool sftp_get_file(char *fname, char *outfname, bool recurse, bool restart)
              */
             for (i = 0; i < nnames; i++) {
                 fxp_free_name(ournames[i]);
-			}
-			sfree(ournames);
+            }
+            sfree(ournames);
 
-			return true;
-		}
-	}
+            return true;
+        }
+    }
 
 	CP("sgetf10");
-	req = fxp_stat_send(fname);
-	pktin = sftp_wait_for_reply(req);
-	if (!fxp_stat_recv(pktin, req, &attrs))
-		attrs.flags = 0;
+    req = fxp_stat_send(fname);
+    pktin = sftp_wait_for_reply(req);
+    if (!fxp_stat_recv(pktin, req, &attrs))
+        attrs.flags = 0;
 
 	CP("sgetf20");
-	req = fxp_open_send(fname, SSH_FXF_READ, NULL);
+    req = fxp_open_send(fname, SSH_FXF_READ, NULL);
 	CP("sgetf21");
-	pktin = sftp_wait_for_reply(req);
+    pktin = sftp_wait_for_reply(req);
 	CP("sgetf22");
-	fh = fxp_open_recv(pktin, req);
+    fh = fxp_open_recv(pktin, req);
 	CP("sgetf23");
 
-	if (!fh) {
+    if (!fh) {
         CP("sgetf29X");
-		with_stripctrl(san, fname)
-			printf("%s: open for read: %s\n", san, fxp_error());
-		return false;
-	}
+        with_stripctrl(san, fname)
+            printf("%s: open for read: %s\n", san, fxp_error());
+        return false;
+    }
 
 	CP("sgetf30");
 	if (outfname!=NULL) // TG
@@ -1958,7 +1960,7 @@ static bool sftp_action_mv(void *vctx, char *srcfname)
 
 int sftp_cmd_mvex(struct sftp_command *cmd,const int moveflags) // TG 2019
 {
-    struct sftp_context_mv actx, *ctx = &actx;
+    struct sftp_context_mv ctx[1];
     int i, ret;
 
     if (!backend) {
@@ -2064,7 +2066,7 @@ int sftp_cmd_chmod(struct sftp_command *cmd)
 {
     char *mode;
     int i, ret;
-    struct sftp_context_chmod actx, *ctx = &actx;
+    struct sftp_context_chmod ctx[1];
 
     if (!backend) {
         not_connected();
@@ -2847,13 +2849,9 @@ int do_sftp(int mode, int modeflags, char *batchfile)
  * Dirty bits: integration with PuTTY.
  */
 
-void ldisc_echoedit_update(Ldisc *ldisc) { }
+// static bool verbose = false; // TG
 
-void agent_schedule_callback(void (*callback)(void *, void *, int),
-                             void *callback_ctx, void *data, int len)
-{
-    unreachable("all PSFTP agent requests should be synchronous");
-}
+void ldisc_echoedit_update(Ldisc *ldisc) { }
 
 /*
  * Receive a block of data from the SSH link. Block until all data
@@ -3001,12 +2999,14 @@ static void usage(void)
     printf("  -P port   connect to specified port\n");
     printf("  -pw passw login with specified password\n");
     printf("  -1 -2     force use of particular SSH protocol version\n");
+    printf("  -ssh -ssh-connection\n");
+    printf("            force use of particular SSH protocol variant\n");
     printf("  -4 -6     force use of IPv4 or IPv6\n");
     printf("  -C        enable compression\n");
     printf("  -i key    private key file for user authentication\n");
     printf("  -noagent  disable use of Pageant\n");
     printf("  -agent    enable use of Pageant\n");
-    printf("  -hostkey aa:bb:cc:...\n");
+    printf("  -hostkey keyid\n");
     printf("            manually specify a host key (may be repeated)\n");
     printf("  -batch    disable all interactive prompts\n");
     printf("  -no-sanitise-stderr  don't strip control chars from"
@@ -3016,6 +3016,9 @@ static void usage(void)
     printf("  -sshlog file\n");
     printf("  -sshrawlog file\n");
     printf("            log protocol details to a file\n");
+    printf("  -logoverwrite\n");
+    printf("  -logappend\n");
+    printf("            control what happens when a log file already exists\n");
     cleanup_exit(1,true); // TG
 }
 
@@ -3038,181 +3041,178 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 	char *host=NULL, *realhost=NULL; // TG 2021: fix crash when attempting to free invalid realhost
 	const char *err=NULL; // TG
 
-	/* Separate host and username */
-	host = userhost;
-	host = strrchr(host, '@');
-	if (host == NULL) {
-		host = userhost;
-	} else {
-		*host++ = '\0';
-		if (user) {
-			printf("psftp: multiple usernames specified; using \"%s\"\n",
-				   user);
-		} else
-			user = userhost;
-	}
+    /* Separate host and username */
+    host = userhost;
+    host = strrchr(host, '@');
+    if (host == NULL) {
+        host = userhost;
+    } else {
+        *host++ = '\0';
+        if (user) {
+            printf("psftp: multiple usernames specified; using \"%s\"\n",
+                   user);
+        } else
+            user = userhost;
+    }
 
 	CP("psftp_c2");
-
-	/*
-	 * If we haven't loaded session details already (e.g., from -load),
-	 * try looking for a session called "host".
-	 */
-	if (!loaded_session)
-	{
+    /*
+     * If we haven't loaded session details already (e.g., from -load),
+     * try looking for a session called "host".
+     */
+    if (!cmdline_loaded_session()) {
 		CP("psftp_c3");
-		/* Try to load settings for `host' into a temporary config */
-		Conf *conf2 = conf_new();
-		conf_set_str(conf2, CONF_host, "");
-		do_defaults(host, conf2);
-		if (conf_get_str(conf2, CONF_host)[0] != '\0') {
-			/* Settings present and include hostname */
-			/* Re-load data into the real config. */
-			do_defaults(host, conf);
-		} else {
-			/* Session doesn't exist or mention a hostname. */
-			/* Use `host' as a bare hostname. */
-			conf_set_str(conf, CONF_host, host);
-		}
-		conf_free(conf2);
-	}
-	else
-	{
+        /* Try to load settings for `host' into a temporary config */
+        Conf *conf2 = conf_new();
+        conf_set_str(conf2, CONF_host, "");
+        do_defaults(host, conf2);
+        if (conf_get_str(conf2, CONF_host)[0] != '\0') {
+            /* Settings present and include hostname */
+            /* Re-load data into the real config. */
+            do_defaults(host, conf);
+        } else {
+            /* Session doesn't exist or mention a hostname. */
+            /* Use `host' as a bare hostname. */
+            conf_set_str(conf, CONF_host, host);
+        }
+        conf_free(conf2);
+    } else {
 		CP("psftp_c4");
-		/* Patch in hostname `host' to session details. */
-		conf_set_str(conf, CONF_host, host);
-	}
+        /* Patch in hostname `host' to session details. */
+        conf_set_str(conf, CONF_host, host);
+    }
 
-	/*
-	 * Force use of SSH. (If they got the protocol wrong we assume the
-	 * port is useless too.)
-	 */
+    /*
+     * Force protocol to SSH if the user has somehow contrived to
+     * select one we don't support (e.g. by loading an inappropriate
+     * saved session). In that situation we assume the port number is
+     * useless too.)
+     */
 	CP("psftp_c5");
-	if (conf_get_int(conf, CONF_protocol) != PROT_SSH)
-	{
+    if (!backend_vt_from_proto(conf_get_int(conf, CONF_protocol))) {
 		CP("psftp_c6");
-		conf_set_int(conf, CONF_protocol, PROT_SSH);
-		conf_set_int(conf, CONF_port, 22);
-	}
+        conf_set_int(conf, CONF_protocol, PROT_SSH);
+        conf_set_int(conf, CONF_port, 22);
+    }
 
-	/*
-	 * If saved session / Default Settings says SSH-1 (`1 only' or `1'),
-	 * then change it to SSH-2, on the grounds that that's more likely to
-	 * work for SFTP. (Can be overridden with `-1' option.)
-	 * But if it says `2 only' or `2', respect which.
-	 */
+    /*
+     * If saved session / Default Settings says SSH-1 (`1 only' or `1'),
+     * then change it to SSH-2, on the grounds that that's more likely to
+     * work for SFTP. (Can be overridden with `-1' option.)
+     * But if it says `2 only' or `2', respect which.
+     */
 	CP("psftp_c7");
-	if ((conf_get_int(conf, CONF_sshprot) & ~1) != 2)   /* is it 2 or 3? */
-		conf_set_int(conf, CONF_sshprot, 2);
+    if ((conf_get_int(conf, CONF_sshprot) & ~1) != 2)   /* is it 2 or 3? */
+        conf_set_int(conf, CONF_sshprot, 2);
 
-	/*
-	 * Enact command-line overrides.
-	 */
+    /*
+     * Enact command-line overrides.
+     */
 	CP("psftp_c8");
-	cmdline_run_saved(conf);
+    cmdline_run_saved(conf);
 
-	/*
-	 * Muck about with the hostname in various ways.
-	 */
-	{
+    /*
+     * Muck about with the hostname in various ways.
+     */
+    {
 		CP("psftp_c9");
-		char *hostbuf = dupstr(conf_get_str(conf, CONF_host));
-		char *host = hostbuf;
-		char *p, *q;
+        char *hostbuf = dupstr(conf_get_str(conf, CONF_host));
+        char *host = hostbuf;
+        char *p, *q;
 
-		/*
-		 * Trim leading whitespace.
-		 */
-		host += strspn(host, " \t");
+        /*
+         * Trim leading whitespace.
+         */
+        host += strspn(host, " \t");
 
-		/*
-		 * See if host is of the form user@host, and separate out
-		 * the username if so.
-		 */
-		if (host[0] != '\0') {
-			char *atsign = strrchr(host, '@');
-			if (atsign) {
-				*atsign = '\0';
-				conf_set_str(conf, CONF_username, host);
-				host = atsign + 1;
-			}
-		}
+        /*
+         * See if host is of the form user@host, and separate out
+         * the username if so.
+         */
+        if (host[0] != '\0') {
+            char *atsign = strrchr(host, '@');
+            if (atsign) {
+                *atsign = '\0';
+                conf_set_str(conf, CONF_username, host);
+                host = atsign + 1;
+            }
+        }
 
-		/*
-		 * Remove any remaining whitespace.
-		 */
-		p = hostbuf;
-		q = host;
-		while (*q) {
-			if (*q != ' ' && *q != '\t')
-				*p++ = *q;
-			q++;
-		}
-		*p = '\0';
+        /*
+         * Remove any remaining whitespace.
+         */
+        p = hostbuf;
+        q = host;
+        while (*q) {
+            if (*q != ' ' && *q != '\t')
+                *p++ = *q;
+            q++;
+        }
+        *p = '\0';
 
-		conf_set_str(conf, CONF_host, hostbuf);
-		sfree(hostbuf);
-	}
+        conf_set_str(conf, CONF_host, hostbuf);
+        sfree(hostbuf);
+    }
 
-	/* Set username */
+    /* Set username */
 	CP("psftp_c10");
-	if (user != NULL && user[0] != '\0') {
-		conf_set_str(conf, CONF_username, user);
-	}
+    if (user != NULL && user[0] != '\0') {
+        conf_set_str(conf, CONF_username, user);
+    }
 
-	if (portnumber)
-		conf_set_int(conf, CONF_port, portnumber);
+    if (portnumber)
+        conf_set_int(conf, CONF_port, portnumber);
 
-	/*
-	 * Disable scary things which shouldn't be enabled for simple
-	 * things like SCP and SFTP: agent forwarding, port forwarding,
-	 * X forwarding.
-	 */
+    /*
+     * Disable scary things which shouldn't be enabled for simple
+     * things like SCP and SFTP: agent forwarding, port forwarding,
+     * X forwarding.
+     */
 	CP("psftp_c11");
 	NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);) // TG
-	conf_set_bool(conf, CONF_agentfwd, false);
-	conf_set_bool(conf, CONF_ssh_simple, true);
-	{
-		char *key;
-		while ((key = conf_get_str_nthstrkey(conf, CONF_portfwd, 0)) != NULL)
-			conf_del_str_str(conf, CONF_portfwd, key);
-	}
+    conf_set_bool(conf, CONF_agentfwd, false);
+    conf_set_bool(conf, CONF_ssh_simple, true);
+    {
+        char *key;
+        while ((key = conf_get_str_nthstrkey(conf, CONF_portfwd, 0)) != NULL)
+            conf_del_str_str(conf, CONF_portfwd, key);
+    }
 
-	/* Set up subsystem name. */
+    /* Set up subsystem name. */
 	CP("psftp_c12");
-	conf_set_str(conf, CONF_remote_cmd, "sftp");
-	conf_set_bool(conf, CONF_ssh_subsys, true);
-	conf_set_bool(conf, CONF_nopty, true);
+    conf_set_str(conf, CONF_remote_cmd, "sftp");
+    conf_set_bool(conf, CONF_ssh_subsys, true);
+    conf_set_bool(conf, CONF_nopty, true);
 
-	/*
-	 * Set up fallback option, for SSH-1 servers or servers with the
-	 * sftp subsystem not enabled but the server binary installed
-	 * in the usual place. We only support fallback on Unix
-	 * systems, and we use a kludgy piece of shellery which should
-	 * try to find sftp-server in various places (the obvious
-	 * systemwide spots /usr/lib and /usr/local/lib, and then the
-	 * user's PATH) and finally give up.
-	 *
-	 *   test -x /usr/lib/sftp-server && exec /usr/lib/sftp-server
-	 *   test -x /usr/local/lib/sftp-server && exec /usr/local/lib/sftp-server
-	 *   exec sftp-server
-	 *
-	 * the idea being that this will attempt to use either of the
-	 * obvious pathnames and then give up, and when it does give up
-	 * it will print the preferred pathname in the error messages.
-	 */
-	conf_set_str(conf, CONF_remote_cmd2,
-				 "test -x /usr/lib/sftp-server &&"
-				 " exec /usr/lib/sftp-server\n"
-				 "test -x /usr/local/lib/sftp-server &&"
-				 " exec /usr/local/lib/sftp-server\n"
-				 "exec sftp-server");
-	conf_set_bool(conf, CONF_ssh_subsys2, false);
+    /*
+     * Set up fallback option, for SSH-1 servers or servers with the
+     * sftp subsystem not enabled but the server binary installed
+     * in the usual place. We only support fallback on Unix
+     * systems, and we use a kludgy piece of shellery which should
+     * try to find sftp-server in various places (the obvious
+     * systemwide spots /usr/lib and /usr/local/lib, and then the
+     * user's PATH) and finally give up.
+     *
+     *   test -x /usr/lib/sftp-server && exec /usr/lib/sftp-server
+     *   test -x /usr/local/lib/sftp-server && exec /usr/local/lib/sftp-server
+     *   exec sftp-server
+     *
+     * the idea being that this will attempt to use either of the
+     * obvious pathnames and then give up, and when it does give up
+     * it will print the preferred pathname in the error messages.
+     */
+    conf_set_str(conf, CONF_remote_cmd2,
+                 "test -x /usr/lib/sftp-server &&"
+                 " exec /usr/lib/sftp-server\n"
+                 "test -x /usr/local/lib/sftp-server &&"
+                 " exec /usr/local/lib/sftp-server\n"
+                 "exec sftp-server");
+    conf_set_bool(conf, CONF_ssh_subsys2, false);
 
 	CP("psftp_c13");
 	if (psftp_logctx==NULL) // TG - might connect again after disconnecting
 	{
-	   psftp_logctx = log_init(default_logpolicy, conf);
+    psftp_logctx = log_init(console_cli_logpolicy, conf);
 #ifdef DEBUG_MALLOC
 	   printf("Created new logctx.\n"); // TG
 #endif
@@ -3223,22 +3223,23 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 #endif
 
 	CP("psftp_c14");
-	platform_psftp_pre_conn_setup();
+    platform_psftp_pre_conn_setup(console_cli_logpolicy);
 
 	CP("psftp_c15");
-	err = backend_init(&ssh_backend, psftp_seat, &backend, psftp_logctx, conf,
-					   conf_get_str(conf, CONF_host),
-					   conf_get_int(conf, CONF_port),
-					   &realhost, 0,
-					   conf_get_bool(conf, CONF_tcp_keepalives));
-	if (err != NULL)
-	{
+    err = backend_init(backend_vt_from_proto(
+                           conf_get_int(conf, CONF_protocol)),
+                       psftp_seat, &backend, psftp_logctx, conf,
+                       conf_get_str(conf, CONF_host),
+                       conf_get_int(conf, CONF_port),
+                       &realhost, 0,
+                       conf_get_bool(conf, CONF_tcp_keepalives));
+    if (err != NULL) {
 		CP("psftp_c16");
-		fprintf(stderr, "ssh_init: %s\n", err);
+        fprintf(stderr, "ssh_init: %s\n", err);
 		if (realhost != NULL) // TG
 		   sfree(realhost); // TG
-		return 1;
-	}
+        return 1;
+    }
 
 	CP("psftp_c17");
 	uint64_t starttick=TGGetTickCount64(); // TG
@@ -3374,6 +3375,9 @@ static void free_thread_vars() // TG
 	#define IMPORT
 	#pragma warning Unknown dynamic link import/export semantics.
 #endif
+
+const unsigned cmdline_tooltype = TOOLTYPE_FILETRANSFER;
+
 /*
  * Main program. Parse arguments etc.
  */
@@ -3388,20 +3392,13 @@ TGDLLCODE(EXPORT) int psftp_main(int argc, char *argv[]) // TG 2019
     bool sanitise_stderr = true;
     char *batchfile = NULL;
 
-    flags = FLAG_INTERACTIVE
-#ifdef FLAG_SYNCAGENT
-        | FLAG_SYNCAGENT
-#endif
-        ;
-    cmdline_tooltype = TOOLTYPE_FILETRANSFER;
     sk_init();
 
-	userhost = user = NULL;
+    userhost = user = NULL;
 
     /* Load Default Settings before doing anything else. */
     conf = conf_new();
     do_defaults(NULL, conf);
-    loaded_session = false;
 
     for (i = 1; i < argc; i++) {
         int ret;
@@ -3419,14 +3416,14 @@ TGDLLCODE(EXPORT) int psftp_main(int argc, char *argv[]) // TG 2019
             i++;               /* skip next argument */
         } else if (ret == 1) {
             /* We have our own verbosity in addition to `flags'. */
-            if (flags & FLAG_VERBOSE)
+            if (cmdline_verbose())
                 verbose = true;
         } else if (strcmp(argv[i], "-h") == 0 ||
                    strcmp(argv[i], "-?") == 0 ||
                    strcmp(argv[i], "--help") == 0) {
             usage();
         } else if (strcmp(argv[i], "-pgpfp") == 0) {
-			pgp_fingerprints();
+            pgp_fingerprints();
             return 1;
         } else if (strcmp(argv[i], "-V") == 0 ||
                    strcmp(argv[i], "--version") == 0) {
@@ -3456,7 +3453,7 @@ TGDLLCODE(EXPORT) int psftp_main(int argc, char *argv[]) // TG 2019
     backend = NULL;
 
     stdio_sink_init(&stderr_ss, stderr);
-	stderr_bs = BinarySink_UPCAST(&stderr_ss);
+    stderr_bs = BinarySink_UPCAST(&stderr_ss);
     if (sanitise_stderr) {
         stderr_scc = stripctrl_new(stderr_bs, false, L'\0');
         stderr_bs = BinarySink_UPCAST(stderr_scc);
@@ -3535,6 +3532,22 @@ EXPORT void tggetstructsizes(int *Pulongsize,int *Pnamesize,int *Pattrsize,int *
     *Pnamessize = sizeof names;
 }
 
+bool cmdline_seat_verbose(Seat *seat) // TG
+{
+  return verbose;
+}
+
+bool cmdline_lp_verbose(LogPolicy *lp) // TG
+{
+  return verbose;
+}
+
+bool cmdline_loaded_session(void) // TG
+{
+  return false; // we don't preload sessions
+}
+
+
 EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
 {
     curlibctx=libctx;
@@ -3560,22 +3573,21 @@ EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
 	libctx->modeflags = 0;
 	libctx->batchfile = NULL;
 #ifdef _WINDOWS
-	libctx->sftp_ssh_socket = INVALID_SOCKET;
-	libctx->netevent = INVALID_HANDLE_VALUE;
+	libctx->winselcli_event = INVALID_HANDLE_VALUE;
 #endif
 
-	flags = (verbose ? FLAG_VERBOSE : 0)
+	// flags = (verbose ? FLAG_VERBOSE : 0)
 #ifdef FLAG_SYNCAGENT
 		| FLAG_SYNCAGENT
 #endif
 		;
-	cmdline_tooltype = TOOLTYPE_FILETRANSFER;
+	// cmdline_tooltype = TOOLTYPE_FILETRANSFER;
 	sk_init();
 
 	/* Load Default Settings before doing anything else. */
 	conf = conf_new();
 	do_defaults(NULL, conf);
-	loaded_session = false;
+	// loaded_session = false;
 
     // initial values taken from sshcommon.c
     libctx->pktin_freeq_head.next = &libctx->pktin_freeq_head;
@@ -3620,8 +3632,8 @@ EXPORT int tgputty_initwithcmdline(int argc, char *argv[], TTGLibraryContext *li
 			i++;               /* skip next argument */
 		} else if (ret == 1) {
 			/* We have our own verbosity in addition to `flags'. */
-			if (flags & FLAG_VERBOSE)
-				verbose = true;
+			//if (flags & FLAG_VERBOSE)
+			//	verbose = true;
 		} else if (strcmp(argv[i], "-h") == 0 ||
 				   strcmp(argv[i], "-?") == 0 ||
 				   strcmp(argv[i], "--help") == 0) {
@@ -3970,7 +3982,7 @@ EXPORT void tgputty_setverbose(const char averbose) // TG 2019
 {
   verbose = (averbose & 1) == 1;
   checkpoints = (averbose & 2) == 2;
-  flags = (verbose ? FLAG_VERBOSE : 0);
+  // flags = (verbose ? FLAG_VERBOSE : 0);
 }
 
 EXPORT void tgputty_setkeyfile(const char *apathname,TTGLibraryContext *libctx) // TG 2019
@@ -4181,8 +4193,14 @@ EXPORT void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
   }
 
 #ifdef _WINDOWS
-  if ((libctx->netevent!=0) && (libctx->netevent!=INVALID_HANDLE_VALUE))
-	 CloseHandle(libctx->netevent);
+  if ((libctx->winselcli_event!=0) && (libctx->winselcli_event!=INVALID_HANDLE_VALUE))
+	 CloseHandle(libctx->winselcli_event);
+
+  if (libctx->winselcli_sockets)
+  {
+	 freetree234(libctx->winselcli_sockets);
+	 libctx->winselcli_sockets=NULL;
+  }
 #endif
 
   conf_free(conf);

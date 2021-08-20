@@ -21,10 +21,10 @@ struct callback {
 #define notify_frontend curlibctx->notify_frontend
 #define notify_ctx (curlibctx->notify_ctx)
 #else
-struct callback *cbcurr = NULL, *cbhead = NULL, *cbtail = NULL;
+static struct callback *cbcurr = NULL, *cbhead = NULL, *cbtail = NULL;
 
-toplevel_callback_notify_fn_t notify_frontend = NULL;
-void *notify_ctx = NULL;
+static toplevel_callback_notify_fn_t notify_frontend = NULL;
+static void *notify_ctx = NULL;
 #endif
 
 void request_callback_notifications(toplevel_callback_notify_fn_t fn,
