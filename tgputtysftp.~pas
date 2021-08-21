@@ -146,6 +146,7 @@ type TGPuttySFTPException=class(Exception);
          procedure xfer_cleanup(const xfer:TSFTPTransfer);
 
          procedure SetBooleanConfigValue(const OptionName:AnsiString;const OptionValue:Boolean);
+         procedure SetIntegerConfigValue(const OptionName:AnsiString;const OptionValue:Integer);
 
          property HostName:AnsiString read FHostName write FHostName;
          property UserName:AnsiString read FUserName write FUserName;
@@ -888,6 +889,11 @@ begin
   attrs.flags := SSH_FILEXFER_ATTR_SIZE; // set only this
   attrs.size:=ASize;
   SetStat(AFileName,Attrs);
+  end;
+
+procedure TTGPuttySFTP.SetIntegerConfigValue(const OptionName: AnsiString; const OptionValue: Integer);
+begin
+  tgputty_conf_set_int(GetPuttyConfIndex(string(OptionName)),OptionValue,@FContext);
   end;
 
 procedure TTGPuttySFTP.SetKeyfile(const Value: AnsiString);
