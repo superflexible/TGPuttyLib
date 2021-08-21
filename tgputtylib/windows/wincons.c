@@ -54,7 +54,7 @@ int console_verify_ssh_host_key(
     {
        bool storeit=false;
 	   bool OK=curlibctx->verify_host_key_callback(host, port, keytype, keystr,
-						*fingerprints,
+						fingerprints[SSH_FPTYPE_MD5],
 						ret, &storeit, curlibctx);
        if (storeit)
           store_host_key(host, port, keytype, keystr);
