@@ -329,38 +329,38 @@ psusan: be_misc.o be_none.o callback.o conf.o cproxy.o ecc.o errsock.o \
 		uxsignal.o uxstore.o uxutils.o version.o wcwidth.o \
 		wildcard.o x11fwd.o $(ULDFLAGS) 
 
-libtgputty.so: agentf.o aqsync.o be_misc.o be_ssh.o callback.o cmdline.o conf.o \
-		cproxy.o ecc.o errsock.o logging.o mainchan.o marshal.o \
+libtgputty.so: agentf.o aqsync.o be_misc.o be_ssh.o callback.o cmdline.o clicons.o conf.o \
+		console.o cproxy.o ecc.o errsock.o logging.o mainchan.o marshal.o \
 		memory.o misc.o mpint.o nullplug.o pgssapi.o pinger.o \
 		portfwd.o proxy.o psftp.o psftpcommon.o settings.o sftp.o \
 		sftpcommon.o ssh.o ssh1bpp.o ssh1censor.o ssh1connection.o \
 		ssh1connection-client.o ssh1login.o ssh2bpp.o ssh2bpp-bare.o \
 		ssh2censor.o ssh2connection.o ssh2connection-client.o \
 		ssh2kex-client.o ssh2transhk.o ssh2transport.o \
-		ssh2userauth.o sshaes.o ssharcf.o sshauxcrypt.o sshblowf.o \
+		ssh2userauth.o sshaes.o ssharcf.o sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o \
 		sshccp.o sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o \
 		sshdss.o sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o \
 		sshprng.o sshpubk.o sshrand.o sshrsa.o sshsh256.o sshsh512.o \
-		sshsha.o sshshare.o sshverstring.o sshzlib.o stripctrl.o \
-		time.o timing.o tree234.o utils.o uxagentc.o uxcons.o \
+		sshsha.o sshsha3.o sshshare.o sshutils.o sshverstring.o sshzlib.o stripctrl.o \
+		time.o timing.o tree234.o utils.o uxagentc.o uxcliloop.o uxcons.o \
 		uxfdsock.o uxgss.o uxmisc.o uxnet.o uxnogtk.o uxnoise.o \
 		uxpeer.o uxpoll.o uxproxy.o uxsel.o uxsftp.o uxshare.o \
 		uxstore.o uxutils.o version.o wcwidth.o wildcard.o x11fwd.o
 	$(CC) -shared -o libtgputty.so -fPIC agentf.o aqsync.o be_misc.o be_ssh.o callback.o \
-		cmdline.o conf.o cproxy.o ecc.o errsock.o logging.o \
+		clicons.o cmdline.o conf.o console.o cproxy.o ecc.o errsock.o logging.o \
 		mainchan.o marshal.o memory.o misc.o mpint.o nullplug.o \
 		pgssapi.o pinger.o portfwd.o proxy.o psftp.o psftpcommon.o \
 		settings.o sftp.o sftpcommon.o ssh.o ssh1bpp.o ssh1censor.o \
 		ssh1connection.o ssh1connection-client.o ssh1login.o \
 		ssh2bpp.o ssh2bpp-bare.o ssh2censor.o ssh2connection.o \
 		ssh2connection-client.o ssh2kex-client.o ssh2transhk.o \
-		ssh2transport.o ssh2userauth.o sshaes.o ssharcf.o \
-		sshauxcrypt.o sshblowf.o sshccp.o sshcommon.o sshcrc.o \
+		ssh2transport.o ssh2userauth.o sshaes.o ssharcf.o sshargon2.o \
+		sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o sshcommon.o sshcrc.o \
 		sshcrcda.o sshdes.o sshdh.o sshdss.o sshecc.o sshgssc.o \
 		sshhmac.o sshmac.o sshmd5.o sshprng.o sshpubk.o sshrand.o \
-		sshrsa.o sshsh256.o sshsh512.o sshsha.o sshshare.o \
-		sshverstring.o sshzlib.o stripctrl.o time.o timing.o \
-		tree234.o utils.o uxagentc.o uxcons.o uxfdsock.o uxgss.o \
+		sshrsa.o sshsh256.o sshsh512.o sshsha.o sshsha3.o sshshare.o \
+		sshutils.o sshverstring.o sshzlib.o stripctrl.o time.o timing.o \
+		tree234.o utils.o uxagentc.o uxcliloop.o uxcons.o uxfdsock.o uxgss.o \
 		uxmisc.o uxnet.o uxnogtk.o uxnoise.o uxpeer.o uxpoll.o \
 		uxproxy.o uxsel.o uxsftp.o uxshare.o uxstore.o uxutils.o \
 		version.o wcwidth.o wildcard.o x11fwd.o $(ULDFLAGS) 
