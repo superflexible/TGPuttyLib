@@ -1237,7 +1237,7 @@ struct fxp_xfer *xfer_upload_init(struct fxp_handle *fh, uint64_t offset)
 bool xfer_upload_ready(struct fxp_xfer *xfer)
 {
 	size_t bufbytes=sftp_sendbuffer(); // TG
-	bool result=bufbytes < cBufferMaxFillSizeThresholdToAcceptMoreUploadData; // TG
+	bool result=bufbytes==0; // DID NOT WORK: < cBufferMaxFillSizeThresholdToAcceptMoreUploadData; // TG
 
 #ifdef DEBUG_UPLOAD // TG
     printf("xfer_upload_ready =%d,  xfer->offset is %" PRIu64 ", bufbytes is %" PRIu64 "\n",result,xfer->offset,bufbytes);
