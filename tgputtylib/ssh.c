@@ -1048,6 +1048,8 @@ static size_t ssh_sendbuffer(Backend *be)
     if (ssh->throttled_all)
         backlog += ssh->overall_bufsize;
 
+	size_t outrawsize = bufchain_size(&ssh->out_raw); // TG 2021 - why was this missing?
+	backlog += outrawsize; // TG 2021 - why was this missing?
     return backlog;
 }
 

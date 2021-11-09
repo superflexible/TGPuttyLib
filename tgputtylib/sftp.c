@@ -36,10 +36,23 @@ static void fxp_internal_error(const char *msg);
 
 bool sftp_send(struct sftp_packet *pkt)
 {
-    bool ret;
-    sftp_send_prepare(pkt);
-    ret = sftp_senddata(pkt->data, pkt->length);
-    sftp_pkt_free(pkt);
+	bool ret;
+	sftp_send_prepare(pkt);
+
+	/*
+	if (verbose)
+	{
+	   printf("Sending pkg: ");
+	   for (int i=0;i<pkt->length;i++)
+	   {
+		  printf("%u ",(unsigned char) pkt->data[i]); // TG
+	   }
+	   printf("\n");
+	}
+	*/
+
+	ret = sftp_senddata(pkt->data, pkt->length);
+	sftp_pkt_free(pkt);
     return ret;
 }
 
@@ -1031,7 +1044,7 @@ bool xfer_done(struct fxp_xfer *xfer)
     bool result= (xfer->eof || xfer->err) && !xfer->head; // TG
 
 #ifdef DEBUG_UPLOAD
-    printf("xfer_done=%d, offset=%" PRIu64 "\n",result,xfer->offset); // TG
+	printf("xfer_done=%d, offset=%" PRIu64 "\n",result,xfer->offset); // TG
 #endif
 
     return result; // TG
@@ -1236,8 +1249,14 @@ struct fxp_xfer *xfer_upload_init(struct fxp_handle *fh, uint64_t offset)
 
 bool xfer_upload_ready(struct fxp_xfer *xfer)
 {
+	// sftp_sendbuffer is in psftp.c
+	// it calls backend->vt->sendbuffer(be)
+	// which calls ssh_sendbuffer from ssh.c
+
 	size_t bufbytes=sftp_sendbuffer(); // TG
-	bool result=bufbytes==0; // DID NOT WORK: < cBufferMaxFillSizeThresholdToAcceptMoreUploadData; // TG
+
+	// this works now, after ssh_sendbuffer has been fixed in ssh.c
+	bool result=bufbytes < cBufferMaxFillSizeThresholdToAcceptMoreUploadData; // TG
 
 #ifdef DEBUG_UPLOAD // TG
     printf("xfer_upload_ready =%d,  xfer->offset is %" PRIu64 ", bufbytes is %" PRIu64 "\n",result,xfer->offset,bufbytes);
