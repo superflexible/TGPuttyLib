@@ -125,9 +125,10 @@ int console_verify_ssh_host_key(
     if (curlibctx->verify_host_key_callback) // TG
     {
        bool storeit=false;
-	   bool OK=curlibctx->verify_host_key_callback(host, port, keytype, keystr,
-							  fingerprints[SSH_FPTYPE_SHA256], // SSH_FPTYPE_MD5],
-							  ret, &storeit, curlibctx);
+       char fp[1000];
+       snprintf(fp,1000,"%s\n%s\n",fingerprints[SSH_FPTYPE_MD5],fingerprints[SSH_FPTYPE_SHA256]);
+       bool OK=curlibctx->verify_host_key_callback(host, port, keytype, keystr,
+						   fp, ret, &storeit, curlibctx);
        if (storeit)
           store_host_key(host, port, keytype, keystr);
        if (OK)
