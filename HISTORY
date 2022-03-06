@@ -1,6 +1,21 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 19 - 06 Mar 2022
+
+This release is based on PuTTY 0.76 and contains a few bug fixes related to buffering and progress 
+reporting. SSH server fingerprints are now reported in both MD5 and SHA formats to the host key 
+verification callback function.
+
+---------------------
+
+Build 13 - 24 Mar 2021
+
+Fixes occasional/rare crashes due to an uninitialized local variable, adds a download function 
+written in Pascal and a checkpoint mechanism for debugging.
+
+---------------------
+
 Build 11 - 14 Jul 2020
 
 Adds the Linux shared library libtgputty.so and adjusts tgputtylib.pas and the FPC Simple Demo 
