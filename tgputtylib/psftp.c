@@ -206,52 +206,66 @@ char *canonify(const char *name)
     pktin = sftp_wait_for_reply(req);
     canonname = fxp_realpath_recv(pktin, req);
 
-    if (canonname) {
+	if (canonname)
+	{
 		sfree(fullname);
-		if (verbose) printf("Canonified %s to %s\n",name,canonname); // TG
-        return canonname;
-    } else {
-        /*
-         * Attempt number 2. Some FXP_REALPATH implementations
-         * (glibc-based ones, in particular) require the _whole_
-         * path to point to something that exists, whereas others
-         * (BSD-based) only require all but the last component to
-         * exist. So if the first call failed, we should strip off
-         * everything from the last slash onwards and try again,
-         * then put the final component back on.
-         *
-         * Special cases:
-         *
-         *  - if the last component is "/." or "/..", then we don't
-         *    bother trying this because there's no way it can work.
-         *
-         *  - if the thing actually ends with a "/", we remove it
-         *    before we start. Except if the string is "/" itself
-         *    (although I can't see why we'd have got here if so,
-         *    because surely "/" would have worked the first
-         *    time?), in which case we don't bother.
-         *
-         *  - if there's no slash in the string at all, give up in
-         *    confusion (we expect at least one because of the way
-         *    we constructed the string).
-         */
 
-        int i;
-        char *returnname;
+		// TG: remove trailing slashes from result, some buggy SFTP servers return
+		// a trailing slash even for files!
+		// and we don't even want one for folders!
+		// strip trailing / unless at pos 0
+		int i = (int) strlen(canonname);
+		if ((i > 2) && (canonname[i - 1] == '/'))
+			canonname[--i] = '\0';
 
-        i = (int) strlen(fullname); // TG
-        if (i > 2 && fullname[i - 1] == '/')
-            fullname[--i] = '\0';      /* strip trailing / unless at pos 0 */
-        while (i > 0 && fullname[--i] != '/');
+		if (verbose)
+		   printf("Server canonified %s to %s\n",name,canonname); // TG
+		return canonname;
+	}
+	else
+	{
+		/*
+		 * Attempt number 2. Some FXP_REALPATH implementations
+		 * (glibc-based ones, in particular) require the _whole_
+		 * path to point to something that exists, whereas others
+		 * (BSD-based) only require all but the last component to
+		 * exist. So if the first call failed, we should strip off
+		 * everything from the last slash onwards and try again,
+		 * then put the final component back on.
+		 *
+		 * Special cases:
+		 *
+		 *  - if the last component is "/." or "/..", then we don't
+		 *    bother trying this because there's no way it can work.
+		 *
+		 *  - if the thing actually ends with a "/", we remove it
+		 *    before we start. Except if the string is "/" itself
+		 *    (although I can't see why we'd have got here if so,
+		 *    because surely "/" would have worked the first
+		 *    time?), in which case we don't bother.
+		 *
+		 *  - if there's no slash in the string at all, give up in
+		 *    confusion (we expect at least one because of the way
+		 *    we constructed the string).
+		 */
 
-        /*
-         * Give up on special cases.
-         */
-        if (fullname[i] != '/' ||      /* no slash at all */
-            !strcmp(fullname + i, "/.") ||      /* ends in /. */
-            !strcmp(fullname + i, "/..") ||     /* ends in /.. */
-            !strcmp(fullname, "/")) {
-            return fullname;
+		int i;
+		char *returnname;
+
+		i = (int) strlen(fullname); // TG
+		if ((i > 2) && (fullname[i - 1] == '/'))
+			fullname[--i] = '\0';      /* strip trailing / unless at pos 0 */
+
+		while ((i > 0) && (fullname[--i] != '/'));
+
+		/*
+		 * Give up on special cases.
+		 */
+		if (fullname[i] != '/' ||      /* no slash at all */
+			!strcmp(fullname + i, "/.") ||      /* ends in /. */
+			!strcmp(fullname + i, "/..") ||     /* ends in /.. */
+			!strcmp(fullname, "/")) {
+			return fullname;
         }
 
         /*
@@ -281,10 +295,19 @@ char *canonify(const char *name)
          */
         returnname = dupcat(canonname,
                             (strendswith(canonname, "/") ? "" : "/"),
-                            fullname + i + 1);
-        sfree(fullname);
-        sfree(canonname);
-		if (verbose) printf("Canonified %s to %s\n",name,returnname); // TG
+							fullname + i + 1);
+
+		sfree(fullname);
+		sfree(canonname);
+
+		// TG: remove trailing slashes from result just to be sure
+		// some customer wrongly had it
+		i = (int) strlen(returnname);
+		if ((i > 2) && (returnname[i - 1] == '/'))
+			returnname[--i] = '\0';
+
+		if (verbose)
+		   printf("We canonified %s to %s\n",name,returnname); // TG
         return returnname;
     }
 }
@@ -2752,27 +2775,39 @@ static int do_sftp_init(void)
 
 static void do_sftp_cleanup(void)
 {
-    if (backend) // TG
-    {
-        if (!sent_eof && backend_connected(backend)) // TG
-        {
-           char ch;
-           backend_special(backend, SS_EOF, 0);
+	CP("sftpclean");
+	if (backend) // TG
+	{
+		CP("sftpclean1");
+		if (!sent_eof && backend_connected(backend)) // TG
+		{
+		   char ch;
+           CP("sftpclean2");
+		   backend_special(backend, SS_EOF, 0);
            sent_eof = true;
-           sftp_recvdata(&ch, 1);
-        } // TG
-        backend_free(backend);
-        sftp_cleanup_request();
-        backend = NULL;
+		   CP("sftpclean3");
+		   sftp_recvdata(&ch, 1);
+		} // TG
+		CP("sftpclean4");
+		backend_free(backend);
+		CP("sftpclean5");
+		sftp_cleanup_request();
+		CP("sftpclean6");
+		backend = NULL;
     }
-    if (pwd) {
-        sfree(pwd);
-        pwd = NULL;
-    }
-    if (homedir) {
-        sfree(homedir);
-        homedir = NULL;
-    }
+	if (pwd)
+	{
+		CP("sftpclean10");
+		sfree(pwd);
+		pwd = NULL;
+	}
+	if (homedir)
+	{
+		CP("sftpclean20");
+		sfree(homedir);
+		homedir = NULL;
+	}
+	CP("sftpcleanX");
 }
 
 void free_sftp_command(struct sftp_command **acmd) // TG
