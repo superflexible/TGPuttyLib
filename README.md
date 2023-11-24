@@ -73,7 +73,7 @@ DELPHI RECOMMENDATION
 
 Please consider just using the TTGPuttySFTP class in tgputtysftp.pas
 rather than the TTGPuttySFTPClient component in tgputtysftpclient.pas.
-Just include the folder with thePascal source files in your compiler path.
+Just include the folder with the Pascal source files in your compiler path.
 
 The class has many advantages! You don't have to install anything into the IDE.
 Much easier when you switch to a newer Delphi version in the future.
