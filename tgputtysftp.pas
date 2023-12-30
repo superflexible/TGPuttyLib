@@ -20,7 +20,7 @@ uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
 const MinimumLibraryBuildNum=8;
       cDummyClearedErrorCode=-1000; // this error code means there was no real error code
 
-      cConfCount=85; // 85 since v0.76, 84 since PuTTY version 0.74, previously 83
+      cConfCount=86; // 86 since 0.77, 85 since v0.76, 84 since PuTTY version 0.74, previously 83
       cDumpSettingsFile=false;
 
 type TGPuttySFTPException=class(Exception);
@@ -58,7 +58,7 @@ type TGPuttySFTPException=class(Exception);
          FUploadStream,
          FDownloadStream:TStream;
          FConnected:Boolean;
-         FPasswordAttempts:Integer;
+         FAttempts:Integer;
          FLastMessages:AnsiString;
          FConfNames:PConfPAnsiCharArray;
          FConfTypes:PConfIntArray;
@@ -66,6 +66,11 @@ type TGPuttySFTPException=class(Exception);
          FConfCount:Integer;
          FProgressIntervalMS:Integer;
          FProgressAfterBytes:Int64;
+
+         FStreamWriteExceptionClassName:string;
+         FStreamWriteExceptionClassType:ExceptClass;
+         FStreamWriteExceptionMessage:string;
+
          function GetHomeDir: AnsiString;
          function GetWorkDir: AnsiString;
          procedure SetVerbose(const Value: Boolean);
@@ -206,8 +211,8 @@ var TGPSFTP:TTGPuttySFTP;
 begin
   Result:=nil;
   TGPSFTP:=TTGPuttySFTP(libctx.Tag);
-  Inc(TGPSFTP.FPasswordAttempts);
-  if TGPSFTP.FPasswordAttempts>3 then begin
+  Inc(TGPSFTP.FAttempts);
+  if TGPSFTP.FAttempts>3 then begin
      cancel^:=true;
      if Assigned(TGPSFTP.OnMessage) then
         TGPSFTP.OnMessage(AnsiString('Password was rejected, or no password given for ')+prompt+AnsiString('.')+sLineBreak,true);
@@ -264,7 +269,7 @@ begin
        ReadLn(line);
        Result:=true;
        except
-         raise Exception.Create('No input method available');
+         raise TGPuttySFTPException.Create('No input method available');
        end;
 
   if Result then begin
@@ -297,9 +302,21 @@ begin
   TGPSFTP:=TTGPuttySFTP(libctx.Tag);
   if Assigned(TGPSFTP.FDownloadStream) then begin
      TGPSFTP.FDownloadStream.Position:=Offset;
-     Result:=TGPSFTP.FDownloadStream.Write(buffer^,bufsize);
-     if Assigned(TGPSFTP.OnProgress) then
-        TGPSFTP.OnProgress(Int64(Offset)+bufsize,false);
+     TGPSFTP.FStreamWriteExceptionClassName:='';
+     TGPSFTP.FStreamWriteExceptionClassType:=nil;
+     TGPSFTP.FStreamWriteExceptionMessage:='';
+     try
+       Result:=TGPSFTP.FDownloadStream.Write(buffer^,bufsize);
+       if Assigned(TGPSFTP.OnProgress) then
+          TGPSFTP.OnProgress(Int64(Offset)+bufsize,false);
+       except
+         on E:Exception do begin
+            Result:=0;
+            TGPSFTP.FStreamWriteExceptionClassName:=E.ClassName;
+            Pointer(TGPSFTP.FStreamWriteExceptionClassType):=Pointer(E.ClassType);
+            TGPSFTP.FStreamWriteExceptionMessage:=E.Message;
+            end;
+       end;
      end
   else
      Result:=0;
@@ -382,10 +399,10 @@ constructor TTGPuttySFTP.Create(const verbose:Boolean);
 var puttyversion:Double;
 begin
   if not TGPuttyLibAvailable then
-     raise Exception.Create('TGPuttyLib is not available');
+     raise TGPuttySFTPException.Create('TGPuttyLib is not available');
   tgputtygetversions(@puttyversion,@tgputtylibbuild);
   if tgputtylibbuild<MinimumLibraryBuildNum then
-     raise Exception.Create('tgputtylib is too old, its build number is '+
+     raise TGPuttySFTPException.Create('tgputtylib is too old, its build number is '+
                              IntToStr(tgputtylibbuild)+
                             ', but we need a minimum of '+IntToStr(MinimumLibraryBuildNum));
 
@@ -395,7 +412,7 @@ begin
 
   Fcontext.structsize:=sizeof(Fcontext);
   if Fcontext.structsize<tggetlibrarycontextsize then
-     raise Exception.Create('Incorrect TTGLibraryContext record size');
+     raise TGPuttySFTPException.Create('Incorrect TTGLibraryContext record size');
   Fcontext.Tag:=UInt64(NativeUInt(self));
   Fcontext.ls_callback:=ls_callback;
   Fcontext.getpassword_callback:=getpassword_callback;
@@ -413,11 +430,14 @@ begin
   if not tgputty_getconfigarrays(@FConfTypes,@FConfSubTypes,@FConfNames,@FConfCount) then
      raise TGPuttySFTPException.Create('tgputty_getconfigarrays failed - incorrect tgputtylib version?');
 
-  if FConfCount<>cConfCount then
+  if FConfCount<>cConfCount then begin
      printmessage_callback(PAnsiChar(AnsiString('Possibly tgputtylib version mismatch, it has ')+
                             AnsiString(IntToStr(FConfCount))+
                             AnsiString(' config strings, but we expected ')+
                             AnsiString(IntToStr(cConfCount))),0,@Fcontext);
+     if FConfCount>cConfCount then
+        FConfCount:=cConfCount;
+     end;
 
   if cDumpSettingsFile then
      DumpSettingsFile;
@@ -484,6 +504,10 @@ begin
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
   try
     res:=tgsftp_getfile(PAnsiChar(ARemoteFilename),nil,anAppend,@Fcontext);
+
+    if Assigned(FStreamWriteExceptionClassType) then
+       raise FStreamWriteExceptionClassType.Create(FStreamWriteExceptionMessage);
+
     if res<>1 then
        raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_getfile'));
     finally

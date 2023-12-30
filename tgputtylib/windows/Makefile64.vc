@@ -93,1696 +93,937 @@
 MAKEFILE = Makefile.vc
 
 # C compilation flags
-CFLAGSRELEASE = /nologo /W3 /wd4018 /wd4146 /we4090 /we4028 /O2 -I..\./ -I..\charset/ -I..\windows/ -I..\unix/ /DTGDLL /D_WINDOWS /D_WIN32_WINDOWS=0x500 /DWINVER=0x500 /D_CRT_SECURE_NO_WARNINGS /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
-CFLAGS = /nologo /W3 /wd4018 /wd4146 /we4090 /we4028 /O2 /Zi -I..\./ -I..\charset/ -I..\windows/ -I..\unix/ /DTGDLL /D_WINDOWS /D_WIN32_WINDOWS=0x500 /DWINVER=0x500 /D_CRT_SECURE_NO_WARNINGS /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+CFLAGSRELEASE = /nologo /W3 /wd4018 /wd4146 /we4090 /we4028 /O2 -I..\./ -I..\charset/ -I..\terminal/ -I..\ssh/ -I..\windows/ -I..\unix/ /DTGDLL /D_WINDOWS /D_WIN32_WINDOWS=0x500 /DWINVER=0x500 /D_CRT_SECURE_NO_WARNINGS /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
+CFLAGS = /nologo /W3 /wd4018 /wd4146 /we4090 /we4028 /O2 /Zi -I..\./ -I..\charset/ -I..\terminal/ -I..\ssh/ -I..\windows/ -I..\unix/ /DTGDLL /D_WINDOWS /D_WIN32_WINDOWS=0x500 /DWINVER=0x500 /D_CRT_SECURE_NO_WARNINGS /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 LFLAGS = /incremental:no /dynamicbase /nxcompat
-LFLAGSDLL = /incremental:no /dynamicbase:no /nxcompat:no /DEBUG:FULL
+LFLAGSDLL = /incremental:no /dynamicbase:no /nxcompat:no /DEBUG:FULL /ignore:4099
 LFLAGSDLLRELEASE = /incremental:no /dynamicbase:no /nxcompat:no
 RCFLAGS = -I..\./ -I..\charset/ -I..\windows/ -I..\unix/ -DWIN32 -D_WIN32 -DWINVER=0x0400
 
 CFLAGS = $(CFLAGS) /DHAS_GSSAPI
 
+all: $(BUILDDIR)tgputtylib.dll
 
-all: $(BUILDDIR)pageant.exe $(BUILDDIR)plink.exe $(BUILDDIR)pscp.exe \
-		$(BUILDDIR)psftp.exe $(BUILDDIR)psocks.exe \
-		$(BUILDDIR)putty.exe $(BUILDDIR)puttygen.exe \
-		$(BUILDDIR)puttytel.exe $(BUILDDIR)testcrypt.exe
-
-$(BUILDDIR)pageant.exe: $(BUILDDIR)aqsync.obj $(BUILDDIR)be_misc.obj \
-		$(BUILDDIR)callback.obj $(BUILDDIR)conf.obj \
-		$(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj \
-		$(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj \
-		$(BUILDDIR)misc.obj $(BUILDDIR)mpint.obj \
-		$(BUILDDIR)pageant.obj $(BUILDDIR)pageant.res \
-		$(BUILDDIR)sshaes.obj $(BUILDDIR)sshargon2.obj \
-		$(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshblake2.obj \
-		$(BUILDDIR)sshdes.obj $(BUILDDIR)sshdss.obj \
-		$(BUILDDIR)sshecc.obj $(BUILDDIR)sshhmac.obj \
-		$(BUILDDIR)sshmd5.obj $(BUILDDIR)sshpubk.obj \
-		$(BUILDDIR)sshrsa.obj $(BUILDDIR)sshsh256.obj \
-		$(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj \
-		$(BUILDDIR)sshsha3.obj $(BUILDDIR)stripctrl.obj \
-		$(BUILDDIR)tree234.obj $(BUILDDIR)utils.obj \
-		$(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj \
-		$(BUILDDIR)wincapi.obj $(BUILDDIR)winhandl.obj \
-		$(BUILDDIR)winhelp.obj $(BUILDDIR)winhsock.obj \
-		$(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj \
-		$(BUILDDIR)winnet.obj $(BUILDDIR)winnpc.obj \
-		$(BUILDDIR)winnps.obj $(BUILDDIR)winpgnt.obj \
-		$(BUILDDIR)winpgntc.obj $(BUILDDIR)winsecur.obj \
-		$(BUILDDIR)winselgui.obj $(BUILDDIR)winutils.obj
-	type <<link_pageant
- advapi32.lib $(BUILDDIR)aqsync.obj $(BUILDDIR)be_misc.obj
- $(BUILDDIR)callback.obj comdlg32.lib $(BUILDDIR)conf.obj
- $(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj gdi32.lib imm32.lib
- $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)misc.obj
- $(BUILDDIR)mpint.obj ole32.lib $(BUILDDIR)pageant.obj
- $(BUILDDIR)pageant.res shell32.lib $(BUILDDIR)sshaes.obj
- $(BUILDDIR)sshargon2.obj $(BUILDDIR)sshauxcrypt.obj
- $(BUILDDIR)sshblake2.obj $(BUILDDIR)sshdes.obj $(BUILDDIR)sshdss.obj
- $(BUILDDIR)sshecc.obj $(BUILDDIR)sshhmac.obj $(BUILDDIR)sshmd5.obj
- $(BUILDDIR)sshpubk.obj $(BUILDDIR)sshrsa.obj $(BUILDDIR)sshsh256.obj
- $(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj
- $(BUILDDIR)stripctrl.obj $(BUILDDIR)tree234.obj user32.lib
- $(BUILDDIR)utils.obj $(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj
- $(BUILDDIR)wincapi.obj $(BUILDDIR)winhandl.obj $(BUILDDIR)winhelp.obj
- $(BUILDDIR)winhsock.obj $(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj
- $(BUILDDIR)winnet.obj $(BUILDDIR)winnpc.obj $(BUILDDIR)winnps.obj
- $(BUILDDIR)winpgnt.obj $(BUILDDIR)winpgntc.obj $(BUILDDIR)winsecur.obj
- $(BUILDDIR)winselgui.obj $(BUILDDIR)winutils.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)pageant.exe -map:$(BUILDDIR)pageant.map -nologo -subsystem:windows$(SUBSYSVER) @link_pageant
-
-$(BUILDDIR)plink.exe: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj \
-		$(BUILDDIR)be_all_s.obj $(BUILDDIR)be_misc.obj \
-		$(BUILDDIR)callback.obj $(BUILDDIR)clicons.obj \
-		$(BUILDDIR)cmdline.obj $(BUILDDIR)conf.obj \
-		$(BUILDDIR)console.obj $(BUILDDIR)cproxy.obj \
-		$(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj \
-		$(BUILDDIR)ldisc.obj $(BUILDDIR)logging.obj \
-		$(BUILDDIR)mainchan.obj $(BUILDDIR)marshal.obj \
-		$(BUILDDIR)memory.obj $(BUILDDIR)misc.obj \
-		$(BUILDDIR)miscucs.obj $(BUILDDIR)mpint.obj \
-		$(BUILDDIR)noterm.obj $(BUILDDIR)nullplug.obj \
-		$(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj \
-		$(BUILDDIR)plink.res $(BUILDDIR)portfwd.obj \
-		$(BUILDDIR)proxy.obj $(BUILDDIR)raw.obj \
-		$(BUILDDIR)rlogin.obj $(BUILDDIR)sessprep.obj \
-		$(BUILDDIR)settings.obj $(BUILDDIR)ssh.obj \
-		$(BUILDDIR)ssh1bpp.obj $(BUILDDIR)ssh1censor.obj \
-		$(BUILDDIR)ssh1connection.obj \
-		$(BUILDDIR)ssh1connection-client.obj \
-		$(BUILDDIR)ssh1login.obj $(BUILDDIR)ssh2bpp.obj \
-		$(BUILDDIR)ssh2bpp-bare.obj $(BUILDDIR)ssh2censor.obj \
-		$(BUILDDIR)ssh2connection.obj \
-		$(BUILDDIR)ssh2connection-client.obj \
-		$(BUILDDIR)ssh2kex-client.obj $(BUILDDIR)ssh2transhk.obj \
-		$(BUILDDIR)ssh2transport.obj $(BUILDDIR)ssh2userauth.obj \
-		$(BUILDDIR)sshaes.obj $(BUILDDIR)ssharcf.obj \
-		$(BUILDDIR)sshargon2.obj $(BUILDDIR)sshauxcrypt.obj \
-		$(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj \
-		$(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj \
-		$(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj \
-		$(BUILDDIR)sshdes.obj $(BUILDDIR)sshdh.obj \
-		$(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj \
-		$(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj \
-		$(BUILDDIR)sshmac.obj $(BUILDDIR)sshmd5.obj \
-		$(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj \
-		$(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj \
-		$(BUILDDIR)sshsh256.obj $(BUILDDIR)sshsh512.obj \
-		$(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj \
-		$(BUILDDIR)sshshare.obj $(BUILDDIR)sshutils.obj \
-		$(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj \
-		$(BUILDDIR)stripctrl.obj $(BUILDDIR)supdup.obj \
-		$(BUILDDIR)telnet.obj $(BUILDDIR)timing.obj \
-		$(BUILDDIR)tree234.obj $(BUILDDIR)utils.obj \
-		$(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj \
-		$(BUILDDIR)wildcard.obj $(BUILDDIR)wincapi.obj \
-		$(BUILDDIR)wincliloop.obj $(BUILDDIR)wincons.obj \
-		$(BUILDDIR)windefs.obj $(BUILDDIR)wingss.obj \
-		$(BUILDDIR)winhandl.obj $(BUILDDIR)winhsock.obj \
-		$(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj \
-		$(BUILDDIR)winnet.obj $(BUILDDIR)winnohlp.obj \
-		$(BUILDDIR)winnoise.obj $(BUILDDIR)winnojmp.obj \
-		$(BUILDDIR)winnpc.obj $(BUILDDIR)winnps.obj \
-		$(BUILDDIR)winpgntc.obj $(BUILDDIR)winplink.obj \
-		$(BUILDDIR)winproxy.obj $(BUILDDIR)winsecur.obj \
-		$(BUILDDIR)winselcli.obj $(BUILDDIR)winser.obj \
-		$(BUILDDIR)winshare.obj $(BUILDDIR)winstore.obj \
-		$(BUILDDIR)wintime.obj $(BUILDDIR)winucs.obj \
-		$(BUILDDIR)winx11.obj $(BUILDDIR)x11fwd.obj
-	type <<link_plink
- advapi32.lib $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj
- $(BUILDDIR)be_all_s.obj $(BUILDDIR)be_misc.obj $(BUILDDIR)callback.obj
- $(BUILDDIR)clicons.obj $(BUILDDIR)cmdline.obj comdlg32.lib
- $(BUILDDIR)conf.obj $(BUILDDIR)console.obj $(BUILDDIR)cproxy.obj
- $(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj gdi32.lib imm32.lib
- $(BUILDDIR)ldisc.obj $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj
- $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)misc.obj
- $(BUILDDIR)miscucs.obj $(BUILDDIR)mpint.obj $(BUILDDIR)noterm.obj
- $(BUILDDIR)nullplug.obj ole32.lib $(BUILDDIR)pgssapi.obj
- $(BUILDDIR)pinger.obj $(BUILDDIR)plink.res $(BUILDDIR)portfwd.obj
- $(BUILDDIR)proxy.obj $(BUILDDIR)raw.obj $(BUILDDIR)rlogin.obj
- $(BUILDDIR)sessprep.obj $(BUILDDIR)settings.obj shell32.lib
- $(BUILDDIR)ssh.obj $(BUILDDIR)ssh1bpp.obj $(BUILDDIR)ssh1censor.obj
- $(BUILDDIR)ssh1connection.obj $(BUILDDIR)ssh1connection-client.obj
- $(BUILDDIR)ssh1login.obj $(BUILDDIR)ssh2bpp.obj
- $(BUILDDIR)ssh2bpp-bare.obj $(BUILDDIR)ssh2censor.obj
- $(BUILDDIR)ssh2connection.obj $(BUILDDIR)ssh2connection-client.obj
- $(BUILDDIR)ssh2kex-client.obj $(BUILDDIR)ssh2transhk.obj
- $(BUILDDIR)ssh2transport.obj $(BUILDDIR)ssh2userauth.obj
- $(BUILDDIR)sshaes.obj $(BUILDDIR)ssharcf.obj $(BUILDDIR)sshargon2.obj
- $(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshblake2.obj
- $(BUILDDIR)sshblowf.obj $(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj
- $(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj $(BUILDDIR)sshdes.obj
- $(BUILDDIR)sshdh.obj $(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj
- $(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj $(BUILDDIR)sshmac.obj
- $(BUILDDIR)sshmd5.obj $(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj
- $(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj $(BUILDDIR)sshsh256.obj
- $(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj
- $(BUILDDIR)sshshare.obj $(BUILDDIR)sshutils.obj
- $(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj
- $(BUILDDIR)stripctrl.obj $(BUILDDIR)supdup.obj $(BUILDDIR)telnet.obj
- $(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj user32.lib
- $(BUILDDIR)utils.obj $(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj
- $(BUILDDIR)wildcard.obj $(BUILDDIR)wincapi.obj
- $(BUILDDIR)wincliloop.obj $(BUILDDIR)wincons.obj $(BUILDDIR)windefs.obj
- $(BUILDDIR)wingss.obj $(BUILDDIR)winhandl.obj $(BUILDDIR)winhsock.obj
- $(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj $(BUILDDIR)winnet.obj
- $(BUILDDIR)winnohlp.obj $(BUILDDIR)winnoise.obj $(BUILDDIR)winnojmp.obj
- $(BUILDDIR)winnpc.obj $(BUILDDIR)winnps.obj $(BUILDDIR)winpgntc.obj
- $(BUILDDIR)winplink.obj $(BUILDDIR)winproxy.obj $(BUILDDIR)winsecur.obj
- $(BUILDDIR)winselcli.obj $(BUILDDIR)winser.obj $(BUILDDIR)winshare.obj
- $(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj $(BUILDDIR)winucs.obj
- $(BUILDDIR)winx11.obj $(BUILDDIR)x11fwd.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)plink.exe -map:$(BUILDDIR)plink.map -nologo -subsystem:console$(SUBSYSVER) @link_plink
-
-$(BUILDDIR)pscp.exe: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj \
-		$(BUILDDIR)be_misc.obj $(BUILDDIR)be_ssh.obj \
-		$(BUILDDIR)callback.obj $(BUILDDIR)clicons.obj \
-		$(BUILDDIR)cmdline.obj $(BUILDDIR)conf.obj \
-		$(BUILDDIR)console.obj $(BUILDDIR)cproxy.obj \
-		$(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj \
-		$(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj \
-		$(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj \
-		$(BUILDDIR)misc.obj $(BUILDDIR)miscucs.obj \
-		$(BUILDDIR)mpint.obj $(BUILDDIR)nullplug.obj \
-		$(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj \
-		$(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj \
-		$(BUILDDIR)pscp.obj $(BUILDDIR)pscp.res \
-		$(BUILDDIR)psftpcommon.obj $(BUILDDIR)settings.obj \
-		$(BUILDDIR)sftp.obj $(BUILDDIR)sftpcommon.obj \
-		$(BUILDDIR)ssh.obj $(BUILDDIR)ssh1bpp.obj \
-		$(BUILDDIR)ssh1censor.obj $(BUILDDIR)ssh1connection.obj \
-		$(BUILDDIR)ssh1connection-client.obj \
-		$(BUILDDIR)ssh1login.obj $(BUILDDIR)ssh2bpp.obj \
-		$(BUILDDIR)ssh2bpp-bare.obj $(BUILDDIR)ssh2censor.obj \
-		$(BUILDDIR)ssh2connection.obj \
-		$(BUILDDIR)ssh2connection-client.obj \
-		$(BUILDDIR)ssh2kex-client.obj $(BUILDDIR)ssh2transhk.obj \
-		$(BUILDDIR)ssh2transport.obj $(BUILDDIR)ssh2userauth.obj \
-		$(BUILDDIR)sshaes.obj $(BUILDDIR)ssharcf.obj \
-		$(BUILDDIR)sshargon2.obj $(BUILDDIR)sshauxcrypt.obj \
-		$(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj \
-		$(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj \
-		$(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj \
-		$(BUILDDIR)sshdes.obj $(BUILDDIR)sshdh.obj \
-		$(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj \
-		$(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj \
-		$(BUILDDIR)sshmac.obj $(BUILDDIR)sshmd5.obj \
-		$(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj \
-		$(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj \
-		$(BUILDDIR)sshsh256.obj $(BUILDDIR)sshsh512.obj \
-		$(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj \
-		$(BUILDDIR)sshshare.obj $(BUILDDIR)sshutils.obj \
-		$(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj \
-		$(BUILDDIR)stripctrl.obj $(BUILDDIR)timing.obj \
-		$(BUILDDIR)tree234.obj $(BUILDDIR)utils.obj \
-		$(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj \
-		$(BUILDDIR)wildcard.obj $(BUILDDIR)wincapi.obj \
-		$(BUILDDIR)wincliloop.obj $(BUILDDIR)wincons.obj \
-		$(BUILDDIR)windefs.obj $(BUILDDIR)wingss.obj \
-		$(BUILDDIR)winhandl.obj $(BUILDDIR)winhsock.obj \
-		$(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj \
-		$(BUILDDIR)winnet.obj $(BUILDDIR)winnohlp.obj \
-		$(BUILDDIR)winnoise.obj $(BUILDDIR)winnojmp.obj \
-		$(BUILDDIR)winnpc.obj $(BUILDDIR)winnps.obj \
-		$(BUILDDIR)winpgntc.obj $(BUILDDIR)winproxy.obj \
-		$(BUILDDIR)winsecur.obj $(BUILDDIR)winselcli.obj \
-		$(BUILDDIR)winsftp.obj $(BUILDDIR)winshare.obj \
-		$(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj \
-		$(BUILDDIR)winucs.obj $(BUILDDIR)x11fwd.obj
-	type <<link_pscp
- advapi32.lib $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj
- $(BUILDDIR)be_misc.obj $(BUILDDIR)be_ssh.obj $(BUILDDIR)callback.obj
- $(BUILDDIR)clicons.obj $(BUILDDIR)cmdline.obj comdlg32.lib
- $(BUILDDIR)conf.obj $(BUILDDIR)console.obj $(BUILDDIR)cproxy.obj
- $(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj gdi32.lib imm32.lib
- $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj $(BUILDDIR)marshal.obj
- $(BUILDDIR)memory.obj $(BUILDDIR)misc.obj $(BUILDDIR)miscucs.obj
- $(BUILDDIR)mpint.obj $(BUILDDIR)nullplug.obj ole32.lib
- $(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj $(BUILDDIR)portfwd.obj
- $(BUILDDIR)proxy.obj $(BUILDDIR)pscp.obj $(BUILDDIR)pscp.res
- $(BUILDDIR)psftpcommon.obj $(BUILDDIR)settings.obj $(BUILDDIR)sftp.obj
- $(BUILDDIR)sftpcommon.obj shell32.lib $(BUILDDIR)ssh.obj
- $(BUILDDIR)ssh1bpp.obj $(BUILDDIR)ssh1censor.obj
- $(BUILDDIR)ssh1connection.obj $(BUILDDIR)ssh1connection-client.obj
- $(BUILDDIR)ssh1login.obj $(BUILDDIR)ssh2bpp.obj
- $(BUILDDIR)ssh2bpp-bare.obj $(BUILDDIR)ssh2censor.obj
- $(BUILDDIR)ssh2connection.obj $(BUILDDIR)ssh2connection-client.obj
- $(BUILDDIR)ssh2kex-client.obj $(BUILDDIR)ssh2transhk.obj
- $(BUILDDIR)ssh2transport.obj $(BUILDDIR)ssh2userauth.obj
- $(BUILDDIR)sshaes.obj $(BUILDDIR)ssharcf.obj $(BUILDDIR)sshargon2.obj
- $(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshblake2.obj
- $(BUILDDIR)sshblowf.obj $(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj
- $(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj $(BUILDDIR)sshdes.obj
- $(BUILDDIR)sshdh.obj $(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj
- $(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj $(BUILDDIR)sshmac.obj
- $(BUILDDIR)sshmd5.obj $(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj
- $(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj $(BUILDDIR)sshsh256.obj
- $(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj
- $(BUILDDIR)sshshare.obj $(BUILDDIR)sshutils.obj
- $(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj
- $(BUILDDIR)stripctrl.obj $(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj
- user32.lib $(BUILDDIR)utils.obj $(BUILDDIR)version.obj
- $(BUILDDIR)wcwidth.obj $(BUILDDIR)wildcard.obj $(BUILDDIR)wincapi.obj
- $(BUILDDIR)wincliloop.obj $(BUILDDIR)wincons.obj $(BUILDDIR)windefs.obj
- $(BUILDDIR)wingss.obj $(BUILDDIR)winhandl.obj $(BUILDDIR)winhsock.obj
- $(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj $(BUILDDIR)winnet.obj
- $(BUILDDIR)winnohlp.obj $(BUILDDIR)winnoise.obj $(BUILDDIR)winnojmp.obj
- $(BUILDDIR)winnpc.obj $(BUILDDIR)winnps.obj $(BUILDDIR)winpgntc.obj
- $(BUILDDIR)winproxy.obj $(BUILDDIR)winsecur.obj
- $(BUILDDIR)winselcli.obj $(BUILDDIR)winsftp.obj $(BUILDDIR)winshare.obj
- $(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj $(BUILDDIR)winucs.obj
- $(BUILDDIR)x11fwd.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)pscp.exe -map:$(BUILDDIR)pscp.map -nologo -subsystem:console$(SUBSYSVER) @link_pscp
-
-$(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj \
-		$(BUILDDIR)be_misc.obj $(BUILDDIR)be_ssh.obj \
-		$(BUILDDIR)callback.obj $(BUILDDIR)cmdline.obj \
-		$(BUILDDIR)conf.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj \
-                $(BUILDDIR)cproxy.obj $(BUILDDIR)ecc.obj \
-		$(BUILDDIR)errsock.obj $(BUILDDIR)logging.obj \
-		$(BUILDDIR)mainchan.obj $(BUILDDIR)marshal.obj \
-		$(BUILDDIR)memory.obj $(BUILDDIR)misc.obj \
-		$(BUILDDIR)miscucs.obj $(BUILDDIR)mpint.obj \
-		$(BUILDDIR)nullplug.obj $(BUILDDIR)pgssapi.obj \
+$(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDIR)ssh2_pick_fingerprint.obj \
+		$(BUILDDIR)network.obj $(BUILDDIR)be_list.obj $(BUILDDIR)bufchain.obj $(BUILDDIR)tempseat.obj \
+		$(BUILDDIR)callback.obj $(BUILDDIR)cmdline.obj $(BUILDDIR)strbuf.obj $(BUILDDIR)antispoof.obj \
+		$(BUILDDIR)conf.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj $(BUILDDIR)sk_free_peer_info.obj \
+                $(BUILDDIR)cproxy.obj $(BUILDDIR)ecc-arithmetic.obj $(BUILDDIR)ecc-ssh.obj $(BUILDDIR)memxor.obj \
+		$(BUILDDIR)errsock.obj $(BUILDDIR)logging.obj $(BUILDDIR)dupcat.obj $(BUILDDIR)fgetline.obj \
+		$(BUILDDIR)mainchan.obj $(BUILDDIR)marshal.obj $(BUILDDIR)local.obj $(BUILDDIR)host_strchr.obj \
+		$(BUILDDIR)memory.obj $(BUILDDIR)validate_manual_hostkey.obj $(BUILDDIR)prompts.obj \
+		$(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)mpint.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)host_strchr_internal.obj \
+		$(BUILDDIR)nullplug.obj $(BUILDDIR)pgssapi.obj $(BUILDDIR)smemeq.obj $(BUILDDIR)interprocess_mutex.obj \
 		$(BUILDDIR)pinger.obj $(BUILDDIR)portfwd.obj \
-		$(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj \
-		$(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj \
-		$(BUILDDIR)settings.obj $(BUILDDIR)sftp.obj \
-		$(BUILDDIR)sftpcommon.obj $(BUILDDIR)ssh.obj \
-		$(BUILDDIR)ssh1bpp.obj $(BUILDDIR)ssh1censor.obj \
-		$(BUILDDIR)ssh1connection.obj \
-		$(BUILDDIR)ssh1connection-client.obj \
-		$(BUILDDIR)ssh1login.obj $(BUILDDIR)ssh2bpp.obj \
-		$(BUILDDIR)ssh2bpp-bare.obj $(BUILDDIR)ssh2censor.obj \
-		$(BUILDDIR)ssh2connection.obj \
-		$(BUILDDIR)ssh2connection-client.obj \
-		$(BUILDDIR)ssh2kex-client.obj $(BUILDDIR)ssh2transhk.obj \
-		$(BUILDDIR)ssh2transport.obj $(BUILDDIR)ssh2userauth.obj \
-		$(BUILDDIR)sshaes.obj $(BUILDDIR)sshargon2.obj $(BUILDDIR)ssharcf.obj \
-		$(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj \
-		$(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj \
-		$(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj \
-		$(BUILDDIR)sshdes.obj $(BUILDDIR)sshdh.obj \
-		$(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj \
-		$(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj \
-		$(BUILDDIR)sshmac.obj $(BUILDDIR)sshmd5.obj \
-		$(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj \
-		$(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj \
-		$(BUILDDIR)sshsh256.obj $(BUILDDIR)sshsh512.obj \
-		$(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj $(BUILDDIR)sshshare.obj \
-                $(BUILDDIR)sshutils.obj \
-		$(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj \
-		$(BUILDDIR)stripctrl.obj $(BUILDDIR)timing.obj \
-		$(BUILDDIR)tree234.obj $(BUILDDIR)utils.obj \
+		$(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)default_description.obj \
+		$(BUILDDIR)http.obj $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj \
+		$(BUILDDIR)settings.obj $(BUILDDIR)sftp.obj $(BUILDDIR)string_length_for_printf.obj \
+		$(BUILDDIR)sftpcommon.obj $(BUILDDIR)ssh.obj $(BUILDDIR)dupstr.obj $(BUILDDIR)encode_utf8.obj \
+		$(BUILDDIR)bpp1.obj $(BUILDDIR)censor1.obj $(BUILDDIR)dupprintf.obj $(BUILDDIR)host_strduptrim.obj \
+		$(BUILDDIR)connection1.obj $(BUILDDIR)nullseat.obj $(BUILDDIR)smemclr.obj $(BUILDDIR)backend_socket_log.obj \
+		$(BUILDDIR)connection1-client.obj $(BUILDDIR)host_strrchr.obj $(BUILDDIR)interactor.obj \
+		$(BUILDDIR)login1.obj $(BUILDDIR)bpp2.obj $(BUILDDIR)platform_get_x_display.obj \
+		$(BUILDDIR)bpp-bare.obj $(BUILDDIR)censor2.obj $(BUILDDIR)ctrlparse.obj $(BUILDDIR)make_spr_sw_abort_static.obj \
+		$(BUILDDIR)connection2.obj $(BUILDDIR)socks4.obj $(BUILDDIR)socks5.obj $(BUILDDIR)make_spr_sw_abort_winerror.obj \
+		$(BUILDDIR)connection2-client.obj $(BUILDDIR)seat_connection_fatal.obj $(BUILDDIR)host_strcspn.obj \
+		$(BUILDDIR)kex2-client.obj $(BUILDDIR)transient-hostkey-cache.obj $(BUILDDIR)out_of_memory.obj \
+		$(BUILDDIR)transport2.obj $(BUILDDIR)userauth2-client.obj $(BUILDDIR)aes-select.obj \
+		$(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-common.obj $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj \
+		$(BUILDDIR)pubkey-ppk.obj $(BUILDDIR)pubkey-ssh1.obj $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj \
+		$(BUILDDIR)chacha20-poly1305.obj $(BUILDDIR)common.obj $(BUILDDIR)base64_encode_atom.obj \
+		$(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)load_system32_dll.obj \
+		$(BUILDDIR)des.obj $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)burnstr.obj $(BUILDDIR)get_system_dir.obj \
+		$(BUILDDIR)dsa.obj $(BUILDDIR)telnet.obj $(BUILDDIR)base64_decode_atom.obj \
+		$(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)hash_simple.obj $(BUILDDIR)mac_simple.obj \
+		$(BUILDDIR)mac.obj $(BUILDDIR)md5.obj $(BUILDDIR)spr_get_error_message.obj \
+		$(BUILDDIR)prng.obj $(BUILDDIR)sshpubk.obj $(BUILDDIR)write_c_string_literal.obj \
+		$(BUILDDIR)sshrand.obj $(BUILDDIR)rsa.obj $(BUILDDIR)sha256-select.obj \
+		$(BUILDDIR)sha256-sw.obj $(BUILDDIR)sha512-sw.obj $(BUILDDIR)sha512-select.obj \
+		$(BUILDDIR)sha256-common.obj $(BUILDDIR)sha512-common.obj $(BUILDDIR)null_lp.obj \
+		$(BUILDDIR)sha1-common.obj $(BUILDDIR)sha1-select.obj $(BUILDDIR)sha1-sw.obj $(BUILDDIR)sha3.obj $(BUILDDIR)sharing.obj \
+                $(BUILDDIR)sshutils.obj $(BUILDDIR)agent_named_pipe_name.obj  $(BUILDDIR)get_username.obj\
+		$(BUILDDIR)verstring.obj $(BUILDDIR)zlib.obj $(BUILDDIR)sessprep.obj \
+		$(BUILDDIR)stripctrl.obj $(BUILDDIR)timing.obj $(BUILDDIR)conf_launchable.obj \
+		$(BUILDDIR)tree234.obj $(BUILDDIR)parse_blocksize.obj \
 		$(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj \
-		$(BUILDDIR)wildcard.obj $(BUILDDIR)wincapi.obj $(BUILDDIR)wincliloop.obj \
-		$(BUILDDIR)wincons.obj $(BUILDDIR)windefs.obj \
-		$(BUILDDIR)wingss.obj $(BUILDDIR)winhandl.obj \
-		$(BUILDDIR)winhsock.obj $(BUILDDIR)winmisc.obj \
-		$(BUILDDIR)winmiscs.obj $(BUILDDIR)winnet.obj \
-		$(BUILDDIR)winnohlp.obj $(BUILDDIR)winnoise.obj \
-		$(BUILDDIR)winnojmp.obj $(BUILDDIR)winnpc.obj \
-		$(BUILDDIR)winnps.obj $(BUILDDIR)winpgntc.obj \
-		$(BUILDDIR)winproxy.obj $(BUILDDIR)winsecur.obj $(BUILDDIR)winselcli.obj \
-		$(BUILDDIR)winsftp.obj $(BUILDDIR)winshare.obj \
-		$(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj \
-		$(BUILDDIR)winucs.obj $(BUILDDIR)x11fwd.obj
+		$(BUILDDIR)wildcard.obj $(BUILDDIR)cryptoapi.obj $(BUILDDIR)cliloop.obj \
+                $(BUILDDIR)escape_registry_key.obj $(BUILDDIR)win_strerror.obj \
+		$(BUILDDIR)consolew.obj $(BUILDDIR)defaults.obj \
+		$(BUILDDIR)gss.obj $(BUILDDIR)handle-io.obj $(BUILDDIR)handle-wait.obj \
+		$(BUILDDIR)handle-socket.obj $(BUILDDIR)filename.obj $(BUILDDIR)log_proxy_stderr.obj \
+		$(BUILDDIR)is_console_handle.obj \
+		$(BUILDDIR)nohelp.obj $(BUILDDIR)noise.obj $(BUILDDIR)sshproxy.obj \
+		$(BUILDDIR)no-jump-list.obj $(BUILDDIR)named-pipe-client.obj \
+		$(BUILDDIR)named-pipe-server.obj $(BUILDDIR)agent-client.obj \
+		$(BUILDDIR)local-proxy.obj $(BUILDDIR)security.obj $(BUILDDIR)select-cli.obj \
+		$(BUILDDIR)sftpw.obj $(BUILDDIR)sharingw.obj $(BUILDDIR)nullstrcmp.obj \
+		$(BUILDDIR)storage.obj $(BUILDDIR)ltime.obj $(BUILDDIR)open_for_write_would_lose_data.obj \
+		$(BUILDDIR)unicode.obj \
+                $(BUILDDIR)xdmauth.obj
 	type <<link_psftp
- advapi32.lib $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj
- $(BUILDDIR)be_misc.obj $(BUILDDIR)be_ssh.obj $(BUILDDIR)callback.obj
+ advapi32.lib $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDIR)bufchain.obj $(BUILDDIR)ctrlparse.obj
+ $(BUILDDIR)network.obj $(BUILDDIR)be_list.obj $(BUILDDIR)callback.obj $(BUILDDIR)strbuf.obj $(BUILDDIR)antispoof.obj
  $(BUILDDIR)cmdline.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj comdlg32.lib $(BUILDDIR)conf.obj
- $(BUILDDIR)cproxy.obj $(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj
- gdi32.lib imm32.lib $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj
- $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)misc.obj
- $(BUILDDIR)miscucs.obj $(BUILDDIR)mpint.obj $(BUILDDIR)nullplug.obj
- ole32.lib $(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj
- $(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj
- $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj $(BUILDDIR)settings.obj
- $(BUILDDIR)sftp.obj $(BUILDDIR)sftpcommon.obj shell32.lib
- $(BUILDDIR)ssh.obj $(BUILDDIR)ssh1bpp.obj $(BUILDDIR)ssh1censor.obj
- $(BUILDDIR)ssh1connection.obj $(BUILDDIR)ssh1connection-client.obj
- $(BUILDDIR)ssh1login.obj $(BUILDDIR)ssh2bpp.obj
- $(BUILDDIR)ssh2bpp-bare.obj $(BUILDDIR)ssh2censor.obj
- $(BUILDDIR)ssh2connection.obj $(BUILDDIR)ssh2connection-client.obj
- $(BUILDDIR)ssh2kex-client.obj $(BUILDDIR)ssh2transhk.obj
- $(BUILDDIR)ssh2transport.obj $(BUILDDIR)ssh2userauth.obj
- $(BUILDDIR)sshaes.obj $(BUILDDIR)sshargon2.obj $(BUILDDIR)ssharcf.obj $(BUILDDIR)sshauxcrypt.obj
- $(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj $(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj
- $(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj $(BUILDDIR)sshdes.obj
- $(BUILDDIR)sshdh.obj $(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj
- $(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj $(BUILDDIR)sshmac.obj
- $(BUILDDIR)sshmd5.obj $(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj
- $(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj $(BUILDDIR)sshsh256.obj
- $(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj $(BUILDDIR)sshshare.obj
- $(BUILDDIR)sshutils.obj $(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj
- $(BUILDDIR)stripctrl.obj $(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj
- user32.lib $(BUILDDIR)utils.obj $(BUILDDIR)version.obj
- $(BUILDDIR)wcwidth.obj $(BUILDDIR)wildcard.obj $(BUILDDIR)wincapi.obj $(BUILDDIR)wincliloop.obj
- $(BUILDDIR)wincons.obj $(BUILDDIR)windefs.obj $(BUILDDIR)wingss.obj
- $(BUILDDIR)winhandl.obj $(BUILDDIR)winhsock.obj $(BUILDDIR)winmisc.obj
- $(BUILDDIR)winmiscs.obj $(BUILDDIR)winnet.obj $(BUILDDIR)winnohlp.obj
- $(BUILDDIR)winnoise.obj $(BUILDDIR)winnojmp.obj $(BUILDDIR)winnpc.obj
- $(BUILDDIR)winnps.obj $(BUILDDIR)winpgntc.obj $(BUILDDIR)winproxy.obj
- $(BUILDDIR)winsecur.obj $(BUILDDIR)winselcli.obj $(BUILDDIR)winsftp.obj $(BUILDDIR)winshare.obj
- $(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj $(BUILDDIR)winucs.obj
- $(BUILDDIR)x11fwd.obj
+ $(BUILDDIR)cproxy.obj $(BUILDDIR)local.obj $(BUILDDIR)ecc-arithmetic.obj $(BUILDDIR)ecc-ssh.obj $(BUILDDIR)errsock.obj
+ gdi32.lib imm32.lib $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj $(BUILDDIR)ssh2_pick_fingerprint.obj
+ $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)validate_manual_hostkey.obj $(BUILDDIR)dupstr.obj
+ $(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)mpint.obj $(BUILDDIR)nullplug.obj $(BUILDDIR)dupcat.obj
+ ole32.lib $(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj $(BUILDDIR)nullseat.obj $(BUILDDIR)dupprintf.obj
+ $(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)prompts.obj
+ $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj $(BUILDDIR)settings.obj $(BUILDDIR)tempseat.obj
+ $(BUILDDIR)sftp.obj $(BUILDDIR)sftpcommon.obj shell32.lib $(BUILDDIR)smemeq.obj $(BUILDDIR)fgetline.obj
+ $(BUILDDIR)ssh.obj $(BUILDDIR)bpp1.obj $(BUILDDIR)censor1.obj $(BUILDDIR)string_length_for_printf.obj
+ $(BUILDDIR)connection1.obj $(BUILDDIR)connection1-client.obj $(BUILDDIR)host_strchr.obj
+ $(BUILDDIR)login1.obj $(BUILDDIR)bpp2.obj $(BUILDDIR)host_strchr_internal.obj
+ $(BUILDDIR)bpp-bare.obj $(BUILDDIR)censor2.obj $(BUILDDIR)interprocess_mutex.obj
+ $(BUILDDIR)connection2.obj $(BUILDDIR)connection2-client.obj $(BUILDDIR)smemclr.obj $(BUILDDIR)memxor.obj
+ $(BUILDDIR)kex2-client.obj $(BUILDDIR)transient-hostkey-cache.obj $(BUILDDIR)host_strrchr.obj
+ $(BUILDDIR)transport2.obj $(BUILDDIR)userauth2-client.obj $(BUILDDIR)pubkey-ppk.obj $(BUILDDIR)base64_encode_atom.obj
+ $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-common.obj $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)pubkey-ssh1.obj
+ $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj $(BUILDDIR)chacha20-poly1305.obj $(BUILDDIR)common.obj
+ $(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)des.obj $(BUILDDIR)sk_free_peer_info.obj
+ $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)dsa.obj $(BUILDDIR)default_description.obj $(BUILDDIR)host_strcspn.obj
+ $(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)mac.obj $(BUILDDIR)platform_get_x_display.obj $(BUILDDIR)sessprep.obj
+ $(BUILDDIR)md5.obj $(BUILDDIR)prng.obj $(BUILDDIR)sshpubk.obj $(BUILDDIR)seat_connection_fatal.obj
+ $(BUILDDIR)sshrand.obj $(BUILDDIR)rsa.obj $(BUILDDIR)sha256-sw.obj $(BUILDDIR)encode_utf8.obj $(BUILDDIR)sha256-select.obj
+ $(BUILDDIR)sha512-sw.obj $(BUILDDIR)agent_named_pipe_name.obj $(BUILDDIR)get_username.obj $(BUILDDIR)log_proxy_stderr.obj
+ $(BUILDDIR)sha256-common.obj $(BUILDDIR)sha512-common.obj $(BUILDDIR)sha1-select.obj $(BUILDDIR)make_spr_sw_abort_static.obj
+ $(BUILDDIR)sha1-common.obj $(BUILDDIR)sha1-sw.obj $(BUILDDIR)sha3.obj $(BUILDDIR)sharing.obj $(BUILDDIR)win_strerror.obj
+ $(BUILDDIR)sshutils.obj $(BUILDDIR)verstring.obj $(BUILDDIR)zlib.obj $(BUILDDIR)interactor.obj $(BUILDDIR)backend_socket_log.obj
+ $(BUILDDIR)stripctrl.obj $(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj $(BUILDDIR)telnet.obj $(BUILDDIR)nullstrcmp.obj
+ user32.lib $(BUILDDIR)parse_blocksize.obj $(BUILDDIR)version.obj $(BUILDDIR)hash_simple.obj $(BUILDDIR)burnstr.obj
+ $(BUILDDIR)wcwidth.obj $(BUILDDIR)wildcard.obj $(BUILDDIR)cryptoapi.obj $(BUILDDIR)cliloop.obj $(BUILDDIR)open_for_write_would_lose_data.obj
+ $(BUILDDIR)escape_registry_key.obj $(BUILDDIR)socks4.obj $(BUILDDIR)socks5.obj $(BUILDDIR)write_c_string_literal.obj
+ $(BUILDDIR)consolew.obj $(BUILDDIR)defaults.obj $(BUILDDIR)gss.obj $(BUILDDIR)spr_get_error_message.obj
+ $(BUILDDIR)handle-io.obj $(BUILDDIR)handle-wait.obj $(BUILDDIR)handle-socket.obj $(BUILDDIR)filename.obj $(BUILDDIR)sshproxy.obj
+ $(BUILDDIR)is_console_handle.obj $(BUILDDIR)nohelp.obj $(BUILDDIR)load_system32_dll.obj $(BUILDDIR)null_lp.obj
+ $(BUILDDIR)noise.obj $(BUILDDIR)no-jump-list.obj $(BUILDDIR)named-pipe-client.obj $(BUILDDIR)get_system_dir.obj
+ $(BUILDDIR)named-pipe-server.obj $(BUILDDIR)agent-client.obj $(BUILDDIR)local-proxy.obj $(BUILDDIR)base64_decode_atom.obj
+ $(BUILDDIR)security.obj $(BUILDDIR)select-cli.obj $(BUILDDIR)sftpw.obj $(BUILDDIR)sharingw.obj $(BUILDDIR)host_strduptrim.obj
+ $(BUILDDIR)storage.obj $(BUILDDIR)ltime.obj $(BUILDDIR)unicode.obj $(BUILDDIR)sha512-select.obj $(BUILDDIR)make_spr_sw_abort_winerror.obj
+ $(BUILDDIR)xdmauth.obj $(BUILDDIR)http.obj $(BUILDDIR)conf_launchable.obj
+ $(BUILDDIR)mac_simple.obj $(BUILDDIR)out_of_memory.obj
 <<
 	link $(LFLAGSDLL) $(XLFLAGS) -out:$(BUILDDIR)tgputtylib.dll -map:$(BUILDDIR)tgputtylib.map -subsystem:console$(SUBSYSVER) -nologo -dll @link_psftp
 	copy tgputtylib.* ..\..\Win64\Release
 	copy tgputtylib.* ..\..\Win64\Debug
 	copy tgputtylib.* ..\..\..\..\exec64
 
-$(BUILDDIR)psocks.exe: $(BUILDDIR)be_misc.obj $(BUILDDIR)callback.obj \
-		$(BUILDDIR)conf.obj $(BUILDDIR)console.obj \
-		$(BUILDDIR)errsock.obj $(BUILDDIR)logging.obj \
-		$(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj \
-		$(BUILDDIR)misc.obj $(BUILDDIR)nocproxy.obj \
-		$(BUILDDIR)norand.obj $(BUILDDIR)portfwd.obj \
-		$(BUILDDIR)proxy.obj $(BUILDDIR)psocks.obj \
-		$(BUILDDIR)sshutils.obj $(BUILDDIR)stripctrl.obj \
-		$(BUILDDIR)time.obj $(BUILDDIR)timing.obj \
-		$(BUILDDIR)tree234.obj $(BUILDDIR)utils.obj \
-		$(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj \
-		$(BUILDDIR)wincliloop.obj $(BUILDDIR)wincons.obj \
-		$(BUILDDIR)winhandl.obj $(BUILDDIR)winhsock.obj \
-		$(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj \
-		$(BUILDDIR)winnet.obj $(BUILDDIR)winnohlp.obj \
-		$(BUILDDIR)winproxy.obj $(BUILDDIR)winselcli.obj \
-		$(BUILDDIR)winsocks.obj
-	type <<link_psocks
- advapi32.lib $(BUILDDIR)be_misc.obj $(BUILDDIR)callback.obj
- comdlg32.lib $(BUILDDIR)conf.obj $(BUILDDIR)console.obj
- $(BUILDDIR)errsock.obj gdi32.lib imm32.lib $(BUILDDIR)logging.obj
- $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)misc.obj
- $(BUILDDIR)nocproxy.obj $(BUILDDIR)norand.obj ole32.lib
- $(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psocks.obj
- shell32.lib $(BUILDDIR)sshutils.obj $(BUILDDIR)stripctrl.obj
- $(BUILDDIR)time.obj $(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj
- user32.lib $(BUILDDIR)utils.obj $(BUILDDIR)version.obj
- $(BUILDDIR)wcwidth.obj $(BUILDDIR)wincliloop.obj $(BUILDDIR)wincons.obj
- $(BUILDDIR)winhandl.obj $(BUILDDIR)winhsock.obj $(BUILDDIR)winmisc.obj
- $(BUILDDIR)winmiscs.obj $(BUILDDIR)winnet.obj $(BUILDDIR)winnohlp.obj
- $(BUILDDIR)winproxy.obj $(BUILDDIR)winselcli.obj
- $(BUILDDIR)winsocks.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)psocks.exe -map:$(BUILDDIR)psocks.map -nologo -subsystem:console$(SUBSYSVER) @link_psocks
-
-$(BUILDDIR)putty.exe: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj \
-		$(BUILDDIR)be_all_s.obj $(BUILDDIR)be_misc.obj \
-		$(BUILDDIR)callback.obj $(BUILDDIR)cmdline.obj \
-		$(BUILDDIR)conf.obj $(BUILDDIR)config.obj \
-		$(BUILDDIR)cproxy.obj $(BUILDDIR)dialog.obj \
-		$(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj \
-		$(BUILDDIR)ldisc.obj $(BUILDDIR)logging.obj \
-		$(BUILDDIR)mainchan.obj $(BUILDDIR)marshal.obj \
-		$(BUILDDIR)memory.obj $(BUILDDIR)minibidi.obj \
-		$(BUILDDIR)misc.obj $(BUILDDIR)miscucs.obj \
-		$(BUILDDIR)mpint.obj $(BUILDDIR)nullplug.obj \
-		$(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj \
-		$(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj \
-		$(BUILDDIR)putty.res $(BUILDDIR)raw.obj \
-		$(BUILDDIR)rlogin.obj $(BUILDDIR)sessprep.obj \
-		$(BUILDDIR)settings.obj $(BUILDDIR)sizetip.obj \
-		$(BUILDDIR)ssh.obj $(BUILDDIR)ssh1bpp.obj \
-		$(BUILDDIR)ssh1censor.obj $(BUILDDIR)ssh1connection.obj \
-		$(BUILDDIR)ssh1connection-client.obj \
-		$(BUILDDIR)ssh1login.obj $(BUILDDIR)ssh2bpp.obj \
-		$(BUILDDIR)ssh2bpp-bare.obj $(BUILDDIR)ssh2censor.obj \
-		$(BUILDDIR)ssh2connection.obj \
-		$(BUILDDIR)ssh2connection-client.obj \
-		$(BUILDDIR)ssh2kex-client.obj $(BUILDDIR)ssh2transhk.obj \
-		$(BUILDDIR)ssh2transport.obj $(BUILDDIR)ssh2userauth.obj \
-		$(BUILDDIR)sshaes.obj $(BUILDDIR)ssharcf.obj \
-		$(BUILDDIR)sshargon2.obj $(BUILDDIR)sshauxcrypt.obj \
-		$(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj \
-		$(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj \
-		$(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj \
-		$(BUILDDIR)sshdes.obj $(BUILDDIR)sshdh.obj \
-		$(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj \
-		$(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj \
-		$(BUILDDIR)sshmac.obj $(BUILDDIR)sshmd5.obj \
-		$(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj \
-		$(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj \
-		$(BUILDDIR)sshsh256.obj $(BUILDDIR)sshsh512.obj \
-		$(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj \
-		$(BUILDDIR)sshshare.obj $(BUILDDIR)sshutils.obj \
-		$(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj \
-		$(BUILDDIR)stripctrl.obj $(BUILDDIR)supdup.obj \
-		$(BUILDDIR)telnet.obj $(BUILDDIR)terminal.obj \
-		$(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj \
-		$(BUILDDIR)utils.obj $(BUILDDIR)version.obj \
-		$(BUILDDIR)wcwidth.obj $(BUILDDIR)wildcard.obj \
-		$(BUILDDIR)wincapi.obj $(BUILDDIR)wincfg.obj \
-		$(BUILDDIR)winctrls.obj $(BUILDDIR)windefs.obj \
-		$(BUILDDIR)windlg.obj $(BUILDDIR)window.obj \
-		$(BUILDDIR)wingss.obj $(BUILDDIR)winhandl.obj \
-		$(BUILDDIR)winhelp.obj $(BUILDDIR)winhsock.obj \
-		$(BUILDDIR)winjump.obj $(BUILDDIR)winmisc.obj \
-		$(BUILDDIR)winmiscs.obj $(BUILDDIR)winnet.obj \
-		$(BUILDDIR)winnoise.obj $(BUILDDIR)winnpc.obj \
-		$(BUILDDIR)winnps.obj $(BUILDDIR)winpgntc.obj \
-		$(BUILDDIR)winprint.obj $(BUILDDIR)winproxy.obj \
-		$(BUILDDIR)winsecur.obj $(BUILDDIR)winselgui.obj \
-		$(BUILDDIR)winser.obj $(BUILDDIR)winshare.obj \
-		$(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj \
-		$(BUILDDIR)winucs.obj $(BUILDDIR)winutils.obj \
-		$(BUILDDIR)winx11.obj $(BUILDDIR)x11fwd.obj
-	type <<link_putty
- advapi32.lib $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj
- $(BUILDDIR)be_all_s.obj $(BUILDDIR)be_misc.obj $(BUILDDIR)callback.obj
- $(BUILDDIR)cmdline.obj comdlg32.lib $(BUILDDIR)conf.obj
- $(BUILDDIR)config.obj $(BUILDDIR)cproxy.obj $(BUILDDIR)dialog.obj
- $(BUILDDIR)ecc.obj $(BUILDDIR)errsock.obj gdi32.lib imm32.lib
- $(BUILDDIR)ldisc.obj $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj
- $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)minibidi.obj
- $(BUILDDIR)misc.obj $(BUILDDIR)miscucs.obj $(BUILDDIR)mpint.obj
- $(BUILDDIR)nullplug.obj ole32.lib $(BUILDDIR)pgssapi.obj
- $(BUILDDIR)pinger.obj $(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj
- $(BUILDDIR)putty.res $(BUILDDIR)raw.obj $(BUILDDIR)rlogin.obj
- $(BUILDDIR)sessprep.obj $(BUILDDIR)settings.obj shell32.lib
- $(BUILDDIR)sizetip.obj $(BUILDDIR)ssh.obj $(BUILDDIR)ssh1bpp.obj
- $(BUILDDIR)ssh1censor.obj $(BUILDDIR)ssh1connection.obj
- $(BUILDDIR)ssh1connection-client.obj $(BUILDDIR)ssh1login.obj
- $(BUILDDIR)ssh2bpp.obj $(BUILDDIR)ssh2bpp-bare.obj
- $(BUILDDIR)ssh2censor.obj $(BUILDDIR)ssh2connection.obj
- $(BUILDDIR)ssh2connection-client.obj $(BUILDDIR)ssh2kex-client.obj
- $(BUILDDIR)ssh2transhk.obj $(BUILDDIR)ssh2transport.obj
- $(BUILDDIR)ssh2userauth.obj $(BUILDDIR)sshaes.obj
- $(BUILDDIR)ssharcf.obj $(BUILDDIR)sshargon2.obj
- $(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshblake2.obj
- $(BUILDDIR)sshblowf.obj $(BUILDDIR)sshccp.obj $(BUILDDIR)sshcommon.obj
- $(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj $(BUILDDIR)sshdes.obj
- $(BUILDDIR)sshdh.obj $(BUILDDIR)sshdss.obj $(BUILDDIR)sshecc.obj
- $(BUILDDIR)sshgssc.obj $(BUILDDIR)sshhmac.obj $(BUILDDIR)sshmac.obj
- $(BUILDDIR)sshmd5.obj $(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj
- $(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj $(BUILDDIR)sshsh256.obj
- $(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj $(BUILDDIR)sshsha3.obj
- $(BUILDDIR)sshshare.obj $(BUILDDIR)sshutils.obj
- $(BUILDDIR)sshverstring.obj $(BUILDDIR)sshzlib.obj
- $(BUILDDIR)stripctrl.obj $(BUILDDIR)supdup.obj $(BUILDDIR)telnet.obj
- $(BUILDDIR)terminal.obj $(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj
- user32.lib $(BUILDDIR)utils.obj $(BUILDDIR)version.obj
- $(BUILDDIR)wcwidth.obj $(BUILDDIR)wildcard.obj $(BUILDDIR)wincapi.obj
- $(BUILDDIR)wincfg.obj $(BUILDDIR)winctrls.obj $(BUILDDIR)windefs.obj
- $(BUILDDIR)windlg.obj $(BUILDDIR)window.obj $(BUILDDIR)wingss.obj
- $(BUILDDIR)winhandl.obj $(BUILDDIR)winhelp.obj $(BUILDDIR)winhsock.obj
- $(BUILDDIR)winjump.obj $(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj
- $(BUILDDIR)winnet.obj $(BUILDDIR)winnoise.obj $(BUILDDIR)winnpc.obj
- $(BUILDDIR)winnps.obj $(BUILDDIR)winpgntc.obj $(BUILDDIR)winprint.obj
- $(BUILDDIR)winproxy.obj $(BUILDDIR)winsecur.obj
- $(BUILDDIR)winselgui.obj $(BUILDDIR)winser.obj $(BUILDDIR)winshare.obj
- $(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj $(BUILDDIR)winucs.obj
- $(BUILDDIR)winutils.obj $(BUILDDIR)winx11.obj $(BUILDDIR)x11fwd.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)putty.exe -map:$(BUILDDIR)putty.map -nologo -subsystem:windows$(SUBSYSVER) @link_putty
-
-$(BUILDDIR)puttygen.exe: $(BUILDDIR)conf.obj $(BUILDDIR)ecc.obj \
-		$(BUILDDIR)import.obj $(BUILDDIR)marshal.obj \
-		$(BUILDDIR)memory.obj $(BUILDDIR)millerrabin.obj \
-		$(BUILDDIR)misc.obj $(BUILDDIR)mpint.obj \
-		$(BUILDDIR)mpunsafe.obj $(BUILDDIR)notiming.obj \
-		$(BUILDDIR)pockle.obj $(BUILDDIR)primecandidate.obj \
-		$(BUILDDIR)puttygen.res $(BUILDDIR)smallprimes.obj \
-		$(BUILDDIR)sshaes.obj $(BUILDDIR)sshargon2.obj \
-		$(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshbcrypt.obj \
-		$(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj \
-		$(BUILDDIR)sshdes.obj $(BUILDDIR)sshdss.obj \
-		$(BUILDDIR)sshdssg.obj $(BUILDDIR)sshecc.obj \
-		$(BUILDDIR)sshecdsag.obj $(BUILDDIR)sshhmac.obj \
-		$(BUILDDIR)sshmd5.obj $(BUILDDIR)sshprime.obj \
-		$(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj \
-		$(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj \
-		$(BUILDDIR)sshrsag.obj $(BUILDDIR)sshsh256.obj \
-		$(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj \
-		$(BUILDDIR)sshsha3.obj $(BUILDDIR)stripctrl.obj \
-		$(BUILDDIR)tree234.obj $(BUILDDIR)utils.obj \
-		$(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj \
-		$(BUILDDIR)winctrls.obj $(BUILDDIR)winhelp.obj \
-		$(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj \
-		$(BUILDDIR)winnoise.obj $(BUILDDIR)winnojmp.obj \
-		$(BUILDDIR)winpgen.obj $(BUILDDIR)winsecur.obj \
-		$(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj \
-		$(BUILDDIR)winutils.obj
-	type <<link_puttygen
- advapi32.lib comdlg32.lib $(BUILDDIR)conf.obj $(BUILDDIR)ecc.obj
- gdi32.lib imm32.lib $(BUILDDIR)import.obj $(BUILDDIR)marshal.obj
- $(BUILDDIR)memory.obj $(BUILDDIR)millerrabin.obj $(BUILDDIR)misc.obj
- $(BUILDDIR)mpint.obj $(BUILDDIR)mpunsafe.obj $(BUILDDIR)notiming.obj
- ole32.lib $(BUILDDIR)pockle.obj $(BUILDDIR)primecandidate.obj
- $(BUILDDIR)puttygen.res shell32.lib $(BUILDDIR)smallprimes.obj
- $(BUILDDIR)sshaes.obj $(BUILDDIR)sshargon2.obj
- $(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshbcrypt.obj
- $(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj $(BUILDDIR)sshdes.obj
- $(BUILDDIR)sshdss.obj $(BUILDDIR)sshdssg.obj $(BUILDDIR)sshecc.obj
- $(BUILDDIR)sshecdsag.obj $(BUILDDIR)sshhmac.obj $(BUILDDIR)sshmd5.obj
- $(BUILDDIR)sshprime.obj $(BUILDDIR)sshprng.obj $(BUILDDIR)sshpubk.obj
- $(BUILDDIR)sshrand.obj $(BUILDDIR)sshrsa.obj $(BUILDDIR)sshrsag.obj
- $(BUILDDIR)sshsh256.obj $(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj
- $(BUILDDIR)sshsha3.obj $(BUILDDIR)stripctrl.obj $(BUILDDIR)tree234.obj
- user32.lib $(BUILDDIR)utils.obj $(BUILDDIR)version.obj
- $(BUILDDIR)wcwidth.obj $(BUILDDIR)winctrls.obj $(BUILDDIR)winhelp.obj
- $(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj $(BUILDDIR)winnoise.obj
- $(BUILDDIR)winnojmp.obj $(BUILDDIR)winpgen.obj $(BUILDDIR)winsecur.obj
- $(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj $(BUILDDIR)winutils.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)puttygen.exe -map:$(BUILDDIR)puttygen.map -nologo -subsystem:windows$(SUBSYSVER) @link_puttygen
-
-$(BUILDDIR)puttytel.exe: $(BUILDDIR)be_misc.obj $(BUILDDIR)be_nos_s.obj \
-		$(BUILDDIR)callback.obj $(BUILDDIR)cmdline.obj \
-		$(BUILDDIR)conf.obj $(BUILDDIR)config.obj \
-		$(BUILDDIR)dialog.obj $(BUILDDIR)errsock.obj \
-		$(BUILDDIR)ldisc.obj $(BUILDDIR)logging.obj \
-		$(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj \
-		$(BUILDDIR)minibidi.obj $(BUILDDIR)misc.obj \
-		$(BUILDDIR)miscucs.obj $(BUILDDIR)nocproxy.obj \
-		$(BUILDDIR)nogss.obj $(BUILDDIR)norand.obj \
-		$(BUILDDIR)pinger.obj $(BUILDDIR)proxy.obj \
-		$(BUILDDIR)puttytel.res $(BUILDDIR)raw.obj \
-		$(BUILDDIR)rlogin.obj $(BUILDDIR)sessprep.obj \
-		$(BUILDDIR)settings.obj $(BUILDDIR)sizetip.obj \
-		$(BUILDDIR)stripctrl.obj $(BUILDDIR)supdup.obj \
-		$(BUILDDIR)telnet.obj $(BUILDDIR)terminal.obj \
-		$(BUILDDIR)timing.obj $(BUILDDIR)tree234.obj \
-		$(BUILDDIR)utils.obj $(BUILDDIR)version.obj \
-		$(BUILDDIR)wcwidth.obj $(BUILDDIR)wincfg.obj \
-		$(BUILDDIR)winctrls.obj $(BUILDDIR)windefs.obj \
-		$(BUILDDIR)windlg.obj $(BUILDDIR)window.obj \
-		$(BUILDDIR)winhandl.obj $(BUILDDIR)winhelp.obj \
-		$(BUILDDIR)winhsock.obj $(BUILDDIR)winjump.obj \
-		$(BUILDDIR)winmisc.obj $(BUILDDIR)winmiscs.obj \
-		$(BUILDDIR)winnet.obj $(BUILDDIR)winprint.obj \
-		$(BUILDDIR)winproxy.obj $(BUILDDIR)winsecur.obj \
-		$(BUILDDIR)winselgui.obj $(BUILDDIR)winser.obj \
-		$(BUILDDIR)winstore.obj $(BUILDDIR)wintime.obj \
-		$(BUILDDIR)winucs.obj $(BUILDDIR)winutils.obj
-	type <<link_puttytel
- advapi32.lib $(BUILDDIR)be_misc.obj $(BUILDDIR)be_nos_s.obj
- $(BUILDDIR)callback.obj $(BUILDDIR)cmdline.obj comdlg32.lib
- $(BUILDDIR)conf.obj $(BUILDDIR)config.obj $(BUILDDIR)dialog.obj
- $(BUILDDIR)errsock.obj gdi32.lib imm32.lib $(BUILDDIR)ldisc.obj
- $(BUILDDIR)logging.obj $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj
- $(BUILDDIR)minibidi.obj $(BUILDDIR)misc.obj $(BUILDDIR)miscucs.obj
- $(BUILDDIR)nocproxy.obj $(BUILDDIR)nogss.obj $(BUILDDIR)norand.obj
- ole32.lib $(BUILDDIR)pinger.obj $(BUILDDIR)proxy.obj
- $(BUILDDIR)puttytel.res $(BUILDDIR)raw.obj $(BUILDDIR)rlogin.obj
- $(BUILDDIR)sessprep.obj $(BUILDDIR)settings.obj shell32.lib
- $(BUILDDIR)sizetip.obj $(BUILDDIR)stripctrl.obj $(BUILDDIR)supdup.obj
- $(BUILDDIR)telnet.obj $(BUILDDIR)terminal.obj $(BUILDDIR)timing.obj
- $(BUILDDIR)tree234.obj user32.lib $(BUILDDIR)utils.obj
- $(BUILDDIR)version.obj $(BUILDDIR)wcwidth.obj $(BUILDDIR)wincfg.obj
- $(BUILDDIR)winctrls.obj $(BUILDDIR)windefs.obj $(BUILDDIR)windlg.obj
- $(BUILDDIR)window.obj $(BUILDDIR)winhandl.obj $(BUILDDIR)winhelp.obj
- $(BUILDDIR)winhsock.obj $(BUILDDIR)winjump.obj $(BUILDDIR)winmisc.obj
- $(BUILDDIR)winmiscs.obj $(BUILDDIR)winnet.obj $(BUILDDIR)winprint.obj
- $(BUILDDIR)winproxy.obj $(BUILDDIR)winsecur.obj
- $(BUILDDIR)winselgui.obj $(BUILDDIR)winser.obj $(BUILDDIR)winstore.obj
- $(BUILDDIR)wintime.obj $(BUILDDIR)winucs.obj $(BUILDDIR)winutils.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)puttytel.exe -map:$(BUILDDIR)puttytel.map -nologo -subsystem:windows$(SUBSYSVER) @link_puttytel
-
-$(BUILDDIR)testcrypt.exe: $(BUILDDIR)ecc.obj $(BUILDDIR)marshal.obj \
-		$(BUILDDIR)memory.obj $(BUILDDIR)millerrabin.obj \
-		$(BUILDDIR)mpint.obj $(BUILDDIR)mpunsafe.obj \
-		$(BUILDDIR)pockle.obj $(BUILDDIR)primecandidate.obj \
-		$(BUILDDIR)smallprimes.obj $(BUILDDIR)sshaes.obj \
-		$(BUILDDIR)ssharcf.obj $(BUILDDIR)sshargon2.obj \
-		$(BUILDDIR)sshauxcrypt.obj $(BUILDDIR)sshblake2.obj \
-		$(BUILDDIR)sshblowf.obj $(BUILDDIR)sshccp.obj \
-		$(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj \
-		$(BUILDDIR)sshdes.obj $(BUILDDIR)sshdh.obj \
-		$(BUILDDIR)sshdss.obj $(BUILDDIR)sshdssg.obj \
-		$(BUILDDIR)sshecc.obj $(BUILDDIR)sshecdsag.obj \
-		$(BUILDDIR)sshhmac.obj $(BUILDDIR)sshmd5.obj \
-		$(BUILDDIR)sshprime.obj $(BUILDDIR)sshprng.obj \
-		$(BUILDDIR)sshpubk.obj $(BUILDDIR)sshrsa.obj \
-		$(BUILDDIR)sshrsag.obj $(BUILDDIR)sshsh256.obj \
-		$(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj \
-		$(BUILDDIR)sshsha3.obj $(BUILDDIR)testcrypt.obj \
-		$(BUILDDIR)tree234.obj $(BUILDDIR)utils.obj \
-		$(BUILDDIR)winmiscs.obj
-	type <<link_testcrypt
- $(BUILDDIR)ecc.obj $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj
- $(BUILDDIR)millerrabin.obj $(BUILDDIR)mpint.obj $(BUILDDIR)mpunsafe.obj
- $(BUILDDIR)pockle.obj $(BUILDDIR)primecandidate.obj
- $(BUILDDIR)smallprimes.obj $(BUILDDIR)sshaes.obj $(BUILDDIR)ssharcf.obj
- $(BUILDDIR)sshargon2.obj $(BUILDDIR)sshauxcrypt.obj
- $(BUILDDIR)sshblake2.obj $(BUILDDIR)sshblowf.obj $(BUILDDIR)sshccp.obj
- $(BUILDDIR)sshcrc.obj $(BUILDDIR)sshcrcda.obj $(BUILDDIR)sshdes.obj
- $(BUILDDIR)sshdh.obj $(BUILDDIR)sshdss.obj $(BUILDDIR)sshdssg.obj
- $(BUILDDIR)sshecc.obj $(BUILDDIR)sshecdsag.obj $(BUILDDIR)sshhmac.obj
- $(BUILDDIR)sshmd5.obj $(BUILDDIR)sshprime.obj $(BUILDDIR)sshprng.obj
- $(BUILDDIR)sshpubk.obj $(BUILDDIR)sshrsa.obj $(BUILDDIR)sshrsag.obj
- $(BUILDDIR)sshsh256.obj $(BUILDDIR)sshsh512.obj $(BUILDDIR)sshsha.obj
- $(BUILDDIR)sshsha3.obj $(BUILDDIR)testcrypt.obj $(BUILDDIR)tree234.obj
- $(BUILDDIR)utils.obj $(BUILDDIR)winmiscs.obj
-<<
-	link $(LFLAGS) $(XLFLAGS) -out:$(BUILDDIR)testcrypt.exe -map:$(BUILDDIR)testcrypt.map -nologo -subsystem:console$(SUBSYSVER) @link_testcrypt
-
-$(BUILDDIR)agentf.obj: ..\agentf.c ..\putty.h ..\ssh.h ..\pageant.h \
-		..\sshchan.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)aqsync.obj: ..\aqsync.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)be_all_s.obj: ..\be_all_s.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)be_misc.obj: ..\be_misc.c ..\putty.h ..\network.h ..\defs.h \
-		..\puttyps.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)be_none.obj: ..\be_none.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)be_nos_s.obj: ..\be_nos_s.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)be_ssh.obj: ..\be_ssh.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)callback.obj: ..\callback.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)cgtest.obj: ..\cgtest.c ..\cmdgen.c ..\putty.h ..\ssh.h \
-		..\sshkeygen.h ..\mpint.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)agentf.obj: ..\ssh\agentf.c ..\putty.h ..\ssh.h ..\pageant.h \
+		..\ssh\channel.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)clicons.obj: ..\clicons.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)aqsync.obj: ..\aqsync.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)be_all_s.obj: ..\be_all_s.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)network.obj: ..\windows\network.c ..\putty.h ..\network.h ..\defs.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)be_none.obj: ..\be_none.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)be_nos_s.obj: ..\be_nos_s.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)be_list.obj: ..\be_list.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)callback.obj: ..\callback.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)cgtest.obj: ..\cgtest.c ..\cmdgen.c ..\putty.h ..\ssh.h \
+		..\sshkeygen.h ..\mpint.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)clicons.obj: ..\clicons.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
 $(BUILDDIR)cmdgen.obj: ..\cmdgen.c ..\putty.h ..\ssh.h ..\sshkeygen.h \
-		..\mpint.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)cmdline.obj: ..\cmdline.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)conf.obj: ..\conf.c ..\tree234.h ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
+		..\mpint.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)cmdline.obj: ..\cmdline.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)agent_named_pipe_name.obj: ..\windows\utils\agent_named_pipe_name.c
+$(BUILDDIR)get_username.obj: ..\windows\utils\get_username.c
+$(BUILDDIR)string_length_for_printf.obj: ..\utils\string_length_for_printf.c
+$(BUILDDIR)conf.obj: ..\utils\conf.c ..\tree234.h ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\charset\charset.h
+$(BUILDDIR)strbuf.obj: ..\utils\strbuf.c
+$(BUILDDIR)smemeq.obj: ..\utils\smemeq.c
+$(BUILDDIR)ptrlen.obj: ..\utils\ptrlen.c
+$(BUILDDIR)nullseat.obj: ..\utils\nullseat.c
+$(BUILDDIR)dupcat.obj: ..\utils\dupcat.c
+$(BUILDDIR)bufchain.obj: ..\utils\bufchain.c
+$(BUILDDIR)ssh2_pick_fingerprint.obj: ..\utils\ssh2_pick_fingerprint.c
 $(BUILDDIR)config.obj: ..\config.c ..\putty.h ..\dialog.h ..\storage.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
 $(BUILDDIR)console.obj: ..\console.c ..\putty.h ..\misc.h ..\console.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\tree234.h ..\windows\winhelp.h \
+		..\defs.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\windows\platform.h \
+		..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)cproxy.obj: ..\cproxy.c ..\putty.h ..\ssh.h ..\network.h \
-		..\proxy.h ..\marshal.h ..\defs.h ..\puttyps.h ..\misc.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)cproxy.obj: ..\proxy\cproxy.c ..\putty.h ..\ssh.h ..\network.h \
+		..\proxy\proxy.h ..\marshal.h ..\defs.h ..\misc.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
+$(BUILDDIR)local.obj: ..\proxy\local.c
 $(BUILDDIR)dialog.obj: ..\dialog.c ..\putty.h ..\dialog.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)ecc.obj: ..\ecc.c ..\ssh.h ..\putty.h ..\mpint.h ..\ecc.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+$(BUILDDIR)ecc-arithmetic.obj: ..\crypto\ecc-arithmetic.c ..\ssh.h ..\putty.h ..\mpint.h ..\crypto\ecc.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
+		..\defs.h ..\marshal.h
+$(BUILDDIR)ecc-ssh.obj: ..\crypto\ecc-ssh.c ..\ssh.h ..\putty.h ..\mpint.h ..\crypto\ecc.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
 $(BUILDDIR)errsock.obj: ..\errsock.c ..\tree234.h ..\putty.h ..\network.h \
-		..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
+		..\defs.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\charset\charset.h
 $(BUILDDIR)fromucs.obj: ..\charset\fromucs.c ..\charset\charset.h \
 		..\charset\internal.h
-$(BUILDDIR)fuzzterm.obj: ..\fuzzterm.c ..\putty.h ..\dialog.h ..\terminal.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\tree234.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
+$(BUILDDIR)fuzzterm.obj: ..\fuzzterm.c ..\putty.h ..\dialog.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\tree234.h ..\windows\platform.h \
+		..\puttymem.h \
 		..\charset\charset.h
-$(BUILDDIR)gtkapp.obj: ..\unix\gtkapp.c ..\putty.h ..\unix\gtkmisc.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)gtkask.obj: ..\unix\gtkask.c ..\defs.h ..\unix\gtkfont.h \
-		..\unix\gtkcompat.h ..\unix\gtkmisc.h ..\putty.h ..\ssh.h \
-		..\misc.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)gtkcfg.obj: ..\unix\gtkcfg.c ..\putty.h ..\dialog.h ..\storage.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)gtkcols.obj: ..\unix\gtkcols.c ..\defs.h ..\unix\gtkcompat.h \
-		..\unix\gtkcols.h
-$(BUILDDIR)gtkcomm.obj: ..\unix\gtkcomm.c ..\putty.h ..\terminal.h \
-		..\unix\gtkcompat.h ..\unix\gtkfont.h ..\unix\gtkmisc.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\tree234.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)gtkdlg.obj: ..\unix\gtkdlg.c ..\putty.h ..\unix\gtkcompat.h \
-		..\unix\gtkcols.h ..\unix\gtkfont.h ..\unix\gtkmisc.h \
-		..\unix\x11misc.h ..\storage.h ..\dialog.h ..\tree234.h \
-		..\licence.h ..\ssh.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)gtkfont.obj: ..\unix\gtkfont.c ..\putty.h ..\unix\gtkfont.h \
-		..\unix\gtkcompat.h ..\unix\gtkmisc.h ..\tree234.h \
-		..\unix\x11misc.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)gtkmain.obj: ..\unix\gtkmain.c ..\putty.h ..\terminal.h \
-		..\unix\gtkcompat.h ..\unix\gtkfont.h ..\unix\gtkmisc.h \
-		..\unix\x11misc.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\tree234.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)gtkmisc.obj: ..\unix\gtkmisc.c ..\putty.h ..\unix\gtkcompat.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)gtkwin.obj: ..\unix\gtkwin.c ..\putty.h ..\terminal.h \
-		..\unix\gtkcompat.h ..\unix\gtkfont.h ..\unix\gtkmisc.h \
-		..\unix\x11misc.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\tree234.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\windows\winhelp.h ..\charset\charset.h
 $(BUILDDIR)import.obj: ..\import.c ..\putty.h ..\ssh.h ..\mpint.h ..\misc.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)ldisc.obj: ..\ldisc.c ..\putty.h ..\terminal.h ..\ldisc.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\tree234.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
+		..\defs.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)localenc.obj: ..\charset\localenc.c ..\charset\charset.h \
 		..\charset\internal.h
-$(BUILDDIR)logging.obj: ..\logging.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)logging.obj: ..\logging.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
 $(BUILDDIR)macenc.obj: ..\charset\macenc.c ..\charset\charset.h \
 		..\charset\internal.h
-$(BUILDDIR)mainchan.obj: ..\mainchan.c ..\putty.h ..\ssh.h ..\sshppl.h \
-		..\sshchan.h ..\sshsignals.h ..\defs.h ..\puttyps.h \
+$(BUILDDIR)mainchan.obj: ..\ssh\mainchan.c ..\putty.h ..\ssh.h ..\ssh\ppl.h \
+		..\ssh\channel.h ..\ssh\signal-list.h ..\defs.h \
 		..\network.h ..\misc.h ..\marshal.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)marshal.obj: ..\marshal.c ..\marshal.h ..\misc.h ..\defs.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)marshal.obj: ..\utils\marshal.c ..\marshal.h ..\misc.h ..\defs.h \
 		..\puttymem.h ..\putty.h
-$(BUILDDIR)memory.obj: ..\memory.c ..\defs.h ..\puttymem.h ..\misc.h \
+$(BUILDDIR)memory.obj: ..\utils\memory.c ..\defs.h ..\puttymem.h ..\misc.h \
 		..\marshal.h
 $(BUILDDIR)millerrabin.obj: ..\millerrabin.c ..\ssh.h ..\sshkeygen.h \
 		..\mpint.h ..\mpunsafe.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
 $(BUILDDIR)mimeenc.obj: ..\charset\mimeenc.c ..\charset\charset.h \
 		..\charset\internal.h
 $(BUILDDIR)minibidi.obj: ..\minibidi.c ..\putty.h ..\misc.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)misc.obj: ..\misc.c ..\defs.h ..\putty.h ..\misc.h ..\puttyps.h \
-		..\network.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\tree234.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)miscucs.obj: ..\miscucs.c ..\putty.h ..\misc.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)mpint.obj: ..\mpint.c ..\defs.h ..\misc.h ..\puttymem.h \
-		..\mpint.h ..\mpint_i.h ..\marshal.h
+		..\network.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\windows\platform.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)validate_manual_hostkey.obj: ..\utils\validate_manual_hostkey.c ..\defs.h ..\putty.h ..\misc.h \
+		..\network.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\windows\platform.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)dup_mb_to_wc.obj: ..\utils\dup_mb_to_wc.c ..\putty.h ..\misc.h ..\defs.h \
+		..\network.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\windows\platform.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)mpint.obj: ..\crypto\mpint.c ..\defs.h ..\misc.h ..\puttymem.h \
+		..\mpint.h ..\crypto\mpint_i.h ..\marshal.h
 $(BUILDDIR)mpunsafe.obj: ..\mpunsafe.c ..\defs.h ..\misc.h ..\puttymem.h \
-		..\mpint.h ..\mpint_i.h ..\marshal.h
-$(BUILDDIR)nocmdline.obj: ..\nocmdline.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)nocproxy.obj: ..\nocproxy.c ..\putty.h ..\network.h ..\proxy.h \
-		..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\mpint.h ..\crypto\mpint_i.h ..\marshal.h
+$(BUILDDIR)nocmdline.obj: ..\nocmdline.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)nocproxy.obj: ..\nocproxy.c ..\putty.h ..\network.h ..\proxy\proxy.h \
+		..\defs.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)nogss.obj: ..\nogss.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)norand.obj: ..\norand.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)noterm.obj: ..\noterm.c ..\putty.h ..\terminal.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\tree234.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
+$(BUILDDIR)nogss.obj: ..\nogss.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)norand.obj: ..\norand.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)noterm.obj: ..\noterm.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\tree234.h ..\windows\platform.h \
+		..\puttymem.h \
 		..\charset\charset.h
-$(BUILDDIR)notiming.obj: ..\notiming.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)nullplug.obj: ..\nullplug.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)osxlaunch.obj: ..\unix\osxlaunch.c
+$(BUILDDIR)notiming.obj: ..\notiming.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)nullplug.obj: ..\stubs\nullplug.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
 $(BUILDDIR)pageant.obj: ..\pageant.c ..\putty.h ..\mpint.h ..\ssh.h \
-		..\sshcr.h ..\pageant.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
+		..\sshcr.h ..\pageant.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
 $(BUILDDIR)pageant.res: ..\windows\pageant.rc ..\windows\rcstuff.h \
 		..\windows\pageant-rc.h ..\windows\winhelp.rc2 \
 		..\windows\pageant.ico ..\windows\pageants.ico \
 		..\windows\version.rc2 ..\windows\pageant.mft \
-		..\windows\win_res.h ..\version.h ..\licence.h
+		..\windows\win_res.h ..\version.h
 	rc /Fo$(BUILDDIR)pageant.res $(RCFL) -r $(RCFLAGS) ..\windows\pageant.rc
 
-$(BUILDDIR)pgssapi.obj: ..\pgssapi.c ..\putty.h ..\pgssapi.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)pgssapi.obj: ..\ssh\pgssapi.c ..\putty.h ..\ssh\pgssapi.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)pinger.obj: ..\pinger.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)pinger.obj: ..\pinger.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
 $(BUILDDIR)plink.res: ..\windows\plink.rc ..\windows\rcstuff.h \
-		..\windows\putty.ico ..\windows\version.rc2 ..\version.h \
-		..\licence.h
+		..\windows\putty.ico ..\windows\version.rc2 ..\version.h
 	rc /Fo$(BUILDDIR)plink.res $(RCFL) -r $(RCFLAGS) ..\windows\plink.rc
 
 $(BUILDDIR)pockle.obj: ..\pockle.c ..\ssh.h ..\sshkeygen.h ..\mpint.h \
 		..\mpunsafe.h ..\tree234.h ..\puttymem.h ..\network.h \
-		..\misc.h ..\sshttymodes.h ..\defs.h ..\marshal.h
-$(BUILDDIR)portfwd.obj: ..\portfwd.c ..\putty.h ..\ssh.h ..\sshchan.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\misc.h ..\ssh\ttymode-list.h ..\defs.h ..\marshal.h
+$(BUILDDIR)portfwd.obj: ..\ssh\portfwd.c ..\putty.h ..\ssh.h ..\ssh\channel.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)primecandidate.obj: ..\primecandidate.c ..\ssh.h ..\mpint.h \
 		..\mpunsafe.h ..\sshkeygen.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)procnet.obj: ..\unix\procnet.c ..\misc.h ..\defs.h ..\puttymem.h \
-		..\marshal.h
-$(BUILDDIR)proxy.obj: ..\proxy.c ..\putty.h ..\network.h ..\proxy.h \
-		..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)proxy.obj: ..\proxy\proxy.c ..\putty.h ..\network.h ..\proxy\proxy.h \
+		..\defs.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)pscp.obj: ..\pscp.c ..\putty.h ..\psftp.h ..\ssh.h ..\sftp.h \
-		..\storage.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)pscp.obj: ..\pscp.c ..\putty.h ..\psftp.h ..\ssh.h ..\ssh\sftp.h \
+		..\storage.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
 $(BUILDDIR)pscp.res: ..\windows\pscp.rc ..\windows\rcstuff.h \
-		..\windows\pscp.ico ..\windows\version.rc2 ..\version.h \
-		..\licence.h
+		..\windows\pscp.ico ..\windows\version.rc2 ..\version.h
 	rc /Fo$(BUILDDIR)pscp.res $(RCFL) -r $(RCFLAGS) ..\windows\pscp.rc
 
 $(BUILDDIR)psftp.obj: ..\psftp.c ..\putty.h ..\psftp.h ..\storage.h ..\ssh.h \
-		..\sftp.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h ..\version.h
+		..\ssh\sftp.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h ..\version.h
 $(BUILDDIR)tgputtylib.res: ..\windows\tgputtylib.rc ..\windows\rcstuff.h \
-		..\windows\pscp.ico ..\windows\version.rc2 ..\version.h \
-		..\licence.h
+		..\windows\pscp.ico ..\windows\version.rc2 ..\version.h
 	rc /Fo$(BUILDDIR)tgputtylib.res $(RCFL) -r $(RCFLAGS) ..\windows\tgputtylib.rc
 
-$(BUILDDIR)psftpcommon.obj: ..\psftpcommon.c ..\putty.h ..\sftp.h ..\psftp.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)psftpcommon.obj: ..\psftpcommon.c ..\putty.h ..\ssh\sftp.h ..\psftp.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
 $(BUILDDIR)psocks.obj: ..\psocks.c ..\putty.h ..\misc.h ..\ssh.h \
-		..\sshchan.h ..\psocks.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
+		..\ssh\channel.h ..\psocks.h ..\defs.h ..\network.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
 $(BUILDDIR)putty.res: ..\windows\putty.rc ..\windows\rcstuff.h \
 		..\windows\winhelp.rc2 ..\windows\win_res.rc2 \
 		..\windows\putty.mft ..\windows\win_res.h \
 		..\windows\putty.ico ..\windows\puttycfg.ico \
-		..\windows\version.rc2 ..\version.h ..\licence.h
+		..\windows\version.rc2 ..\version.h
 	rc /Fo$(BUILDDIR)putty.res $(RCFL) -r $(RCFLAGS) ..\windows\putty.rc
 
 $(BUILDDIR)puttygen.res: ..\windows\puttygen.rc ..\windows\rcstuff.h \
 		..\windows\winhelp.rc2 ..\windows\puttygen-rc.h \
 		..\windows\puttygen.ico ..\windows\version.rc2 \
-		..\windows\puttygen.mft ..\windows\win_res.h ..\version.h \
-		..\licence.h
+		..\windows\puttygen.mft ..\windows\win_res.h ..\version.h
 	rc /Fo$(BUILDDIR)puttygen.res $(RCFL) -r $(RCFLAGS) ..\windows\puttygen.rc
 
 $(BUILDDIR)puttytel.res: ..\windows\puttytel.rc ..\windows\rcstuff.h \
 		..\windows\winhelp.rc2 ..\windows\win_res.rc2 \
 		..\windows\puttytel.mft ..\windows\win_res.h \
 		..\windows\putty.ico ..\windows\puttycfg.ico \
-		..\windows\version.rc2 ..\version.h ..\licence.h
+		..\windows\version.rc2 ..\version.h
 	rc /Fo$(BUILDDIR)puttytel.res $(RCFL) -r $(RCFLAGS) ..\windows\puttytel.rc
 
-$(BUILDDIR)raw.obj: ..\raw.c ..\putty.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\tree234.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)rlogin.obj: ..\rlogin.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)raw.obj: ..\raw.c ..\putty.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)rlogin.obj: ..\rlogin.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
 $(BUILDDIR)sbcs.obj: ..\charset\sbcs.c ..\charset\charset.h \
 		..\charset\internal.h
 $(BUILDDIR)sbcsdat.obj: ..\charset\sbcsdat.c ..\charset\charset.h \
 		..\charset\internal.h
 $(BUILDDIR)scpserver.obj: ..\scpserver.c ..\putty.h ..\ssh.h ..\sshcr.h \
-		..\sshchan.h ..\sftp.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)sesschan.obj: ..\sesschan.c ..\putty.h ..\ssh.h ..\sshchan.h \
-		..\sshserver.h ..\sftp.h ..\sshsignals.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\ssh\channel.h ..\ssh\sftp.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)sessprep.obj: ..\sessprep.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)settings.obj: ..\settings.c ..\putty.h ..\storage.h ..\sshgssc.h \
-		..\sshgss.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\pgssapi.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)sftp.obj: ..\sftp.c ..\misc.h ..\tree234.h ..\sftp.h ..\defs.h \
+$(BUILDDIR)sesschan.obj: ..\sesschan.c ..\putty.h ..\ssh.h ..\ssh\channel.h \
+		..\ssh\server.h ..\ssh\sftp.h ..\ssh\signal-list.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)settings.obj: ..\settings.c ..\putty.h ..\storage.h ..\ssh\gssc.h \
+		..\ssh\gss.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\ssh\pgssapi.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)sftp.obj: ..\ssh\sftp.c ..\misc.h ..\tree234.h ..\ssh\sftp.h ..\defs.h \
 		..\puttymem.h ..\marshal.h ..\putty.h
-$(BUILDDIR)sftpcommon.obj: ..\sftpcommon.c ..\misc.h ..\sftp.h ..\defs.h \
+$(BUILDDIR)sftpcommon.obj: ..\ssh\sftpcommon.c ..\misc.h ..\ssh\sftp.h ..\defs.h \
 		..\puttymem.h ..\marshal.h
-$(BUILDDIR)sftpserver.obj: ..\sftpserver.c ..\putty.h ..\ssh.h ..\sftp.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)sftpserver.obj: ..\sftpserver.c ..\putty.h ..\ssh.h ..\ssh\sftp.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)sizetip.obj: ..\windows\sizetip.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
 $(BUILDDIR)slookup.obj: ..\charset\slookup.c ..\charset\charset.h \
 		..\charset\internal.h ..\charset\enum.c ..\charset\sbcsdat.c \
 		..\charset\utf8.c
 $(BUILDDIR)smallprimes.obj: ..\smallprimes.c ..\ssh.h ..\sshkeygen.h \
 		..\puttymem.h ..\tree234.h ..\network.h ..\misc.h \
-		..\sshttymodes.h ..\defs.h ..\marshal.h
-$(BUILDDIR)ssh.obj: ..\ssh.c ..\putty.h ..\pageant.h ..\tree234.h \
-		..\storage.h ..\marshal.h ..\putty.h ..\ssh.h ..\sshcr.h ..\sshbpp.h \
-		..\sshppl.h ..\sshchan.h ..\sshgssc.h ..\sshgss.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\sshsignals.h \
-		..\puttymem.h ..\sshttymodes.h ..\pgssapi.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\ssh\ttymode-list.h ..\defs.h ..\marshal.h
+$(BUILDDIR)ssh.obj: ..\ssh\ssh.c ..\putty.h ..\pageant.h ..\tree234.h \
+		..\storage.h ..\marshal.h ..\putty.h ..\ssh.h ..\sshcr.h ..\ssh\bpp.h \
+		..\ssh\ppl.h ..\ssh\channel.h ..\ssh\gssc.h ..\ssh\gss.h ..\defs.h \
+		..\network.h ..\misc.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\ssh\ttymode-list.h ..\ssh\pgssapi.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh1bpp.obj: ..\ssh1bpp.c ..\putty.h ..\ssh.h ..\sshbpp.h \
-		..\sshcr.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh1censor.obj: ..\ssh1censor.c ..\putty.h ..\ssh.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)bpp1.obj: ..\ssh\bpp1.c ..\putty.h ..\ssh.h ..\ssh\bpp.h \
+		..\sshcr.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh1connection.obj: ..\ssh1connection.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshppl.h ..\sshchan.h ..\sshcr.h \
-		..\ssh1connection.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh1connection-client.obj: ..\ssh1connection-client.c ..\putty.h \
-		..\ssh.h ..\sshbpp.h ..\sshppl.h ..\sshchan.h ..\sshcr.h \
-		..\ssh1connection.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh1connection-server.obj: ..\ssh1connection-server.c ..\putty.h \
-		..\ssh.h ..\sshbpp.h ..\sshppl.h ..\sshchan.h ..\sshcr.h \
-		..\ssh1connection.h ..\sshserver.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)censor1.obj: ..\ssh\censor1.c ..\putty.h ..\ssh.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh1login.obj: ..\ssh1login.c ..\putty.h ..\ssh.h ..\mpint.h \
-		..\sshbpp.h ..\sshppl.h ..\sshcr.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)connection1.obj: ..\ssh\connection1.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\ssh\channel.h ..\sshcr.h \
+		..\ssh\connection1.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh1login-server.obj: ..\ssh1login-server.c ..\putty.h ..\mpint.h \
-		..\ssh.h ..\sshbpp.h ..\sshppl.h ..\sshcr.h ..\sshserver.h \
-		..\sshkeygen.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh2bpp.obj: ..\ssh2bpp.c ..\putty.h ..\ssh.h ..\sshbpp.h \
-		..\sshcr.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh2bpp-bare.obj: ..\ssh2bpp-bare.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshcr.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh2censor.obj: ..\ssh2censor.c ..\putty.h ..\ssh.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)connection1-client.obj: ..\ssh\connection1-client.c ..\putty.h \
+		..\ssh.h ..\ssh\bpp.h ..\ssh\ppl.h ..\ssh\channel.h ..\sshcr.h \
+		..\ssh\connection1.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh2connection.obj: ..\ssh2connection.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshppl.h ..\sshchan.h ..\sshcr.h \
-		..\ssh2connection.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh2connection-client.obj: ..\ssh2connection-client.c ..\putty.h \
-		..\ssh.h ..\sshbpp.h ..\sshppl.h ..\sshchan.h ..\sshcr.h \
-		..\ssh2connection.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh2connection-server.obj: ..\ssh2connection-server.c ..\putty.h \
-		..\ssh.h ..\sshbpp.h ..\sshppl.h ..\sshchan.h ..\sshcr.h \
-		..\ssh2connection.h ..\sshserver.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)connection1-server.obj: ..\ssh\connection1-server.c ..\putty.h \
+		..\ssh.h ..\ssh\bpp.h ..\ssh\ppl.h ..\ssh\channel.h ..\sshcr.h \
+		..\ssh\connection1.h ..\ssh\server.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh2kex-client.obj: ..\ssh2kex-client.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshppl.h ..\sshcr.h ..\storage.h \
-		..\ssh2transport.h ..\mpint.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\tree234.h ..\sshttymodes.h ..\sshgssc.h \
-		..\sshgss.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\pgssapi.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh2kex-server.obj: ..\ssh2kex-server.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshppl.h ..\sshcr.h ..\sshserver.h \
-		..\sshkeygen.h ..\storage.h ..\ssh2transport.h ..\mpint.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\sshgssc.h ..\sshgss.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\pgssapi.h ..\windows\winhelp.h \
+$(BUILDDIR)login1.obj: ..\ssh\login1.c ..\putty.h ..\ssh.h ..\mpint.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\sshcr.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh2transhk.obj: ..\ssh2transhk.c ..\putty.h ..\ssh.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)login1-server.obj: ..\ssh\login1-server.c ..\putty.h ..\mpint.h \
+		..\ssh.h ..\ssh\bpp.h ..\ssh\ppl.h ..\sshcr.h ..\ssh\server.h \
+		..\sshkeygen.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh2transport.obj: ..\ssh2transport.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshppl.h ..\sshcr.h ..\sshserver.h \
-		..\storage.h ..\ssh2transport.h ..\mpint.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\sshgssc.h ..\sshgss.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\pgssapi.h ..\windows\winhelp.h \
+$(BUILDDIR)bpp2.obj: ..\ssh\bpp2.c ..\putty.h ..\ssh.h ..\ssh\bpp.h \
+		..\sshcr.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)ssh2userauth.obj: ..\ssh2userauth.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshppl.h ..\sshcr.h ..\sshgssc.h ..\sshgss.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\pgssapi.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)ssh2userauth-server.obj: ..\ssh2userauth-server.c ..\putty.h \
-		..\ssh.h ..\sshbpp.h ..\sshppl.h ..\sshcr.h ..\sshserver.h \
-		..\sshgssc.h ..\sshgss.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\pgssapi.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)bpp-bare.obj: ..\ssh\bpp-bare.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\sshcr.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)sshaes.obj: ..\sshaes.c ..\putty.h ..\ssh.h ..\mpint_i.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+$(BUILDDIR)censor2.obj: ..\ssh\censor2.c ..\putty.h ..\ssh.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)connection2.obj: ..\ssh\connection2.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\ssh\channel.h ..\sshcr.h \
+		..\ssh\connection2.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)connection2-client.obj: ..\ssh\connection2-client.c ..\putty.h \
+		..\ssh.h ..\ssh\bpp.h ..\ssh\ppl.h ..\ssh\channel.h ..\sshcr.h \
+		..\ssh\connection2.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)connection2-server.obj: ..\ssh\connection2-server.c ..\putty.h \
+		..\ssh.h ..\ssh\bpp.h ..\ssh\ppl.h ..\ssh\channel.h ..\sshcr.h \
+		..\ssh\connection2.h ..\ssh\server.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)kex2-client.obj: ..\ssh\kex2-client.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\sshcr.h ..\storage.h \
+		..\ssh\transport2.h ..\mpint.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h ..\ssh\gssc.h \
+		..\ssh\gss.h ..\windows\platform.h \
+		..\ssh\pgssapi.h ..\charset\charset.h
+$(BUILDDIR)kex2-server.obj: ..\ssh\kex2-server.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\sshcr.h ..\ssh\server.h \
+		..\sshkeygen.h ..\storage.h ..\ssh\transport2.h ..\mpint.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\ssh\gssc.h ..\ssh\gss.h ..\windows\platform.h \
+		..\ssh\pgssapi.h \
+		..\charset\charset.h
+$(BUILDDIR)transient-hostkey-cache.obj: ..\ssh\transient-hostkey-cache.c ..\putty.h ..\ssh.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)transport2.obj: ..\ssh\transport2.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\sshcr.h ..\ssh\server.h \
+		..\storage.h ..\ssh\transport2.h ..\mpint.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\ssh\gssc.h ..\ssh\gss.h ..\windows\platform.h \
+		..\ssh\pgssapi.h \
+		..\charset\charset.h
+$(BUILDDIR)userauth2-client.obj: ..\ssh\userauth2-client.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\sshcr.h ..\ssh\gssc.h ..\ssh\gss.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\ssh\pgssapi.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)userauth2-server.obj: ..\ssh\userauth2-server.c ..\putty.h \
+		..\ssh.h ..\ssh\bpp.h ..\ssh\ppl.h ..\sshcr.h ..\ssh\server.h \
+		..\ssh\gssc.h ..\ssh\gss.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\ssh\pgssapi.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)aes-sw.obj: ..\crypto\aes-sw.c ..\putty.h ..\ssh.h ..\crypto\mpint_i.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
-$(BUILDDIR)ssharcf.obj: ..\ssharcf.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+$(BUILDDIR)aes-select.obj: ..\crypto\aes-select.c
+$(BUILDDIR)arcfour.obj: ..\crypto\arcfour.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)sshargon2.obj: ..\sshargon2.c ..\putty.h ..\ssh.h ..\marshal.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)argon2.obj: ..\crypto\argon2.c ..\putty.h ..\ssh.h ..\marshal.h \
+		..\defs.h ..\network.h ..\misc.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)sshauxcrypt.obj: ..\sshauxcrypt.c ..\putty.h ..\ssh.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+$(BUILDDIR)pubkey-ssh1.obj: ..\crypto\pubkey-ssh1.c ..\putty.h ..\ssh.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
-$(BUILDDIR)sshbcrypt.obj: ..\sshbcrypt.c ..\putty.h ..\ssh.h ..\sshblowf.h \
+$(BUILDDIR)pubkey-ppk.obj: ..\crypto\pubkey-ppk.c
+$(BUILDDIR)sshbcrypt.obj: ..\sshbcrypt.c ..\putty.h ..\ssh.h ..\blowfish.h \
 		..\puttymem.h ..\tree234.h ..\network.h ..\misc.h \
-		..\sshttymodes.h ..\defs.h ..\marshal.h
-$(BUILDDIR)sshblake2.obj: ..\sshblake2.c ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+		..\ssh\ttymode-list.h ..\defs.h ..\marshal.h
+$(BUILDDIR)blake2.obj: ..\crypto\blake2.c ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)sshblowf.obj: ..\sshblowf.c ..\putty.h ..\ssh.h ..\sshblowf.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+$(BUILDDIR)blowfish.obj: ..\crypto\blowfish.c ..\putty.h ..\ssh.h ..\crypto\blowfish.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
-$(BUILDDIR)sshccp.obj: ..\sshccp.c ..\putty.h ..\ssh.h ..\mpint_i.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+$(BUILDDIR)chacha20-poly1305.obj: ..\crypto\chacha20-poly1305.c ..\putty.h ..\ssh.h ..\crypto\mpint_i.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
-$(BUILDDIR)sshcommon.obj: ..\sshcommon.c ..\putty.h ..\mpint.h ..\ssh.h \
-		..\sshbpp.h ..\sshppl.h ..\sshchan.h ..\sshttymodes.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)common.obj: ..\ssh\common.c ..\putty.h ..\mpint.h ..\ssh.h \
+		..\ssh\bpp.h ..\ssh\ppl.h ..\ssh\channel.h ..\ssh\ttymode-list.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)sshcrc.obj: ..\sshcrc.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+$(BUILDDIR)crc32.obj: ..\crypto\crc32.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)sshcrcda.obj: ..\sshcrcda.c ..\misc.h ..\putty.h ..\ssh.h ..\defs.h \
+$(BUILDDIR)crc-attack-detector.obj: ..\ssh\crc-attack-detector.c ..\misc.h ..\putty.h ..\ssh.h ..\defs.h \
 		..\puttymem.h ..\marshal.h ..\tree234.h ..\network.h \
-		..\sshttymodes.h
-$(BUILDDIR)sshdes.obj: ..\sshdes.c ..\putty.h ..\ssh.h ..\mpint_i.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+		..\ssh\ttymode-list.h
+$(BUILDDIR)des.obj: ..\crypto\des.c ..\putty.h ..\ssh.h ..\crypto\mpint_i.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
-$(BUILDDIR)sshdh.obj: ..\sshdh.c ..\putty.h ..\ssh.h ..\misc.h ..\mpint.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\sshttymodes.h ..\defs.h \
+$(BUILDDIR)diffie-hellman.obj: ..\crypto\diffie-hellman.c ..\putty.h ..\ssh.h ..\misc.h ..\mpint.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)sshdss.obj: ..\sshdss.c ..\putty.h ..\ssh.h ..\mpint.h ..\misc.h \
-		..\puttymem.h ..\tree234.h ..\network.h ..\sshttymodes.h \
+$(BUILDDIR)dsa.obj: ..\crypto\dsa.c ..\putty.h ..\ssh.h ..\mpint.h ..\misc.h \
+		..\puttymem.h ..\tree234.h ..\network.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
 $(BUILDDIR)sshdssg.obj: ..\sshdssg.c ..\misc.h ..\putty.h ..\ssh.h ..\sshkeygen.h \
 		..\mpint.h ..\defs.h ..\puttymem.h ..\marshal.h ..\tree234.h \
-		..\network.h ..\sshttymodes.h
-$(BUILDDIR)sshecc.obj: ..\sshecc.c ..\ssh.h ..\mpint.h ..\ecc.h \
-		..\puttymem.h ..\tree234.h ..\network.h ..\misc.h \
-		..\sshttymodes.h ..\defs.h ..\marshal.h
+		..\network.h ..\ssh\ttymode-list.h
 $(BUILDDIR)sshecdsag.obj: ..\sshecdsag.c ..\ssh.h ..\sshkeygen.h ..\mpint.h \
 		..\putty.h ..\puttymem.h ..\tree234.h ..\network.h ..\misc.h \
-		..\sshttymodes.h ..\defs.h ..\marshal.h
-$(BUILDDIR)sshgssc.obj: ..\sshgssc.c ..\putty.h ..\sshgssc.h ..\misc.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\pgssapi.h ..\sshgss.h ..\puttymem.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\tree234.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)sshhmac.obj: ..\sshhmac.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+		..\ssh\ttymode-list.h ..\defs.h ..\marshal.h
+$(BUILDDIR)gssc.obj: ..\ssh\gssc.c ..\putty.h ..\ssh\gssc.h ..\misc.h \
+		..\defs.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\ssh\pgssapi.h ..\ssh\gss.h ..\puttymem.h \
+		..\windows\platform.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)hmac.obj: ..\crypto\hmac.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)sshmac.obj: ..\sshmac.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+$(BUILDDIR)mac.obj: ..\crypto\mac.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)sshmd5.obj: ..\sshmd5.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
+$(BUILDDIR)md5.obj: ..\crypto\md5.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
 $(BUILDDIR)sshprime.obj: ..\sshprime.c ..\ssh.h ..\mpint.h ..\mpunsafe.h \
 		..\sshkeygen.h ..\putty.h ..\puttymem.h ..\tree234.h ..\network.h \
-		..\misc.h ..\sshttymodes.h ..\defs.h ..\marshal.h
-$(BUILDDIR)sshprng.obj: ..\sshprng.c ..\putty.h ..\ssh.h ..\mpint_i.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\misc.h ..\ssh\ttymode-list.h ..\defs.h ..\marshal.h
+$(BUILDDIR)prng.obj: ..\crypto\prng.c ..\putty.h ..\ssh.h ..\crypto\mpint_i.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)sshpubk.obj: ..\sshpubk.c ..\putty.h ..\mpint.h ..\ssh.h \
-		..\misc.h ..\defs.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\misc.h ..\defs.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)sshrand.obj: ..\sshrand.c ..\putty.h ..\ssh.h ..\storage.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)sshrsa.obj: ..\sshrsa.c ..\putty.h ..\ssh.h ..\mpint.h ..\misc.h \
-		..\puttymem.h ..\tree234.h ..\network.h ..\sshttymodes.h \
+$(BUILDDIR)rsa.obj: ..\crypto\rsa.c ..\putty.h ..\ssh.h ..\mpint.h ..\misc.h \
+		..\puttymem.h ..\tree234.h ..\network.h ..\ssh\ttymode-list.h \
 		..\defs.h ..\marshal.h
-$(BUILDDIR)sshrsag.obj: ..\sshrsag.c ..\putty.h ..\ssh.h ..\sshkeygen.h ..\mpint.h \
+$(BUILDDIR)rsag.obj: ..\rsag.c ..\putty.h ..\ssh.h ..\sshkeygen.h ..\mpint.h \
 		..\puttymem.h ..\tree234.h ..\network.h ..\misc.h \
-		..\sshttymodes.h ..\defs.h ..\marshal.h
-$(BUILDDIR)sshserver.obj: ..\sshserver.c ..\putty.h ..\ssh.h ..\sshbpp.h \
-		..\sshppl.h ..\sshchan.h ..\sshserver.h ..\sshgssc.h \
-		..\sshgss.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\pgssapi.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)sshsh256.obj: ..\sshsh256.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
-		..\marshal.h
-$(BUILDDIR)sshsh512.obj: ..\sshsh512.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
-		..\marshal.h
-$(BUILDDIR)sshsha.obj: ..\sshsha.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
-		..\marshal.h
-$(BUILDDIR)sshsha3.obj: ..\sshsha3.c ..\ssh.h ..\puttymem.h ..\tree234.h \
-		..\network.h ..\misc.h ..\sshttymodes.h ..\defs.h \
-		..\marshal.h
-$(BUILDDIR)sshshare.obj: ..\sshshare.c ..\putty.h ..\tree234.h ..\ssh.h \
-		..\sshcr.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\ssh\ttymode-list.h ..\defs.h ..\marshal.h
+$(BUILDDIR)server.obj: ..\ssh\server.c ..\putty.h ..\ssh.h ..\ssh\bpp.h \
+		..\ssh\ppl.h ..\ssh\channel.h ..\ssh\server.h ..\ssh\gssc.h \
+		..\ssh\gss.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\ssh\pgssapi.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)sshutils.obj: ..\sshutils.c ..\putty.h ..\ssh.h ..\sshchan.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)sshverstring.obj: ..\sshverstring.c ..\putty.h ..\ssh.h \
-		..\sshbpp.h ..\sshcr.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)sshzlib.obj: ..\sshzlib.c ..\defs.h ..\putty.h ..\ssh.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+$(BUILDDIR)sha256-sw.obj: ..\crypto\sha256-sw.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
 		..\marshal.h
-$(BUILDDIR)stripctrl.obj: ..\stripctrl.c ..\putty.h ..\terminal.h ..\misc.h \
-		..\marshal.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\sshsignals.h ..\tree234.h ..\puttymem.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)sha512-sw.obj: ..\crypto\sha512-sw.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
+		..\marshal.h
+$(BUILDDIR)sha256-common.obj: ..\crypto\sha256-common.c
+$(BUILDDIR)sha512-common.obj: ..\crypto\sha512-common.c
+$(BUILDDIR)sha1-sw.obj: ..\crypto\sha1-sw.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
+		..\marshal.h
+$(BUILDDIR)sha1-common.obj: ..\crypto\sha1-common.c
+$(BUILDDIR)sha3.obj: ..\crypto\sha3.c ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
+		..\marshal.h
+$(BUILDDIR)sharing.obj: ..\ssh\sharing.c ..\putty.h ..\tree234.h ..\ssh.h \
+		..\sshcr.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)supdup.obj: ..\supdup.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)telnet.obj: ..\telnet.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)terminal.obj: ..\terminal.c ..\putty.h ..\terminal.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\tree234.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
+$(BUILDDIR)sshutils.obj: ..\utils\sshutils.c ..\putty.h ..\ssh.h ..\ssh\channel.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)verstring.obj: ..\ssh\verstring.c ..\putty.h ..\ssh.h \
+		..\ssh\bpp.h ..\sshcr.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)zlib.obj: ..\ssh\zlib.c ..\defs.h ..\putty.h ..\ssh.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
+		..\marshal.h
+$(BUILDDIR)stripctrl.obj: ..\utils\stripctrl.c ..\putty.h ..\misc.h \
+		..\marshal.h ..\defs.h ..\network.h \
+		..\ssh\signal-list.h ..\tree234.h ..\puttymem.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)supdup.obj: ..\supdup.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)telnet.obj: ..\proxy\telnet.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)terminal.obj: ..\terminal.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\tree234.h ..\windows\platform.h \
+		..\puttymem.h \
 		..\charset\charset.h
 $(BUILDDIR)testcrypt.obj: ..\testcrypt.c ..\defs.h ..\putty.h ..\ssh.h ..\sshkeygen.h \
-		..\misc.h ..\mpint.h ..\ecc.h ..\testcrypt.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\sshttymodes.h ..\marshal.h
+		..\misc.h ..\mpint.h ..\crypto\ecc.h ..\testcrypt.h ..\puttymem.h \
+		..\tree234.h ..\network.h ..\ssh\ttymode-list.h ..\marshal.h
 $(BUILDDIR)testsc.obj: ..\testsc.c ..\defs.h ..\putty.h ..\ssh.h ..\misc.h \
-		..\mpint.h ..\ecc.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+		..\mpint.h ..\crypto\ecc.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\tree234.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)testzlib.obj: ..\testzlib.c ..\defs.h ..\putty.h ..\ssh.h ..\puttymem.h \
-		..\tree234.h ..\network.h ..\misc.h ..\sshttymodes.h \
+		..\tree234.h ..\network.h ..\misc.h ..\ssh\ttymode-list.h \
 		..\marshal.h
 $(BUILDDIR)time.obj: ..\time.c
 $(BUILDDIR)timing.obj: ..\timing.c ..\putty.h ..\tree234.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\charset\charset.h
 $(BUILDDIR)toucs.obj: ..\charset\toucs.c ..\charset\charset.h \
 		..\charset\internal.h
-$(BUILDDIR)tree234.obj: ..\tree234.c ..\defs.h ..\tree234.h ..\puttymem.h
+$(BUILDDIR)tree234.obj: ..\utils\tree234.c ..\defs.h ..\tree234.h ..\puttymem.h
 $(BUILDDIR)utf8.obj: ..\charset\utf8.c ..\charset\charset.h \
 		..\charset\internal.h
-$(BUILDDIR)utils.obj: ..\utils.c ..\defs.h ..\misc.h ..\ssh.h ..\puttymem.h \
-		..\marshal.h ..\tree234.h ..\network.h ..\sshttymodes.h
-$(BUILDDIR)ux_x11.obj: ..\unix\ux_x11.c ..\putty.h ..\ssh.h ..\network.h \
-		..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)parse_blocksize.obj: ..\utils\parse_blocksize.c ..\defs.h ..\misc.h ..\ssh.h ..\puttymem.h \
+		..\marshal.h ..\tree234.h ..\network.h ..\ssh\ttymode-list.h
+$(BUILDDIR)version.obj: ..\utils\version.c ..\putty.h ..\ssh.h \
+		..\version.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)uxagentc.obj: ..\unix\uxagentc.c ..\putty.h ..\misc.h \
-		..\tree234.h ..\puttymem.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)wcwidth.obj: ..\utils\wcwidth.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)wildcard.obj: ..\utils\wildcard.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)escape_registry_key: ..\windows\utils\escape_registry_key.c
+$(BUILDDIR)cryptoapi.obj: ..\windows\utils\cryptoapi.c ..\putty.h ..\ssh.h \
+		..\windows\cryptoapi.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)uxagentsock.obj: ..\unix\uxagentsock.c ..\putty.h ..\ssh.h \
-		..\misc.h ..\pageant.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxcfg.obj: ..\unix\uxcfg.c ..\putty.h ..\dialog.h ..\storage.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxcliloop.obj: ..\unix\uxcliloop.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxcons.obj: ..\unix\uxcons.c ..\putty.h ..\storage.h ..\ssh.h \
-		..\console.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxfdsock.obj: ..\unix\uxfdsock.c ..\tree234.h ..\putty.h \
-		..\network.h ..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxgen.obj: ..\unix\uxgen.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxgss.obj: ..\unix\uxgss.c ..\putty.h ..\pgssapi.h ..\sshgss.h \
-		..\sshgssc.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\tree234.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxmisc.obj: ..\unix\uxmisc.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxnet.obj: ..\unix\uxnet.c ..\putty.h ..\network.h ..\tree234.h \
-		..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxnogtk.obj: ..\unix\uxnogtk.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxnoise.obj: ..\unix\uxnoise.c ..\putty.h ..\ssh.h ..\storage.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxpeer.obj: ..\unix\uxpeer.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxpgnt.obj: ..\unix\uxpgnt.c ..\putty.h ..\ssh.h ..\misc.h \
-		..\pageant.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxplink.obj: ..\unix\uxplink.c ..\putty.h ..\putty.h ..\ssh.h ..\storage.h \
-		..\tree234.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxpoll.obj: ..\unix\uxpoll.c ..\putty.h ..\tree234.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxprint.obj: ..\unix\uxprint.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxproxy.obj: ..\unix\uxproxy.c ..\tree234.h ..\putty.h \
-		..\network.h ..\proxy.h ..\defs.h ..\puttyps.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxpsusan.obj: ..\unix\uxpsusan.c ..\putty.h ..\mpint.h ..\ssh.h \
-		..\sshserver.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxpterm.obj: ..\unix\uxpterm.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxpty.obj: ..\unix\uxpty.c ..\putty.h ..\ssh.h ..\sshserver.h \
-		..\tree234.h ..\sshttymodes.h ..\sshsignals.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\puttymem.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxputty.obj: ..\unix\uxputty.c ..\putty.h ..\putty.h ..\ssh.h ..\storage.h \
-		..\unix\gtkcompat.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxsel.obj: ..\unix\uxsel.c ..\putty.h ..\tree234.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxser.obj: ..\unix\uxser.c ..\putty.h ..\tree234.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxserver.obj: ..\unix\uxserver.c ..\putty.h ..\mpint.h ..\ssh.h \
-		..\sshserver.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxsftp.obj: ..\unix\uxsftp.c ..\putty.h ..\ssh.h ..\psftp.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxsftpserver.obj: ..\unix\uxsftpserver.c ..\putty.h ..\ssh.h \
-		..\sshserver.h ..\sftp.h ..\tree234.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxshare.obj: ..\unix\uxshare.c ..\tree234.h ..\putty.h \
-		..\network.h ..\proxy.h ..\putty.h ..\ssh.h ..\defs.h ..\puttyps.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)uxsignal.obj: ..\unix\uxsignal.c ..\defs.h
-$(BUILDDIR)uxsocks.obj: ..\unix\uxsocks.c ..\putty.h ..\ssh.h ..\psocks.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxstore.obj: ..\unix\uxstore.c ..\putty.h ..\storage.h \
-		..\tree234.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)uxucs.obj: ..\unix\uxucs.c ..\putty.h ..\charset\charset.h \
-		..\terminal.h ..\misc.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\marshal.h ..\sshsignals.h ..\tree234.h ..\puttymem.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h
-$(BUILDDIR)uxutils.obj: ..\unix\uxutils.c ..\putty.h ..\ssh.h \
-		..\unix\uxutils.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)version.obj: ..\version.c ..\putty.h ..\ssh.h ..\empty.h \
-		..\version.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)wcwidth.obj: ..\wcwidth.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)wildcard.obj: ..\wildcard.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)wincapi.obj: ..\windows\wincapi.c ..\putty.h ..\ssh.h \
-		..\windows\wincapi.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
 $(BUILDDIR)wincfg.obj: ..\windows\wincfg.c ..\putty.h ..\dialog.h \
-		..\storage.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\tree234.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)wincliloop.obj: ..\windows\wincliloop.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\storage.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)wincons.obj: ..\windows\wincons.c ..\putty.h ..\storage.h \
-		..\ssh.h ..\console.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)cliloop.obj: ..\windows\cliloop.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)consolew.obj: ..\windows\consolew.c ..\putty.h ..\storage.h \
+		..\ssh.h ..\console.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
 $(BUILDDIR)winctrls.obj: ..\windows\winctrls.c ..\putty.h ..\misc.h \
-		..\dialog.h ..\defs.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\tree234.h ..\windows\winhelp.h \
+		..\dialog.h ..\defs.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\windows\platform.h \
+		..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)windefs.obj: ..\windows\windefs.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)defaults.obj: ..\windows\utils\defaults.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
 $(BUILDDIR)windlg.obj: ..\windows\windlg.c ..\putty.h ..\ssh.h \
 		..\windows\win_res.h ..\windows\winseat.h ..\storage.h \
-		..\dialog.h ..\licence.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)window.obj: ..\windows\window.c ..\putty.h ..\terminal.h \
-		..\storage.h ..\windows\win_res.h ..\windows\winsecur.h \
-		..\windows\winseat.h ..\tree234.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)wingss.obj: ..\windows\wingss.c ..\putty.h ..\pgssapi.h \
-		..\sshgss.h ..\sshgssc.h ..\misc.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\tree234.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)winhandl.obj: ..\windows\winhandl.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\dialog.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
+$(BUILDDIR)window.obj: ..\windows\window.c ..\putty.h \
+		..\storage.h ..\windows\win_res.h \
+		..\windows\winseat.h ..\tree234.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\charset\charset.h
+$(BUILDDIR)gss.obj: ..\windows\gss.c ..\putty.h ..\ssh\pgssapi.h \
+		..\ssh\gss.h ..\ssh\gssc.h ..\misc.h ..\defs.h \
+		..\network.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\windows\platform.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)handle-io.obj: ..\windows\handle-io.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)handle-wait.obj: ..\windows\handle-wait.c
 $(BUILDDIR)winhelp.obj: ..\windows\winhelp.c ..\putty.h ..\windows\win_res.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winhsock.obj: ..\windows\winhsock.c ..\tree234.h ..\putty.h \
-		..\network.h ..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)handle-socket.obj: ..\windows\handle-socket.c ..\tree234.h ..\putty.h \
+		..\network.h ..\defs.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\charset\charset.h
 $(BUILDDIR)winjump.obj: ..\windows\winjump.c ..\putty.h ..\storage.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winmisc.obj: ..\windows\winmisc.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)filename.obj: ..\windows\utils\filename.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winmiscs.obj: ..\windows\winmiscs.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)is_console_handle.obj: ..\windows\utils\is_console_handle.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winnet.obj: ..\windows\winnet.c ..\putty.h ..\network.h \
-		..\tree234.h ..\ssh.h ..\defs.h ..\puttyps.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)network.obj: ..\windows\network.c ..\putty.h ..\network.h \
+		..\tree234.h ..\ssh.h ..\defs.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)winnohlp.obj: ..\windows\winnohlp.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)nohelp.obj: ..\windows\nohelp.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winnoise.obj: ..\windows\winnoise.c ..\putty.h ..\ssh.h \
-		..\storage.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)winnojmp.obj: ..\windows\winnojmp.c
-$(BUILDDIR)winnpc.obj: ..\windows\winnpc.c ..\tree234.h ..\putty.h \
-		..\network.h ..\proxy.h ..\putty.h ..\ssh.h ..\windows\winsecur.h \
-		..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)noise.obj: ..\windows\noise.c ..\putty.h ..\ssh.h \
+		..\storage.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)winnps.obj: ..\windows\winnps.c ..\tree234.h ..\putty.h \
-		..\network.h ..\proxy.h ..\putty.h ..\ssh.h ..\windows\winsecur.h \
-		..\defs.h ..\puttyps.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)no-jump-list.obj: ..\windows\no-jump-list.c
+$(BUILDDIR)named-pipe-client.obj: ..\windows\named-pipe-client.c ..\tree234.h ..\putty.h \
+		..\network.h ..\proxy\proxy.h ..\putty.h ..\ssh.h \
+		..\defs.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)named-pipe-server.obj: ..\windows\named-pipe-server.c ..\tree234.h ..\putty.h \
+		..\network.h ..\proxy\proxy.h ..\putty.h ..\ssh.h \
+		..\defs.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\ssh\ttymode-list.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)winpgen.obj: ..\windows\winpgen.c ..\putty.h ..\ssh.h \
-		..\sshkeygen.h ..\licence.h ..\windows\winsecur.h \
-		..\windows\puttygen-rc.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
+		..\sshkeygen.h \
+		..\windows\puttygen-rc.h ..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
 $(BUILDDIR)winpgnt.obj: ..\windows\winpgnt.c ..\putty.h ..\ssh.h ..\misc.h \
-		..\tree234.h ..\windows\winsecur.h ..\windows\wincapi.h \
-		..\pageant.h ..\licence.h ..\windows\pageant-rc.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\marshal.h ..\sshsignals.h \
-		..\puttymem.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)winpgntc.obj: ..\windows\winpgntc.c ..\putty.h ..\pageant.h \
-		..\windows\winsecur.h ..\windows\wincapi.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\tree234.h ..\windows\cryptoapi.h \
+		..\pageant.h ..\windows\pageant-rc.h ..\defs.h \
+		..\network.h ..\marshal.h ..\ssh\signal-list.h \
+		..\puttymem.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)agent-client.obj: ..\windows\agent-client.c ..\putty.h ..\pageant.h \
+		..\windows\cryptoapi.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
 $(BUILDDIR)winplink.obj: ..\windows\winplink.c ..\putty.h ..\storage.h \
-		..\tree234.h ..\windows\winsecur.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\windows\winhelp.h ..\charset\charset.h
+		..\tree234.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\charset\charset.h
 $(BUILDDIR)winprint.obj: ..\windows\winprint.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winproxy.obj: ..\windows\winproxy.c ..\tree234.h ..\putty.h \
-		..\network.h ..\proxy.h ..\defs.h ..\puttyps.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\windows\winhelp.h \
+$(BUILDDIR)local-proxy.obj: ..\windows\local-proxy.c ..\tree234.h ..\putty.h \
+		..\network.h ..\proxy\proxy.h ..\defs.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h \
 		..\charset\charset.h
-$(BUILDDIR)winsecur.obj: ..\windows\winsecur.c ..\putty.h \
-		..\windows\winsecur.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\puttymem.h ..\tree234.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)winselcli.obj: ..\windows\winselcli.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)security.obj: ..\windows\utils\security.c ..\putty.h \
+		..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)select-cli.obj: ..\windows\select-cli.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
 $(BUILDDIR)winselgui.obj: ..\windows\winselgui.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winser.obj: ..\windows\winser.c ..\putty.h ..\defs.h ..\puttyps.h \
-		..\network.h ..\misc.h ..\marshal.h ..\sshsignals.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\puttymem.h \
-		..\tree234.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)winsftp.obj: ..\windows\winsftp.c ..\putty.h ..\psftp.h ..\ssh.h \
-		..\windows\winsecur.h ..\defs.h ..\puttyps.h ..\network.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\tree234.h ..\sshttymodes.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)winshare.obj: ..\windows\winshare.c ..\tree234.h ..\putty.h \
-		..\network.h ..\proxy.h ..\putty.h ..\ssh.h ..\windows\wincapi.h \
-		..\windows\winsecur.h ..\noshare.c ..\defs.h ..\puttyps.h \
-		..\misc.h ..\marshal.h ..\sshsignals.h ..\puttymem.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
+$(BUILDDIR)winser.obj: ..\windows\winser.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
+		..\windows\platform.h ..\puttymem.h \
+		..\tree234.h ..\charset\charset.h
+$(BUILDDIR)sftpw.obj: ..\windows\sftpw.c ..\putty.h ..\psftp.h ..\ssh.h \
+		..\defs.h ..\network.h \
+		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
+		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
+		..\charset\charset.h
+$(BUILDDIR)sharingw.obj: ..\windows\sharingw.c
 $(BUILDDIR)winsocks.obj: ..\windows\winsocks.c ..\putty.h ..\ssh.h \
-		..\psocks.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\tree234.h \
-		..\sshttymodes.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\windows\winhelp.h ..\charset\charset.h
-$(BUILDDIR)winstore.obj: ..\windows\winstore.c ..\putty.h ..\storage.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+		..\psocks.h ..\defs.h ..\network.h ..\misc.h \
+		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
+		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)wintime.obj: ..\windows\wintime.c ..\putty.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
+$(BUILDDIR)storage.obj: ..\windows\storage.c ..\putty.h ..\storage.h \
+		..\defs.h ..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winucs.obj: ..\windows\winucs.c ..\putty.h ..\terminal.h \
-		..\misc.h ..\defs.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\tree234.h ..\puttymem.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
+$(BUILDDIR)ltime.obj: ..\windows\utils\ltime.c ..\putty.h ..\defs.h \
+		..\network.h ..\misc.h ..\marshal.h \
+		..\ssh\signal-list.h ..\windows\platform.h \
+		..\puttymem.h ..\tree234.h \
+		..\charset\charset.h
+$(BUILDDIR)unicode.obj: ..\windows\unicode.c ..\putty.h \
+		..\misc.h ..\defs.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\tree234.h ..\puttymem.h \
+		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)winutils.obj: ..\windows\winutils.c ..\putty.h ..\misc.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\windows\winstuff.h \
-		..\unix\unix.h ..\tree234.h ..\windows\winhelp.h \
+		..\defs.h ..\network.h ..\marshal.h \
+		..\ssh\signal-list.h ..\puttymem.h ..\windows\platform.h \
+		..\tree234.h \
 		..\charset\charset.h
-$(BUILDDIR)winx11.obj: ..\windows\winx11.c ..\putty.h ..\ssh.h ..\defs.h \
-		..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\puttymem.h ..\tree234.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)x11fwd.obj: ..\x11fwd.c ..\putty.h ..\ssh.h ..\sshchan.h \
-		..\tree234.h ..\defs.h ..\puttyps.h ..\network.h ..\misc.h \
-		..\marshal.h ..\sshsignals.h ..\puttymem.h ..\sshttymodes.h \
-		..\windows\winstuff.h ..\unix\unix.h ..\windows\winhelp.h \
-		..\charset\charset.h
-$(BUILDDIR)x11misc.obj: ..\unix\x11misc.c ..\putty.h ..\unix\x11misc.h \
-		..\defs.h ..\puttyps.h ..\network.h ..\misc.h ..\marshal.h \
-		..\sshsignals.h ..\windows\winstuff.h ..\unix\unix.h \
-		..\puttymem.h ..\tree234.h ..\windows\winhelp.h \
-		..\charset\charset.h
+$(BUILDDIR)xdmauth.obj: ..\crypto\xdmauth.c
 $(BUILDDIR)xenc.obj: ..\charset\xenc.c ..\charset\charset.h \
 		..\charset\internal.h
 $(BUILDDIR)xkeysym.obj: ..\unix\xkeysym.c ..\misc.h ..\defs.h ..\puttymem.h \
@@ -1801,14 +1042,29 @@ $(BUILDDIR)xpmputty.obj: ..\unix\xpmputty.c
 {..\charset\}.c.obj::
 	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
 
+{..\ssh\}.c.obj::
+	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
+
+{..\crypto\}.c.obj::
+	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
+
+{..\utils\}.c.obj::
+	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
+
+{..\stubs\}.c.obj::
+	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
+
+{..\proxy\}.c.obj::
+	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
+
+{..\terminal\}.c.obj::
+	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
+
 {..\windows\}.c.obj::
 	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
 
-{..\unix\}.c.obj::
+{..\windows\utils\}.c.obj::
 	cl /Fo$(BUILDDIR) $(COMPAT) $(CFLAGS) $(XFLAGS) /c $<
-
-cleantestprogs:
-	-del $(BUILDDIR)testcrypt.exe $(BUILDDIR)psocks.exe
 
 clean: tidy
 	-del $(BUILDDIR)*.exe

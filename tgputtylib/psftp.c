@@ -12,7 +12,7 @@
 #include "psftp.h"
 #include "storage.h"
 #include "ssh.h"
-#include "sftp.h"
+#include "ssh/sftp.h"
 #include "version.h" // TG
 
 #include "tglibcver.h"
@@ -40,7 +40,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber);
 static int do_sftp_init(void);
 static void do_sftp_cleanup(void);
 #ifdef TGDLL
-static int tg_get_userpass_input(Seat *seat, prompts_t *p, bufchain *input); // TG 2019, for DLL use
+static SeatPromptResult tg_get_userpass_input(Seat *seat, prompts_t *p); // TG 2019, for DLL use
 #endif
 
 /* ----------------------------------------------------------------------
@@ -110,19 +110,23 @@ uint64_t TGGetTickCount64()
  * Seat vtable.
  */
 
-static size_t psftp_output(Seat *, bool is_stderr, const void *, size_t);
+static size_t psftp_output(Seat *, SeatOutputType type, const void *, size_t);
 static bool psftp_eof(Seat *);
 
 static const SeatVtable psftp_seat_vt = {
     .output = psftp_output,
     .eof = psftp_eof,
+    .sent = nullseat_sent,
+    .banner = nullseat_banner_to_stderr,
     .get_userpass_input = NORMALCODE(filexfer_get_userpass_input)TGDLLCODE(tg_get_userpass_input), // TG 2019, for DLL use
+    .notify_session_started = nullseat_notify_session_started,
     .notify_remote_exit = nullseat_notify_remote_exit,
+    .notify_remote_disconnect = nullseat_notify_remote_disconnect,
     .connection_fatal = console_connection_fatal,
     .update_specials_menu = nullseat_update_specials_menu,
     .get_ttymode = nullseat_get_ttymode,
     .set_busy_status = nullseat_set_busy_status,
-    .verify_ssh_host_key = console_verify_ssh_host_key,
+    .confirm_ssh_host_key = console_confirm_ssh_host_key,
     .confirm_weak_crypto_primitive = console_confirm_weak_crypto_primitive,
     .confirm_weak_cached_hostkey = console_confirm_weak_cached_hostkey,
     .is_utf8 = nullseat_is_never_utf8,
@@ -131,7 +135,9 @@ static const SeatVtable psftp_seat_vt = {
     .get_windowid = nullseat_get_windowid,
     .get_window_pixel_size = nullseat_get_window_pixel_size,
     .stripctrl_new = console_stripctrl_new,
-    .set_trust_status = nullseat_set_trust_status_vacuously,
+    .set_trust_status = nullseat_set_trust_status,
+    .can_set_trust_status = nullseat_can_set_trust_status_yes,
+    .has_mixed_input_stream = nullseat_has_mixed_input_stream_no,
     .verbose = cmdline_seat_verbose,
     .interactive = nullseat_interactive_yes,
     .get_cursor_position = nullseat_get_cursor_position,
@@ -3032,7 +3038,7 @@ static void usage(void)
     printf("  -load sessname  Load settings from saved session\n");
     printf("  -l user   connect with specified username\n");
     printf("  -P port   connect to specified port\n");
-    printf("  -pw passw login with specified password\n");
+    printf("  -pwfile file   login with password read from specified file\n");
     printf("  -1 -2     force use of particular SSH protocol version\n");
     printf("  -ssh -ssh-connection\n");
     printf("            force use of particular SSH protocol variant\n");
@@ -3206,7 +3212,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
      * X forwarding.
      */
 	CP("psftp_c11");
-	NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);) // TG
+	NORMALCODE(conf_set_bool(conf, CONF_x11_forward, false);) // TG: x11_forwarding is not included
     conf_set_bool(conf, CONF_agentfwd, false);
     conf_set_bool(conf, CONF_ssh_simple, true);
     {
@@ -3263,8 +3269,14 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
     platform_psftp_pre_conn_setup(console_cli_logpolicy);
 
 	CP("psftp_c15");
-    err = backend_init(backend_vt_from_proto(
-                           conf_get_int(conf, CONF_protocol)),
+	const struct BackendVtable *be=&ssh_backend; // backend_vt_from_proto(PROT_SSH);
+
+	if (!be)
+	{
+	   fprintf(stderr, "ssh_init: SSH backend missing\n"); // TG
+	   return 1;
+	}
+	err = backend_init(be,
                        psftp_seat, &backend, psftp_logctx, conf,
                        conf_get_str(conf, CONF_host),
                        conf_get_int(conf, CONF_port),
@@ -3632,6 +3644,8 @@ EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
     libctx->pktin_freeq_head.on_free_queue = true;
 
     libctx->ic_pktin_free.fn = pktin_free_queue_callback;
+
+    libctx->ready_event = INVALID_HANDLE_VALUE;
 
     backend = NULL;
 
@@ -4332,8 +4346,9 @@ EXPORT void tgputty_conf_set_str_str(int key,const char *subkey, const char *val
 
 // TG 2019, for DLL use
 // similar to cmdline_get_passwd_input in cmdline.c
-static int tg_get_userpass_input(Seat *seat, prompts_t *p, bufchain *input)
+static SeatPromptResult tg_get_userpass_input(Seat *seat, prompts_t *p) // TG 2019, for DLL use
 {
+    SeatPromptResult spr;
 	if (!curlibctx->caller_supplied_password ||
 		(strlen(curlibctx->caller_supplied_password)==0) ||
 		curlibctx->tried_caller_supplied_password_once ||
@@ -4353,13 +4368,17 @@ static int tg_get_userpass_input(Seat *seat, prompts_t *p, bufchain *input)
 			 const char *thepwd = curlibctx->getpassword_callback(pr->prompt,pr->echo,&cancel,curlibctx);
 
 			 if (cancel)
-				return 0;
-             prompt_set_result(pr,thepwd);
+			 {
+				spr.kind=SPRK_USER_ABORT;
+				return spr;
+			 }
+			 prompt_set_result(pr,thepwd);
 		  }
-          return 1;
+		  spr.kind=SPRK_OK;
+		  return spr;
 	   }
 	   else
-		  return filexfer_get_userpass_input(seat,p,input); // pass on to the original function
+		  return filexfer_get_userpass_input(seat,p); // pass on to the original function
 	}
 
 	prompt_set_result(p->prompts[0], curlibctx->caller_supplied_password);
@@ -4367,7 +4386,8 @@ static int tg_get_userpass_input(Seat *seat, prompts_t *p, bufchain *input)
 	sfree(curlibctx->caller_supplied_password);
 	curlibctx->caller_supplied_password = NULL;
 	curlibctx->tried_caller_supplied_password_once = true;
-	return 1;
+	spr.kind=SPRK_OK;
+	return spr;
 }
 
 #undef printf

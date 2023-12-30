@@ -54,8 +54,8 @@ static int compare_timers(void *av, void *bv)
 {
     struct timer *a = (struct timer *)av;
     struct timer *b = (struct timer *)bv;
-    long at = a->now - snow;
-    long bt = b->now - snow;
+    long at = a->now - snow; // TG
+    long bt = b->now - snow; // TG
 
     if (at < bt)
         return -1;
@@ -108,7 +108,7 @@ static void init_timers(void)
     if (!timers) {
         timers = newtree234(compare_timers);
         timer_contexts = newtree234(compare_timer_contexts);
-        snow = GETTICKCOUNT();
+        snow = GETTICKCOUNT(); // TG
     }
 }
 
@@ -119,31 +119,30 @@ unsigned long schedule_timer(int ticks, timer_fn_t fn, void *ctx)
 
     init_timers();
 
-    snow = GETTICKCOUNT();
-    when = ticks + snow;
+    snow = GETTICKCOUNT(); // TG
+    when = ticks + snow; // TG
 
     /*
      * Just in case our various defences against timing skew fail
      * us: if we try to schedule a timer that's already in the
      * past, we instead schedule it for the immediate future.
      */
-    if (when - snow <= 0)
-        when = snow + 1;
+    if (when - snow <= 0) // TG
+        when = snow + 1; // TG
 
     t = snew(struct timer);
     t->fn = fn;
     t->ctx = ctx;
     t->now = when;
-    t->when_set = snow;
+    t->when_set = snow; // TG
 #ifdef DEBUG_MALLOC
-    printf("schedule_timer: created timer %p\n",t);
+    printf("schedule_timer: created timer %p\n",t); // TG
 #endif
 
-    if (t != add234(timers, t))
-    {
+    if (t != add234(timers, t)) {
         sfree(t);                      /* identical timer already exists */
 #ifdef DEBUG_MALLOC
-        printf("schedule_timer: freed timer %p\n",t);
+        printf("schedule_timer: freed timer %p\n",t); // TG
 #endif
     } else {
         add234(timer_contexts, t->ctx);/* don't care if this fails */
@@ -169,7 +168,7 @@ unsigned long timing_last_clock(void)
      * 'snow' that was used to decide when the timer you just set would
      * go off.
      */
-    return snow;
+    return snow; // TG
 }
 
 /*
@@ -183,7 +182,7 @@ bool run_timers(unsigned long anow, unsigned long *next)
 
     init_timers();
 
-    snow = GETTICKCOUNT();
+    snow = GETTICKCOUNT(); // TG
 
     while (1) {
         first = (struct timer *)index234(timers, 0);
@@ -199,9 +198,9 @@ bool run_timers(unsigned long anow, unsigned long *next)
             delpos234(timers, 0);
             sfree(first);
 #ifdef DEBUG_MALLOC
-            printf("schedule_timer: freed timer %p\n",first);
+            printf("schedule_timer: freed timer %p\n",first); // TG
 #endif
-        } else if (snow - (first->when_set - 10) >
+        } else if (snow - (first->when_set - 10) >    // TG: snow
                    first->now - (first->when_set - 10)) {
             /*
              * This timer is active and has reached its running
@@ -211,7 +210,7 @@ bool run_timers(unsigned long anow, unsigned long *next)
             first->fn(first->ctx, first->now);
             sfree(first);
 #ifdef DEBUG_MALLOC
-            printf("schedule_timer: freed timer %p\n",first);
+            printf("schedule_timer: freed timer %p\n",first); // TG
 #endif
         } else {
             /*
@@ -224,7 +223,7 @@ bool run_timers(unsigned long anow, unsigned long *next)
     }
 }
 
-void free_timerwithctx(void *ctx)
+void free_timerwithctx(void *ctx) // TG
 {
     struct timer *t;
     for (int i = 0;
@@ -258,7 +257,7 @@ void expire_timer_context(void *ctx)
 #ifdef DEBUG_MALLOC
       printf("expire_timer_context: freeing timer with ctx %p\n",p);
 #endif
-      free_timerwithctx(p);
+      free_timerwithctx(p); // TG
     }
 
     /*
