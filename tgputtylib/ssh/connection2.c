@@ -34,7 +34,7 @@ static SshChannel *ssh2_lportfwd_open(
     ConnectionLayer *cl, const char *hostname, int port,
     const char *description, const SocketPeerInfo *pi, Channel *chan);
 static struct X11FakeAuth *ssh2_add_x11_display(
-	ConnectionLayer *cl, int authtype, struct X11Display *x11disp);
+    ConnectionLayer *cl, int authtype, struct X11Display *x11disp);
 static struct X11FakeAuth *ssh2_add_sharing_x11_display(
     ConnectionLayer *cl, int authtype, ssh_sharing_connstate *share_cs,
     share_channel *share_chan);
@@ -993,7 +993,7 @@ static void ssh2_connection_process_queue(PacketProtocolLayer *ppl)
      */
     if (ssh2_connection_need_antispoof_prompt(s)) {
         s->antispoof_prompt = ssh_ppl_new_prompts(&s->ppl);
-        s->antispoof_prompt->to_server = true;
+        s->antispoof_prompt->to_server = false;
         s->antispoof_prompt->from_server = false;
         s->antispoof_prompt->name = dupstr("Authentication successful");
         add_prompt(
@@ -1507,7 +1507,7 @@ static void ssh2_sharing_no_more_downstreams(ConnectionLayer *cl)
 }
 
 static struct X11FakeAuth *ssh2_add_x11_display(
-	ConnectionLayer *cl, int authtype, struct X11Display *disp)
+    ConnectionLayer *cl, int authtype, struct X11Display *disp)
 {
 #ifdef TGDLL
     return NULL;
@@ -1521,8 +1521,8 @@ static struct X11FakeAuth *ssh2_add_x11_display(
 }
 
 static struct X11FakeAuth *ssh2_add_sharing_x11_display(
-	ConnectionLayer *cl, int authtype, ssh_sharing_connstate *share_cs,
-	share_channel *share_chan)
+    ConnectionLayer *cl, int authtype, ssh_sharing_connstate *share_cs,
+    share_channel *share_chan)
 {
 #ifdef TGDLL
     return NULL;
@@ -1579,8 +1579,8 @@ static void ssh2_delete_sharing_channel(ConnectionLayer *cl, unsigned localid)
 }
 
 static void ssh2_send_packet_from_downstream(
-        ConnectionLayer *cl, unsigned id, int type,
-        const void *data, int datalen, const char *additional_log_text)
+    ConnectionLayer *cl, unsigned id, int type,
+    const void *data, int datalen, const char *additional_log_text)
 {
     struct ssh2_connection_state *s =
         container_of(cl, struct ssh2_connection_state, cl);

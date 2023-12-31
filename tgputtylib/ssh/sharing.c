@@ -532,8 +532,8 @@ void sharestate_free(ssh_sharing_state *sharestate)
     sfree(sharestate);
 }
 
-static struct share_halfchannel *share_add_halfchannel
-    (struct ssh_sharing_connstate *cs, unsigned server_id)
+static struct share_halfchannel *share_add_halfchannel(
+    struct ssh_sharing_connstate *cs, unsigned server_id)
 {
     struct share_halfchannel *hc = snew(struct share_halfchannel);
     hc->server_id = server_id;
@@ -546,8 +546,8 @@ static struct share_halfchannel *share_add_halfchannel
     }
 }
 
-static struct share_halfchannel *share_find_halfchannel
-    (struct ssh_sharing_connstate *cs, unsigned server_id)
+static struct share_halfchannel *share_find_halfchannel(
+    struct ssh_sharing_connstate *cs, unsigned server_id)
 {
     struct share_halfchannel dummyhc;
     dummyhc.server_id = server_id;
@@ -561,9 +561,9 @@ static void share_remove_halfchannel(struct ssh_sharing_connstate *cs,
     sfree(hc);
 }
 
-static struct share_channel *share_add_channel
-    (struct ssh_sharing_connstate *cs, unsigned downstream_id,
-     unsigned upstream_id, unsigned server_id, int state, int maxpkt)
+static struct share_channel *share_add_channel(
+    struct ssh_sharing_connstate *cs, unsigned downstream_id,
+    unsigned upstream_id, unsigned server_id, int state, int maxpkt)
 {
     struct share_channel *chan = snew(struct share_channel);
     chan->downstream_id = downstream_id;
@@ -600,16 +600,16 @@ static void share_channel_set_server_id(struct ssh_sharing_connstate *cs,
     add234(cs->channels_by_server, chan);
 }
 
-static struct share_channel *share_find_channel_by_upstream
-    (struct ssh_sharing_connstate *cs, unsigned upstream_id)
+static struct share_channel *share_find_channel_by_upstream(
+    struct ssh_sharing_connstate *cs, unsigned upstream_id)
 {
     struct share_channel dummychan;
     dummychan.upstream_id = upstream_id;
     return find234(cs->channels_by_us, &dummychan, NULL);
 }
 
-static struct share_channel *share_find_channel_by_server
-    (struct ssh_sharing_connstate *cs, unsigned server_id)
+static struct share_channel *share_find_channel_by_server(
+    struct ssh_sharing_connstate *cs, unsigned server_id)
 {
     struct share_channel dummychan;
     dummychan.server_id = server_id;
@@ -628,9 +628,8 @@ static void share_remove_channel(struct ssh_sharing_connstate *cs,
     sfree(chan);
 }
 
-static struct share_xchannel *share_add_xchannel
-    (struct ssh_sharing_connstate *cs,
-     unsigned upstream_id, unsigned server_id)
+static struct share_xchannel *share_add_xchannel(
+    struct ssh_sharing_connstate *cs, unsigned upstream_id, unsigned server_id)
 {
     struct share_xchannel *xc = snew(struct share_xchannel);
     xc->upstream_id = upstream_id;
@@ -649,16 +648,16 @@ static struct share_xchannel *share_add_xchannel
     return xc;
 }
 
-static struct share_xchannel *share_find_xchannel_by_upstream
-    (struct ssh_sharing_connstate *cs, unsigned upstream_id)
+static struct share_xchannel *share_find_xchannel_by_upstream(
+    struct ssh_sharing_connstate *cs, unsigned upstream_id)
 {
     struct share_xchannel dummyxc;
     dummyxc.upstream_id = upstream_id;
     return find234(cs->xchannels_by_us, &dummyxc, NULL);
 }
 
-static struct share_xchannel *share_find_xchannel_by_server
-    (struct ssh_sharing_connstate *cs, unsigned server_id)
+static struct share_xchannel *share_find_xchannel_by_server(
+    struct ssh_sharing_connstate *cs, unsigned server_id)
 {
     struct share_xchannel dummyxc;
     dummyxc.server_id = server_id;
@@ -666,16 +665,15 @@ static struct share_xchannel *share_find_xchannel_by_server
 }
 
 static void share_remove_xchannel(struct ssh_sharing_connstate *cs,
-                                 struct share_xchannel *xc)
+                                  struct share_xchannel *xc)
 {
     del234(cs->xchannels_by_us, xc);
     del234(cs->xchannels_by_server, xc);
     share_xchannel_free(xc);
 }
 
-static struct share_forwarding *share_add_forwarding
-    (struct ssh_sharing_connstate *cs,
-     const char *host, int port)
+static struct share_forwarding *share_add_forwarding(
+    struct ssh_sharing_connstate *cs, const char *host, int port)
 {
     struct share_forwarding *fwd = snew(struct share_forwarding);
     fwd->host = dupstr(host);
@@ -689,8 +687,8 @@ static struct share_forwarding *share_add_forwarding
     return fwd;
 }
 
-static struct share_forwarding *share_find_forwarding
-    (struct ssh_sharing_connstate *cs, const char *host, int port)
+static struct share_forwarding *share_find_forwarding(
+    struct ssh_sharing_connstate *cs, const char *host, int port)
 {
     struct share_forwarding dummyfwd, *ret;
     dummyfwd.host = dupstr(host);
@@ -991,8 +989,8 @@ static void share_xchannel_add_message(
     xc->msgtail = msg;
 }
 
-void share_dead_xchannel_respond(struct ssh_sharing_connstate *cs,
-                                 struct share_xchannel *xc)
+static void share_dead_xchannel_respond(struct ssh_sharing_connstate *cs,
+                                        struct share_xchannel *xc)
 {
     /*
      * Handle queued incoming messages from the server destined for an
@@ -1015,10 +1013,10 @@ void share_dead_xchannel_respond(struct ssh_sharing_connstate *cs,
             if (get_bool(src)) {
                 strbuf *packet = strbuf_new();
                 put_uint32(packet, xc->server_id);
-                ssh_send_packet_from_downstream
-                    (cs->parent->cl, cs->id, SSH2_MSG_CHANNEL_FAILURE,
-                     packet->s, packet->len,
-                     "downstream refused X channel open");
+                ssh_send_packet_from_downstream(
+                    cs->parent->cl, cs->id, SSH2_MSG_CHANNEL_FAILURE,
+                    packet->s, packet->len,
+                    "downstream refused X channel open");
                 strbuf_free(packet);
             }
         } else if (msg->type == SSH2_MSG_CHANNEL_CLOSE) {
@@ -1037,10 +1035,9 @@ void share_dead_xchannel_respond(struct ssh_sharing_connstate *cs,
     }
 }
 
-void share_xchannel_confirmation(struct ssh_sharing_connstate *cs,
-                                 struct share_xchannel *xc,
-                                 struct share_channel *chan,
-                                 unsigned downstream_window)
+static void share_xchannel_confirmation(
+    struct ssh_sharing_connstate *cs, struct share_xchannel *xc,
+    struct share_channel *chan, unsigned downstream_window)
 {
     strbuf *packet;
 
@@ -1074,8 +1071,8 @@ void share_xchannel_confirmation(struct ssh_sharing_connstate *cs,
     strbuf_free(packet);
 }
 
-void share_xchannel_failure(struct ssh_sharing_connstate *cs,
-                            struct share_xchannel *xc)
+static void share_xchannel_failure(struct ssh_sharing_connstate *cs,
+                                   struct share_xchannel *xc)
 {
     /*
      * If downstream refuses to open our X channel at all for some
@@ -1133,7 +1130,7 @@ void share_setup_x11_channel(ssh_sharing_connstate *cs, share_channel *chan,
                                packet->s, packet->len);
     strbuf_free(packet);
 
-	xc->window = client_adjusted_window + greeting_len;
+    xc->window = client_adjusted_window + greeting_len;
 
     /*
      * Send on a CHANNEL_OPEN to downstream.
@@ -1384,9 +1381,9 @@ static void share_got_pkt_from_downstream(struct ssh_sharing_connstate *cs,
                  * cleaned up if downstream goes away.
                  */
                 pkt[wantreplypos] = 1;
-                ssh_send_packet_from_downstream
-                    (cs->parent->cl, cs->id, type, pkt, pktlen,
-                     orig_wantreply ? NULL : "upstream added want_reply flag");
+                ssh_send_packet_from_downstream(
+                    cs->parent->cl, cs->id, type, pkt, pktlen,
+                    orig_wantreply ? NULL : "upstream added want_reply flag");
                 fwd = share_add_forwarding(cs, host, port);
                 ssh_sharing_queue_global_request(cs->parent->cl, cs);
 
@@ -1447,9 +1444,9 @@ static void share_got_pkt_from_downstream(struct ssh_sharing_connstate *cs,
                  * deleted even if downstream doesn't want to know.
                  */
                 pkt[wantreplypos] = 1;
-                ssh_send_packet_from_downstream
-                    (cs->parent->cl, cs->id, type, pkt, pktlen,
-                     orig_wantreply ? NULL : "upstream added want_reply flag");
+                ssh_send_packet_from_downstream(
+                    cs->parent->cl, cs->id, type, pkt, pktlen,
+                    orig_wantreply ? NULL : "upstream added want_reply flag");
                 ssh_sharing_queue_global_request(cs->parent->cl, cs);
 
                 /*
@@ -1636,82 +1633,82 @@ static void share_got_pkt_from_downstream(struct ssh_sharing_connstate *cs,
              * when we see an X11 channel open request we can know
              * whether it's one to handle locally or one to pass on to
              * a downstream, and if the latter, which one.
-			 */
-			if (ptrlen_eq_string(request_name, "x11-req")) {
-				bool want_reply, single_connection;
-				int screen;
-				ptrlen auth_data;
-				int auth_proto;
+             */
+            if (ptrlen_eq_string(request_name, "x11-req")) {
+                bool want_reply, single_connection;
+                int screen;
+                ptrlen auth_data;
+                int auth_proto;
 
 #ifdef TGDLL
 				chan = NULL;
 #else
 				chan = share_find_channel_by_server(cs, server_id);
 #endif
-				if (!chan) {
-					char *buf = dupprintf("X11 forwarding request for "
-										  "unrecognised channel %u", server_id);
-					share_disconnect(cs, buf);
-					sfree(buf);
-					return;
-				}
+                if (!chan) {
+                    char *buf = dupprintf("X11 forwarding request for "
+                                          "unrecognised channel %u", server_id);
+                    share_disconnect(cs, buf);
+                    sfree(buf);
+                    return;
+                }
 
 #ifndef TGDLL
-				/*
-				 * Pick apart the whole message to find the downstream
-				 * auth details.
-				 */
-				want_reply = get_bool(src);
-				single_connection = get_bool(src);
-				auth_proto = x11_identify_auth_proto(get_string(src));
-				auth_data = get_string(src);
-				screen = toint(get_uint32(src));
-				if (get_err(src)) {
-					err = dupprintf("Truncated CHANNEL_REQUEST(\"x11-req\")"
-									" packet");
-					goto confused;
-				}
+                /*
+                 * Pick apart the whole message to find the downstream
+                 * auth details.
+                 */
+                want_reply = get_bool(src);
+                single_connection = get_bool(src);
+                auth_proto = x11_identify_auth_proto(get_string(src));
+                auth_data = get_string(src);
+                screen = toint(get_uint32(src));
+                if (get_err(src)) {
+                    err = dupprintf("Truncated CHANNEL_REQUEST(\"x11-req\")"
+                                    " packet");
+                    goto confused;
+                }
 
-				if (auth_proto < 0) {
-					/* Reject due to not understanding downstream's
-					 * requested authorisation method. */
-					packet = strbuf_new();
-					put_uint32(packet, chan->downstream_id);
-					send_packet_to_downstream(
-						cs, SSH2_MSG_CHANNEL_FAILURE,
-						packet->s, packet->len, NULL);
-					strbuf_free(packet);
-					break;
-				}
+                if (auth_proto < 0) {
+                    /* Reject due to not understanding downstream's
+                     * requested authorisation method. */
+                    packet = strbuf_new();
+                    put_uint32(packet, chan->downstream_id);
+                    send_packet_to_downstream(
+                        cs, SSH2_MSG_CHANNEL_FAILURE,
+                        packet->s, packet->len, NULL);
+                    strbuf_free(packet);
+                    break;
+                }
 
-				chan->x11_auth_proto = auth_proto;
-				chan->x11_auth_data = x11_dehexify(auth_data,
-												   &chan->x11_auth_datalen);
-				chan->x11_auth_upstream =
-					ssh_add_sharing_x11_display(cs->parent->cl, auth_proto,
-												cs, chan);
-				chan->x11_one_shot = single_connection;
+                chan->x11_auth_proto = auth_proto;
+                chan->x11_auth_data = x11_dehexify(auth_data,
+                                                   &chan->x11_auth_datalen);
+                chan->x11_auth_upstream =
+                    ssh_add_sharing_x11_display(cs->parent->cl, auth_proto,
+                                                cs, chan);
+                chan->x11_one_shot = single_connection;
 
-				/*
-				 * Now construct a replacement X forwarding request,
-				 * containing our own auth data, and send that to the
-				 * server.
-				 */
-				packet = strbuf_new_nm();
-				put_uint32(packet, server_id);
-				put_stringz(packet, "x11-req");
-				put_bool(packet, want_reply);
-				put_bool(packet, single_connection);
-				put_stringz(packet, chan->x11_auth_upstream->protoname);
-				put_stringz(packet, chan->x11_auth_upstream->datastring);
-				put_uint32(packet, screen);
-				ssh_send_packet_from_downstream(
-					cs->parent->cl, cs->id, SSH2_MSG_CHANNEL_REQUEST,
-					packet->s, packet->len, NULL);
-				strbuf_free(packet);
+                /*
+                 * Now construct a replacement X forwarding request,
+                 * containing our own auth data, and send that to the
+                 * server.
+                 */
+                packet = strbuf_new_nm();
+                put_uint32(packet, server_id);
+                put_stringz(packet, "x11-req");
+                put_bool(packet, want_reply);
+                put_bool(packet, single_connection);
+                put_stringz(packet, chan->x11_auth_upstream->protoname);
+                put_stringz(packet, chan->x11_auth_upstream->datastring);
+                put_uint32(packet, screen);
+                ssh_send_packet_from_downstream(
+                    cs->parent->cl, cs->id, SSH2_MSG_CHANNEL_REQUEST,
+                    packet->s, packet->len, NULL);
+                strbuf_free(packet);
 
 #endif
-				break;
+                break;
             }
         }
 
@@ -1998,7 +1995,7 @@ static int share_listen_accepting(Plug *plug,
  * configurations which return the same string from this function will
  * be treated as potentially shareable with each other.
  */
-char *ssh_share_sockname(const char *host, int port, Conf *conf)
+static char *ssh_share_sockname(const char *host, int port, Conf *conf)
 {
     char *username = NULL;
     char *sockname;
