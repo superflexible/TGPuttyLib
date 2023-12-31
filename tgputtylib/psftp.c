@@ -1369,7 +1369,7 @@ int sftp_cmd_close(struct sftp_command *cmd)
     }
     do_sftp_cleanup();
 
-    return 0;
+    return 1;
 }
 
 void list_directory_from_sftp_warn_unsorted(void)
@@ -2814,6 +2814,10 @@ static void do_sftp_cleanup(void)
 		sfree(homedir);
 		homedir = NULL;
 	}
+    if (psftp_logctx) {
+        log_free(psftp_logctx);
+        psftp_logctx = NULL;
+    }
 	CP("sftpcleanX");
 }
 

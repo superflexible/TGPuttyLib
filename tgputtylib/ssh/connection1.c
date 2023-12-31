@@ -40,6 +40,7 @@ static const PacketProtocolLayerVtable ssh1_connection_vtable = {
     .special_cmd = ssh1_connection_special_cmd,
     .reconfigure = ssh1_connection_reconfigure,
     .queued_data_size = ssh_ppl_default_queued_data_size,
+    .final_output = ssh_ppl_default_final_output,
     .name = NULL, /* no layer names in SSH-1 */
 };
 
@@ -49,7 +50,7 @@ static SshChannel *ssh1_lportfwd_open(
     ConnectionLayer *cl, const char *hostname, int port,
     const char *description, const SocketPeerInfo *pi, Channel *chan);
 static struct X11FakeAuth *ssh1_add_x11_display(
-	ConnectionLayer *cl, int authtype, struct X11Display *disp);
+    ConnectionLayer *cl, int authtype, struct X11Display *disp);
 static bool ssh1_agent_forwarding_permitted(ConnectionLayer *cl);
 static void ssh1_terminal_size(ConnectionLayer *cl, int width, int height);
 static void ssh1_stdout_unthrottle(ConnectionLayer *cl, size_t bufsize);
@@ -632,7 +633,7 @@ static size_t ssh1channel_write(
 }
 
 static struct X11FakeAuth *ssh1_add_x11_display(
-	ConnectionLayer *cl, int authtype, struct X11Display *disp)
+    ConnectionLayer *cl, int authtype, struct X11Display *disp)
 {
 #ifdef TGDLL
     return NULL;

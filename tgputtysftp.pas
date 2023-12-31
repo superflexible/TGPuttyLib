@@ -20,7 +20,7 @@ uses {$ifdef SFFS}TGGlobal,Basics,{$endif}
 const MinimumLibraryBuildNum=8;
       cDummyClearedErrorCode=-1000; // this error code means there was no real error code
 
-      cConfCount=86; // 86 since 0.77, 85 since v0.76, 84 since PuTTY version 0.74, previously 83
+      cMaxConfCount=1000;
       cDumpSettingsFile=false;
 
 type TGPuttySFTPException=class(Exception);
@@ -35,8 +35,8 @@ type TGPuttySFTPException=class(Exception);
                                const verificationstatus:Integer;
                                var storehostkey:Boolean):Boolean of object;
 
-     TConfIntArray=array[0..cConfCount-1] of Integer;
-     TConfPAnsiCharArray=array[0..cConfCount-1] of PAnsiChar;
+     TConfIntArray=array[0..cMaxConfCount-1] of Integer;
+     TConfPAnsiCharArray=array[0..cMaxConfCount-1] of PAnsiChar;
 
      PConfIntArray=^TConfIntArray;
      PConfPAnsiCharArray=^TConfPAnsiCharArray;
@@ -430,13 +430,12 @@ begin
   if not tgputty_getconfigarrays(@FConfTypes,@FConfSubTypes,@FConfNames,@FConfCount) then
      raise TGPuttySFTPException.Create('tgputty_getconfigarrays failed - incorrect tgputtylib version?');
 
-  if FConfCount<>cConfCount then begin
-     printmessage_callback(PAnsiChar(AnsiString('Possibly tgputtylib version mismatch, it has ')+
-                            AnsiString(IntToStr(FConfCount))+
-                            AnsiString(' config strings, but we expected ')+
-                            AnsiString(IntToStr(cConfCount))),0,@Fcontext);
-     if FConfCount>cConfCount then
-        FConfCount:=cConfCount;
+  if FConfCount>cMaxConfCount then begin
+     printmessage_callback(PAnsiChar(AnsiString('Possible tgputtylib version mismatch, it has ')+
+                           AnsiString(IntToStr(FConfCount))+
+                           AnsiString(' config strings, but we expected max. ')+
+                           AnsiString(IntToStr(cMaxConfCount))),0,@Fcontext);
+     FConfCount:=cMaxConfCount;
      end;
 
   if cDumpSettingsFile then
