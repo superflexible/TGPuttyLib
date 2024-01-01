@@ -1,12 +1,12 @@
 #include "putty.h"
 #ifndef NO_GSSAPI
-#include "pgssapi.h"
-#include "sshgss.h"
-#include "sshgssc.h"
+#include "ssh/pgssapi.h"
+#include "ssh/gss.h"
+#include "ssh/gssc.h"
 
 /* Unix code to set up the GSSAPI library list. */
 
-#if !defined NO_LIBDL && !defined NO_GSSAPI
+#if !defined NO_LIBDL && !defined STATIC_GSSAPI && !defined NO_GSSAPI
 
 const int ngsslibs = 4;
 const char *const gsslibnames[4] = {
@@ -140,6 +140,7 @@ struct ssh_gss_liblist *ssh_gss_setup(Conf *conf)
     list->libraries = snew(struct ssh_gss_library);
     list->nlibraries = 1;
 
+    list->libraries[0].id = 0;
     list->libraries[0].gsslogmsg = "Using statically linked GSSAPI";
 
 #define BIND_GSS_FN(name) \

@@ -1,3 +1,24 @@
+/*
+ * Wrapper system around poll() that lets me treat it more or less
+ * like select(), but avoiding the inherent limitation of select()
+ * that it can't handle the full range of fds that are capable of
+ * existing.
+ *
+ * The pollwrapper structure contains the 'struct pollfd' array passed
+ * to poll() itself, and also a tree234 that maps each fd to its
+ * location in the list, which makes it convenient to add or remove
+ * individual fds from the system or change what events you're
+ * watching for on them. So the API is _shaped_ basically like select,
+ * even if none of the details are identical: from outside this
+ * module, a pollwrapper can be used wherever you'd otherwise have had
+ * an fd_set.
+ *
+ * Also, this module translate between the simple select r/w/x
+ * classification and the richer poll flags. We have to stick to r/w/x
+ * in this code base, because it ports to other systems where that's
+ * all you get.
+ */
+
 /* On some systems this is needed to get poll.h to define eg.. POLLRDNORM */
 #define _XOPEN_SOURCE
 
