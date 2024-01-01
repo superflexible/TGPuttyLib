@@ -12,6 +12,15 @@
 #include "console.h"
 #include "psftp.h" // TG for curlibctx
 
+#ifdef TGDLL
+ // prevent using standard input or output
+#undef STD_INPUT_HANDLE
+#undef STD_OUTPUT_HANDLE
+#define STD_INPUT_HANDLE ERROR
+#define STD_OUTPUT_HANDLE ERROR
+#define GetStdHandle ERROR
+#endif
+
 void cleanup_exit(int code,const bool cleanupglobalstoo) // TG
 {
     /*
@@ -33,19 +42,17 @@ void console_print_error_msg(const char *prefix, const char *msg)
     fflush(stderr);
 }
 
-SeatPromptResult console_confirm_ssh_host_key(
-    Seat *seat, const char *host, int port, const char *keytype,
-    char *keystr, SeatDialogText *text, HelpCtx helpctx,
-    void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
+/*
+ * Helper function to print the message from a SeatDialogText. Returns
+ * the final prompt to print on the input line, or NULL if a
+ * batch-mode abort is needed. In the latter case it will have printed
+ * the abort text already.
+ */
+static const char *console_print_seatdialogtext(SeatDialogText *text)
 {
-    HANDLE hin;
-    DWORD savemode, i;
     const char *prompt = NULL;
-
     stdio_sink errsink[1];
     stdio_sink_init(errsink, stderr);
-
-    char line[32];
 
     for (SeatDialogTextItem *item = text->items,
              *end = item+text->nitems; item < end; item++) {
@@ -66,7 +73,7 @@ SeatPromptResult console_confirm_ssh_host_key(
             if (console_batch_mode) {
                 fprintf(stderr, "%s\n", item->text);
                 fflush(stderr);
-                return SPR_SW_ABORT("Cannot confirm a host key in batch mode");
+                return NULL;
             }
             break;
           case SDT_PROMPT:
@@ -77,6 +84,22 @@ SeatPromptResult console_confirm_ssh_host_key(
         }
     }
     assert(prompt); /* something in the SeatDialogText should have set this */
+    return prompt;
+}
+
+SeatPromptResult console_confirm_ssh_host_key(
+    Seat *seat, const char *host, int port, const char *keytype,
+    char *keystr, SeatDialogText *text, HelpCtx helpctx,
+    void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
+{
+    HANDLE hin;
+    DWORD savemode, i;
+
+    const char *prompt = console_print_seatdialogtext(text);
+    if (!prompt)
+        return SPR_SW_ABORT("Cannot confirm a host key in batch mode");
+
+    char line[32];
 
     while (true) {
         fprintf(stderr,
@@ -86,12 +109,19 @@ SeatPromptResult console_confirm_ssh_host_key(
 
         line[0] = '\0';    /* fail safe if ReadFile returns no data */
 
-    if (curlibctx->get_input_callback) // TG
-       curlibctx->get_input_callback(line,sizeof(line)-1,curlibctx);
-    else
-    {
-        hin = GetStdHandle(STD_INPUT_HANDLE);
-        GetConsoleMode(hin, &savemode);
+	if (curlibctx->get_input_callback) // TG
+	{
+	   if (!curlibctx->get_input_callback(line,sizeof(line)-1,curlibctx))
+		  return SPR_USER_ABORT;
+	   break;
+	}
+	else
+	{
+#ifdef TGDLL
+		return SPR_SW_ABORT("Host key not recognized - get_input_callback not assigned");
+#else
+		hin = GetStdHandle(STD_INPUT_HANDLE);
+		GetConsoleMode(hin, &savemode);
         SetConsoleMode(hin, (savemode | ENABLE_ECHO_INPUT |
                              ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT));
         ReadFile(hin, line, sizeof(line) - 1, &i, NULL);
@@ -99,28 +129,29 @@ SeatPromptResult console_confirm_ssh_host_key(
 
         if (line[0] == 'i' || line[0] == 'I') {
             for (SeatDialogTextItem *item = text->items,
-                     *end = item+text->nitems; item < end; item++) {
-                switch (item->type) {
-                  case SDT_MORE_INFO_KEY:
-                    fprintf(stderr, "%s", item->text);
-                    break;
-                  case SDT_MORE_INFO_VALUE_SHORT:
-                    fprintf(stderr, ": %s\n", item->text);
-                    break;
-                  case SDT_MORE_INFO_VALUE_BLOB:
-                    fprintf(stderr, ":\n%s\n", item->text);
-                    break;
-                  default:
-                    break;
-                }
-            }
-        } else {
-            break;
-        }
-    }
-    }
+					 *end = item+text->nitems; item < end; item++) {
+				switch (item->type) {
+				  case SDT_MORE_INFO_KEY:
+					fprintf(stderr, "%s", item->text);
+					break;
+				  case SDT_MORE_INFO_VALUE_SHORT:
+					fprintf(stderr, ": %s\n", item->text);
+					break;
+				  case SDT_MORE_INFO_VALUE_BLOB:
+					fprintf(stderr, ":\n%s\n", item->text);
+					break;
+				  default:
+					break;
+				}
+			}
+		} else {
+			break;
+		}
+#endif
+	}
+	}
 
-    /* In case of misplaced reflexes from another program, also recognise 'q'
+	/* In case of misplaced reflexes from another program, also recognise 'q'
      * as 'abandon connection rather than trust this key' */
     if (line[0] != '\0' && line[0] != '\r' && line[0] != '\n' &&
         line[0] != 'q' && line[0] != 'Q') {
@@ -134,23 +165,23 @@ SeatPromptResult console_confirm_ssh_host_key(
 }
 
 SeatPromptResult console_confirm_weak_crypto_primitive(
-    Seat *seat, const char *algtype, const char *algname,
+    Seat *seat, SeatDialogText *text,
     void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
 {
+#ifdef TGDLL
+    return SPR_SW_ABORT("Weak crypto primitive detected");
+#else
     HANDLE hin;
     DWORD savemode, i;
 
-    char line[32];
-
-    fprintf(stderr, weakcrypto_msg_common_fmt, algtype, algname);
-
-    if (console_batch_mode) {
-        fputs(console_abandoned_msg, stderr);
+    const char *prompt = console_print_seatdialogtext(text);
+    if (!prompt)
         return SPR_SW_ABORT("Cannot confirm a weak crypto primitive "
                             "in batch mode");
-    }
 
-    fputs(console_continue_prompt, stderr);
+    char line[32];
+
+    fprintf(stderr, "%s (y/n) ", prompt);
     fflush(stderr);
 
     hin = GetStdHandle(STD_INPUT_HANDLE);
@@ -166,26 +197,27 @@ SeatPromptResult console_confirm_weak_crypto_primitive(
         fputs(console_abandoned_msg, stderr);
         return SPR_USER_ABORT;
     }
+#endif
 }
 
 SeatPromptResult console_confirm_weak_cached_hostkey(
-    Seat *seat, const char *algname, const char *betteralgs,
+    Seat *seat, SeatDialogText *text,
     void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
 {
+#ifdef TGDLL
+    return SPR_SW_ABORT("Weak cached host key detected");
+#else
     HANDLE hin;
     DWORD savemode, i;
 
-    char line[32];
-
-    fprintf(stderr, weakhk_msg_common_fmt, algname, betteralgs);
-
-    if (console_batch_mode) {
-        fputs(console_abandoned_msg, stderr);
+    const char *prompt = console_print_seatdialogtext(text);
+    if (!prompt)
         return SPR_SW_ABORT("Cannot confirm a weak cached host key "
                             "in batch mode");
-    }
 
-    fputs(console_continue_prompt, stderr);
+    char line[32];
+
+    fprintf(stderr, "%s (y/n) ", prompt);
     fflush(stderr);
 
     hin = GetStdHandle(STD_INPUT_HANDLE);
@@ -201,11 +233,16 @@ SeatPromptResult console_confirm_weak_cached_hostkey(
         fputs(console_abandoned_msg, stderr);
         return SPR_USER_ABORT;
     }
+#endif	
 }
 
 bool is_interactive(void)
 {
+#ifdef TGDLL
+    return false;
+#else
     return is_console_handle(GetStdHandle(STD_INPUT_HANDLE));
+#endif   
 }
 
 bool console_antispoof_prompt = true;
@@ -256,6 +293,9 @@ bool console_has_mixed_input_stream(Seat *seat)
 int console_askappend(LogPolicy *lp, Filename *filename,
                       void (*callback)(void *ctx, int result), void *ctx)
 {
+#ifdef TGDLL
+    return 1; // append log file
+#else	
     HANDLE hin;
     DWORD savemode, i;
 
@@ -295,6 +335,7 @@ int console_askappend(LogPolicy *lp, Filename *filename,
         return 1;
     else
         return 0;
+#endif
 }
 
 /*
@@ -371,7 +412,10 @@ static void console_write(HANDLE hout, ptrlen data)
 
 SeatPromptResult console_get_userpass_input(prompts_t *p)
 {
-    HANDLE hin = INVALID_HANDLE_VALUE, hout = INVALID_HANDLE_VALUE;
+#ifdef TGDLL
+	return SPR_SW_ABORT("Username or password missing");
+#else
+	HANDLE hin = INVALID_HANDLE_VALUE, hout = INVALID_HANDLE_VALUE;
     size_t curr_prompt;
 
     /*
@@ -397,7 +441,7 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
         if (hin == INVALID_HANDLE_VALUE) {
             fprintf(stderr, "Cannot get standard input handle\n");
             NORMALCODE(cleanup_exit(1);) // TG
-        }
+		}
     }
 
     /*
@@ -423,7 +467,7 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
     }
     /* ...but we always print any `instruction'. */
     if (p->instruction) {
-        ptrlen plinst = ptrlen_from_asciz(p->instruction);
+		ptrlen plinst = ptrlen_from_asciz(p->instruction);
         console_write(hout, plinst);
         if (!ptrlen_endswith(plinst, PTRLEN_LITERAL("\n"), NULL))
             console_write(hout, PTRLEN_LITERAL("\n"));
@@ -449,7 +493,7 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
         while (1) {
             /*
              * Amount of data to try to read from the console in one
-             * go. This isn't completely arbitrary: a user reported
+			 * go. This isn't completely arbitrary: a user reported
              * that trying to read more than 31366 bytes at a time
              * would fail with ERROR_NOT_ENOUGH_MEMORY on Windows 7,
              * and Ruby's Win32 support module has evidence of a
@@ -475,7 +519,7 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
                 spr = make_spr_sw_abort_winerror(
                     "Error reading from console", GetLastError());
                 break;
-            } else if (ret == 0) {
+			} else if (ret == 0) {
                 /* Regard EOF on the terminal as a deliberate user-abort */
                 failed = true;
                 spr = SPR_USER_ABORT;
@@ -498,5 +542,6 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
             return spr;
     }
 
-    return SPR_OK;
+	return SPR_OK;
+#endif
 }

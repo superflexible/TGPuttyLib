@@ -872,6 +872,68 @@ SeatPromptResult verify_ssh_host_key(
     char **fingerprints, int ca_count,
     void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
 {
+	/*
+	 * First, check if the Conf includes a manual specification of the
+	 * expected host key. If so, that completely supersedes everything
+	 * else, including the normal host key cache _and_ including
+	 * manual overrides: we return success or failure immediately,
+	 * entirely based on whether the key matches the Conf.
+	 */
+	if (conf_get_str_nthstrkey(conf, CONF_ssh_manual_hostkeys, 0)) {
+		if (fingerprints) {
+			for (size_t i = 0; i < SSH_N_FPTYPES; i++) {
+				/*
+				 * Each fingerprint string we've been given will have
+				 * things like 'ssh-rsa 2048' at the front of it. Strip
+				 * those off and narrow down to just the hash at the end
+				 * of the string.
+				 */
+				const char *fingerprint = fingerprints[i];
+				if (!fingerprint)
+					continue;
+				const char *p = strrchr(fingerprint, ' ');
+				fingerprint = p ? p+1 : fingerprint;
+				if (conf_get_str_str_opt(conf, CONF_ssh_manual_hostkeys,
+										 fingerprint))
+					return SPR_OK;
+			}
+		}
+
+		if (key) {
+			/*
+			 * Construct the base64-encoded public key blob and see if
+			 * that's listed.
+			 */
+			strbuf *binblob;
+			char *base64blob;
+			int atoms, i;
+			binblob = strbuf_new();
+			ssh_key_public_blob(key, BinarySink_UPCAST(binblob));
+			atoms = (binblob->len + 2) / 3;
+			base64blob = snewn(atoms * 4 + 1, char);
+			for (i = 0; i < atoms; i++)
+				base64_encode_atom(binblob->u + 3*i,
+								   binblob->len - 3*i, base64blob + 4*i);
+			base64blob[atoms * 4] = '\0';
+			strbuf_free(binblob);
+			if (conf_get_str_str_opt(conf, CONF_ssh_manual_hostkeys,
+									 base64blob)) {
+				sfree(base64blob);
+				return SPR_OK;
+			}
+			sfree(base64blob);
+		}
+
+		return SPR_SW_ABORT("Host key not in manually configured list");
+	}
+
+	/*
+	 * Next, check the host key cache.
+	 */
+	int storage_status = check_stored_host_key(host, port, keytype, keystr);
+	if (storage_status == 0) /* matching key was found in the cache */
+		return SPR_OK;
+
 	// call TGPuttyLib callback
 	if (curlibctx->verify_host_key_callback) // TG
 	{
@@ -879,7 +941,7 @@ SeatPromptResult verify_ssh_host_key(
 	   char fp[1000];
 	   snprintf(fp,1000,"%s\n%s\n",fingerprints[SSH_FPTYPE_MD5],fingerprints[SSH_FPTYPE_SHA256]);
 	   bool OK=curlibctx->verify_host_key_callback(host, port, keytype, keystr,
-						   fp, 0, &storeit, curlibctx);
+						   fp, storage_status, &storeit, curlibctx);
 	   if (storeit)
 		  store_host_key(host, port, keytype, keystr);
 	   if (OK)
@@ -888,70 +950,8 @@ SeatPromptResult verify_ssh_host_key(
 		  return SPR_USER_ABORT;
 	}
 
-    /*
-     * First, check if the Conf includes a manual specification of the
-     * expected host key. If so, that completely supersedes everything
-     * else, including the normal host key cache _and_ including
-     * manual overrides: we return success or failure immediately,
-     * entirely based on whether the key matches the Conf.
-     */
-    if (conf_get_str_nthstrkey(conf, CONF_ssh_manual_hostkeys, 0)) {
-        if (fingerprints) {
-            for (size_t i = 0; i < SSH_N_FPTYPES; i++) {
-                /*
-                 * Each fingerprint string we've been given will have
-                 * things like 'ssh-rsa 2048' at the front of it. Strip
-                 * those off and narrow down to just the hash at the end
-                 * of the string.
-                 */
-                const char *fingerprint = fingerprints[i];
-                if (!fingerprint)
-                    continue;
-                const char *p = strrchr(fingerprint, ' ');
-                fingerprint = p ? p+1 : fingerprint;
-                if (conf_get_str_str_opt(conf, CONF_ssh_manual_hostkeys,
-                                         fingerprint))
-                    return SPR_OK;
-            }
-        }
-
-        if (key) {
-            /*
-             * Construct the base64-encoded public key blob and see if
-             * that's listed.
-             */
-            strbuf *binblob;
-            char *base64blob;
-            int atoms, i;
-            binblob = strbuf_new();
-            ssh_key_public_blob(key, BinarySink_UPCAST(binblob));
-            atoms = (binblob->len + 2) / 3;
-            base64blob = snewn(atoms * 4 + 1, char);
-            for (i = 0; i < atoms; i++)
-                base64_encode_atom(binblob->u + 3*i,
-                                   binblob->len - 3*i, base64blob + 4*i);
-            base64blob[atoms * 4] = '\0';
-            strbuf_free(binblob);
-            if (conf_get_str_str_opt(conf, CONF_ssh_manual_hostkeys,
-                                     base64blob)) {
-                sfree(base64blob);
-                return SPR_OK;
-            }
-            sfree(base64blob);
-        }
-
-        return SPR_SW_ABORT("Host key not in manually configured list");
-    }
-
-    /*
-     * Next, check the host key cache.
-     */
-    int storage_status = check_stored_host_key(host, port, keytype, keystr);
-    if (storage_status == 0) /* matching key was found in the cache */
-        return SPR_OK;
-
-    /*
-     * The key is either missing from the cache, or does not match.
+	/*
+	 * The key is either missing from the cache, or does not match.
      * Either way, fall back to an interactive prompt from the Seat.
      */
     SeatDialogText *text = seat_dialog_text_new();
@@ -1107,6 +1107,110 @@ SeatPromptResult verify_ssh_host_key(
 
     SeatPromptResult toret = seat_confirm_ssh_host_key(
         iseat, host, port, keytype, keystr, text, helpctx, callback, ctx);
+    seat_dialog_text_free(text);
+    return toret;
+}
+
+SeatPromptResult confirm_weak_crypto_primitive(
+    InteractionReadySeat iseat, const char *algtype, const char *algname,
+    void (*callback)(void *ctx, SeatPromptResult result), void *ctx,
+    WeakCryptoReason wcr)
+{
+    SeatDialogText *text = seat_dialog_text_new();
+    const SeatDialogPromptDescriptions *pds =
+        seat_prompt_descriptions(iseat.seat);
+
+    seat_dialog_text_append(text, SDT_TITLE, "%s Security Alert", appname);
+
+    switch (wcr) {
+      case WCR_BELOW_THRESHOLD:
+        seat_dialog_text_append(
+            text, SDT_PARA,
+            "The first %s supported by the server is %s, "
+            "which is below the configured warning threshold.",
+            algtype, algname);
+        break;
+      case WCR_TERRAPIN:
+      case WCR_TERRAPIN_AVOIDABLE:
+        seat_dialog_text_append(
+            text, SDT_PARA,
+            "The %s selected for this session is %s, "
+            "which, with this server, is vulnerable to the 'Terrapin' attack "
+            "CVE-2023-48795, potentially allowing an attacker to modify "
+            "the encrypted session.",
+            algtype, algname);
+        seat_dialog_text_append(
+            text, SDT_PARA,
+            "Upgrading, patching, or reconfiguring this SSH server is the "
+            "best way to avoid this vulnerability, if possible.");
+        if (wcr == WCR_TERRAPIN_AVOIDABLE) {
+            seat_dialog_text_append(
+                text, SDT_PARA,
+                "You can also avoid this vulnerability by abandoning "
+                "this connection, moving ChaCha20 to below the "
+                "'warn below here' line in PuTTY's SSH cipher "
+                "configuration (so that an algorithm without the "
+                "vulnerability will be selected), and starting a new "
+                "connection.");
+        }
+        break;
+      default:
+        unreachable("bad WeakCryptoReason");
+    }
+
+    /* In batch mode, we print the above information and then this
+     * abort message, and stop. */
+    seat_dialog_text_append(text, SDT_BATCH_ABORT, "Connection abandoned.");
+
+    seat_dialog_text_append(
+        text, SDT_PARA, "To accept the risk and continue, %s. "
+        "To abandon the connection, %s.",
+        pds->weak_accept_action, pds->weak_cancel_action);
+
+    seat_dialog_text_append(text, SDT_PROMPT, "Continue with connection?");
+
+    SeatPromptResult toret = seat_confirm_weak_crypto_primitive(
+        iseat, text, callback, ctx);
+    seat_dialog_text_free(text);
+    return toret;
+}
+
+SeatPromptResult confirm_weak_cached_hostkey(
+    InteractionReadySeat iseat, const char *algname, const char **betteralgs,
+    void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
+{
+    SeatDialogText *text = seat_dialog_text_new();
+    const SeatDialogPromptDescriptions *pds =
+        seat_prompt_descriptions(iseat.seat);
+
+    seat_dialog_text_append(text, SDT_TITLE, "%s Security Alert", appname);
+
+    seat_dialog_text_append(
+        text, SDT_PARA,
+        "The first host key type we have stored for this server "
+        "is %s, which is below the configured warning threshold.", algname);
+
+    seat_dialog_text_append(
+        text, SDT_PARA,
+        "The server also provides the following types of host key "
+        "above the threshold, which we do not have stored:");
+
+    for (const char **p = betteralgs; *p; p++)
+        seat_dialog_text_append(text, SDT_DISPLAY, "%s", *p);
+
+    /* In batch mode, we print the above information and then this
+     * abort message, and stop. */
+    seat_dialog_text_append(text, SDT_BATCH_ABORT, "Connection abandoned.");
+
+    seat_dialog_text_append(
+        text, SDT_PARA, "To accept the risk and continue, %s. "
+        "To abandon the connection, %s.",
+        pds->weak_accept_action, pds->weak_cancel_action);
+
+    seat_dialog_text_append(text, SDT_PROMPT, "Continue with connection?");
+
+    SeatPromptResult toret = seat_confirm_weak_cached_hostkey(
+        iseat, text, callback, ctx);
     seat_dialog_text_free(text);
     return toret;
 }

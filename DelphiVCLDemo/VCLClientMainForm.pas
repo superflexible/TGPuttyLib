@@ -367,7 +367,7 @@ begin
   try
     with Reg do begin
       RootKey:=HKEY_CURRENT_USER;
-      if OpenKey('SOFWARE\tgputty',true) then begin
+      if OpenKey('SOFTWARE\tgputty',true) then begin
          edURL.Text:=ReadString('URL');
          edUserName.Text:=ReadString('UserName');
          edPassword.Text:=ReadString('Password');
@@ -407,7 +407,7 @@ begin
   try
     with Reg do begin
       RootKey:=HKEY_CURRENT_USER;
-      if OpenKey('SOFWARE\tgputty',true) then begin
+      if OpenKey('SOFTWARE\tgputty',true) then begin
          WriteString('URL',edURL.Text);
          WriteString('UserName',edUserName.Text);
          if cbSavePassword.Checked then

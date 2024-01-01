@@ -5,7 +5,9 @@
 #include <assert.h>
 
 #include "putty.h"
+#ifndef TGDLL
 #include "terminal.h"
+#endif
 #include "misc.h"
 
 #include "tglibcver.h"

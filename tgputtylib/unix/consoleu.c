@@ -19,29 +19,39 @@
 #include "console.h"
 #include "psftp.h" // TG for curlibctx
 
+#ifdef TGDLL
+#define STDERR_FILENO ERROR
+#endif
+
 static struct termios orig_termios_stderr;
 static bool stderr_is_a_tty;
 
 void stderr_tty_init()
 {
-    /* Ensure that if stderr is a tty, we can get it back to a sane state. */
-    if (isatty(STDERR_FILENO)) {
-        stderr_is_a_tty = true;
-        tcgetattr(STDERR_FILENO, &orig_termios_stderr);
-    }
+#ifndef TGDLL
+	/* Ensure that if stderr is a tty, we can get it back to a sane state. */
+	if (isatty(STDERR_FILENO)) {
+		stderr_is_a_tty = true;
+		tcgetattr(STDERR_FILENO, &orig_termios_stderr);
+	}
+#endif
 }
 
 void premsg(struct termios *cf)
 {
-    if (stderr_is_a_tty) {
-        tcgetattr(STDERR_FILENO, cf);
-        tcsetattr(STDERR_FILENO, TCSADRAIN, &orig_termios_stderr);
-    }
+#ifndef TGDLL
+	if (stderr_is_a_tty) {
+		tcgetattr(STDERR_FILENO, cf);
+		tcsetattr(STDERR_FILENO, TCSADRAIN, &orig_termios_stderr);
+	}
+#endif
 }
 void postmsg(struct termios *cf)
 {
-    if (stderr_is_a_tty)
-        tcsetattr(STDERR_FILENO, TCSADRAIN, cf);
+#ifndef TGDLL
+	if (stderr_is_a_tty)
+		tcsetattr(STDERR_FILENO, TCSADRAIN, cf);
+#endif
 }
 
 void cleanup_exit(int code,const bool cleanupglobalstoo) // TG
@@ -103,34 +113,17 @@ static int block_and_read(int fd, void *buf, size_t len)
     return ret;
 }
 
-SeatPromptResult console_confirm_ssh_host_key(
-    Seat *seat, const char *host, int port, const char *keytype,
-    char *keystr, SeatDialogText *text, HelpCtx helpctx,
-    void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
+/*
+ * Helper function to print the message from a SeatDialogText. Returns
+ * the final prompt to print on the input line, or NULL if a
+ * batch-mode abort is needed. In the latter case it will have printed
+ * the abort text already.
+ */
+static const char *console_print_seatdialogtext(SeatDialogText *text)
 {
-    char line[32];
-    struct termios cf;
     const char *prompt = NULL;
-
     stdio_sink errsink[1];
     stdio_sink_init(errsink, stderr);
-
-    if (curlibctx->verify_host_key_callback) // TG
-    {
-       bool storeit=false;
-       char fp[1000];
-       snprintf(fp,1000,"%s\n%s\n",fingerprints[SSH_FPTYPE_MD5],fingerprints[SSH_FPTYPE_SHA256]);
-       bool OK=curlibctx->verify_host_key_callback(host, port, keytype, keystr,
-						   fp, ret, &storeit, curlibctx);
-       if (storeit)
-          store_host_key(host, port, keytype, keystr);
-       if (OK)
-          return SPR_OK;
-       else
-          return SPR_USER_ABORT;
-    }
-	
-    premsg(&cf);
 
     for (SeatDialogTextItem *item = text->items,
              *end = item+text->nitems; item < end; item++) {
@@ -151,8 +144,7 @@ SeatPromptResult console_confirm_ssh_host_key(
             if (console_batch_mode) {
                 fprintf(stderr, "%s\n", item->text);
                 fflush(stderr);
-                postmsg(&cf);
-                return SPR_SW_ABORT("Cannot confirm a host key in batch mode");
+                return NULL;
             }
             break;
           case SDT_PROMPT:
@@ -162,7 +154,26 @@ SeatPromptResult console_confirm_ssh_host_key(
             break;
         }
     }
+
     assert(prompt); /* something in the SeatDialogText should have set this */
+    return prompt;
+}
+
+SeatPromptResult console_confirm_ssh_host_key(
+    Seat *seat, const char *host, int port, const char *keytype,
+    char *keystr, SeatDialogText *text, HelpCtx helpctx,
+    void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
+{
+    char line[32];
+    struct termios cf;
+
+    premsg(&cf);
+
+    const char *prompt = console_print_seatdialogtext(text);
+    if (!prompt) {
+        postmsg(&cf);
+        return SPR_SW_ABORT("Cannot confirm a host key in batch mode");
+    }
 
     while (true) {
         fprintf(stderr,
@@ -173,18 +184,21 @@ SeatPromptResult console_confirm_ssh_host_key(
        curlibctx->get_input_callback(line,sizeof(line)-1,curlibctx);
     else
     {
-        struct termios oldmode, newmode;
-        tcgetattr(0, &oldmode);
-        newmode = oldmode;
-        newmode.c_lflag |= ECHO | ISIG | ICANON;
-        tcsetattr(0, TCSANOW, &newmode);
-        line[0] = '\0';
-        if (block_and_read(0, line, sizeof(line) - 1) <= 0)
-            /* handled below */;
-        tcsetattr(0, TCSANOW, &oldmode);
+#ifdef TGDLL
+		return SPR_SW_ABORT("Host key not recognized - get_input_callback not assigned");
+#else
+		struct termios oldmode, newmode;
+		tcgetattr(0, &oldmode);
+		newmode = oldmode;
+		newmode.c_lflag |= ECHO | ISIG | ICANON;
+		tcsetattr(0, TCSANOW, &newmode);
+		line[0] = '\0';
+		if (block_and_read(0, line, sizeof(line) - 1) <= 0)
+			/* handled below */;
+		tcsetattr(0, TCSANOW, &oldmode);
 
-        if (line[0] == 'i' || line[0] == 'I') {
-            for (SeatDialogTextItem *item = text->items,
+		if (line[0] == 'i' || line[0] == 'I') {
+			for (SeatDialogTextItem *item = text->items,
                      *end = item+text->nitems; item < end; item++) {
                 switch (item->type) {
                   case SDT_MORE_INFO_KEY:
@@ -202,8 +216,9 @@ SeatPromptResult console_confirm_ssh_host_key(
             }
         } else {
             break;
-        }
-    }
+		}
+#endif
+	}
 	}
 
     /* In case of misplaced reflexes from another program, also recognise 'q'
@@ -222,23 +237,25 @@ SeatPromptResult console_confirm_ssh_host_key(
 }
 
 SeatPromptResult console_confirm_weak_crypto_primitive(
-    Seat *seat, const char *algtype, const char *algname,
+    Seat *seat, SeatDialogText *text,
     void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
 {
+#ifdef TGDLL   
+    return SPR_SW_ABORT("Weak crypto primitive detected");
+#else	
     char line[32];
     struct termios cf;
 
     premsg(&cf);
-    fprintf(stderr, weakcrypto_msg_common_fmt, algtype, algname);
 
-    if (console_batch_mode) {
-        fputs(console_abandoned_msg, stderr);
+    const char *prompt = console_print_seatdialogtext(text);
+    if (!prompt) {
         postmsg(&cf);
         return SPR_SW_ABORT("Cannot confirm a weak crypto primitive "
                             "in batch mode");
     }
 
-    fputs(console_continue_prompt, stderr);
+    fprintf(stderr, "%s (y/n) ", prompt);
     fflush(stderr);
 
     {
@@ -261,26 +278,29 @@ SeatPromptResult console_confirm_weak_crypto_primitive(
         postmsg(&cf);
         return SPR_USER_ABORT;
     }
+#endif	
 }
 
 SeatPromptResult console_confirm_weak_cached_hostkey(
-    Seat *seat, const char *algname, const char *betteralgs,
+    Seat *seat, SeatDialogText *text,
     void (*callback)(void *ctx, SeatPromptResult result), void *ctx)
 {
+#ifdef TGDLL   
+    return SPR_SW_ABORT("Weak cached host key detected");
+#else	
     char line[32];
     struct termios cf;
 
     premsg(&cf);
-    fprintf(stderr, weakhk_msg_common_fmt, algname, betteralgs);
 
-    if (console_batch_mode) {
-        fputs(console_abandoned_msg, stderr);
+    const char *prompt = console_print_seatdialogtext(text);
+    if (!prompt) {
         postmsg(&cf);
         return SPR_SW_ABORT("Cannot confirm a weak cached host key "
                             "in batch mode");
     }
 
-    fputs(console_continue_prompt, stderr);
+    fprintf(stderr, "%s (y/n) ", prompt);
     fflush(stderr);
 
     {
@@ -303,6 +323,7 @@ SeatPromptResult console_confirm_weak_cached_hostkey(
         postmsg(&cf);
         return SPR_USER_ABORT;
     }
+#endif
 }
 
 /*
@@ -312,6 +333,9 @@ SeatPromptResult console_confirm_weak_cached_hostkey(
 int console_askappend(LogPolicy *lp, Filename *filename,
                       void (*callback)(void *ctx, int result), void *ctx)
 {
+#ifdef TGDLL
+    return 1; // append log file
+#else	
     static const char msgtemplate[] =
         "The session log file \"%.*s\" already exists.\n"
         "You can overwrite it with a new session log,\n"
@@ -356,6 +380,7 @@ int console_askappend(LogPolicy *lp, Filename *filename,
         return 1;
     else
         return 0;
+#endif		
 }
 
 bool console_antispoof_prompt = true;
@@ -461,34 +486,39 @@ StripCtrlChars *console_stripctrl_new(
  * the basis that it might have been sent by a hostile SSH server
  * doing malicious keyboard-interactive.
  */
+#ifndef TGDLL
 static void console_open(FILE **outfp, int *infd)
 {
-    int fd;
+	int fd;
 
-    if ((fd = open("/dev/tty", O_RDWR)) >= 0) {
-        *infd = fd;
-        *outfp = fdopen(*infd, "w");
-    } else {
-        *infd = 0;
-        *outfp = stderr;
-    }
+	if ((fd = open("/dev/tty", O_RDWR)) >= 0) {
+		*infd = fd;
+		*outfp = fdopen(*infd, "w");
+	} else {
+		*infd = 0;
+		*outfp = stderr;
+	}
 }
 static void console_close(FILE *outfp, int infd)
 {
-    if (outfp != stderr)
-        fclose(outfp);             /* will automatically close infd too */
+	if (outfp != stderr)
+		fclose(outfp);             /* will automatically close infd too */
 }
 
 static void console_write(FILE *outfp, ptrlen data)
 {
-    fwrite(data.ptr, 1, data.len, outfp);
-    fflush(outfp);
+	fwrite(data.ptr, 1, data.len, outfp);
+	fflush(outfp);
 }
+#endif
 
 SeatPromptResult console_get_userpass_input(prompts_t *p)
 {
-    size_t curr_prompt;
-    FILE *outfp = NULL;
+#ifdef TGDLL
+	return SPR_SW_ABORT("Username or password missing");
+#else
+	size_t curr_prompt;
+	FILE *outfp = NULL;
     int infd;
 
     /*
@@ -514,7 +544,7 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
         ptrlen plname = ptrlen_from_asciz(p->name);
         console_write(outfp, plname);
         if (!ptrlen_endswith(plname, PTRLEN_LITERAL("\n"), NULL))
-            console_write(outfp, PTRLEN_LITERAL("\n"));
+			console_write(outfp, PTRLEN_LITERAL("\n"));
     }
     /* ...but we always print any `instruction'. */
     if (p->instruction) {
@@ -542,7 +572,7 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
 
         bool failed = false;
         SeatPromptResult spr;
-        while (1) {
+		while (1) {
             size_t toread = 65536;
             size_t prev_result_len = pr->result->len;
             void *ptr = strbuf_append(pr->result, toread);
@@ -571,23 +601,28 @@ SeatPromptResult console_get_userpass_input(prompts_t *p)
 
         tcsetattr(infd, TCSANOW, &oldmode);
 
-        if (!pr->echo)
-            console_write(outfp, PTRLEN_LITERAL("\n"));
+		if (!pr->echo)
+			console_write(outfp, PTRLEN_LITERAL("\n"));
 
-        if (failed) {
-            console_close(outfp, infd);
-            return spr;
-        }
-    }
+		if (failed) {
+			console_close(outfp, infd);
+			return spr;
+		}
+	}
 
-    console_close(outfp, infd);
+	console_close(outfp, infd);
 
-    return SPR_OK;
+	return SPR_OK;
+#endif
 }
 
 bool is_interactive(void)
 {
+#ifdef TGDLL
+    return false;
+#else	
     return isatty(0);
+#endif	
 }
 
 /*

@@ -47,7 +47,7 @@ settings_w *open_settings_w(const char *sessionname, char **errmsg)
     strbuf *sb = strbuf_new();
     escape_registry_key(sessionname, sb);
 
-    HKEY sesskey = open_regkey(true, HKEY_CURRENT_USER, puttystr, sb->s);
+    HKEY sesskey = create_regkey(HKEY_CURRENT_USER, puttystr, sb->s);
     if (!sesskey) {
         *errmsg = dupprintf("Unable to create registry key\n"
                             "HKEY_CURRENT_USER\\%s\\%s", puttystr, sb->s);
@@ -92,7 +92,7 @@ settings_r *open_settings_r(const char *sessionname)
 
     strbuf *sb = strbuf_new();
     escape_registry_key(sessionname, sb);
-    HKEY sesskey = open_regkey(false, HKEY_CURRENT_USER, puttystr, sb->s);
+    HKEY sesskey = open_regkey_ro(HKEY_CURRENT_USER, puttystr, sb->s);
     strbuf_free(sb);
 
     if (!sesskey)
@@ -203,7 +203,7 @@ void close_settings_r(settings_r *handle)
 
 void del_settings(const char *sessionname)
 {
-    HKEY rkey = open_regkey(false, HKEY_CURRENT_USER, puttystr);
+    HKEY rkey = open_regkey_rw(HKEY_CURRENT_USER, puttystr);
     if (!rkey)
         return;
 
@@ -226,7 +226,7 @@ struct settings_e {
 #ifndef TGDLL
 settings_e *enum_settings_start(void)
 {
-    HKEY key = open_regkey(false, HKEY_CURRENT_USER, puttystr);
+    HKEY key = open_regkey_ro(HKEY_CURRENT_USER, puttystr);
     if (!key)
         return NULL;
 
@@ -274,8 +274,8 @@ int check_stored_host_key(const char *hostname, int port,
     strbuf *regname = strbuf_new();
     hostkey_regname(regname, hostname, port, keytype);
 
-    HKEY rkey = open_regkey(false, HKEY_CURRENT_USER,
-                            PUTTY_REG_POS "\\SshHostKeys");
+    HKEY rkey = open_regkey_ro(HKEY_CURRENT_USER,
+                               PUTTY_REG_POS "\\SshHostKeys");
     if (!rkey) {
         strbuf_free(regname);
         return 1;                      /* key does not exist in registry */
@@ -373,8 +373,8 @@ void store_host_key(const char *hostname, int port,
     strbuf *regname = strbuf_new();
     hostkey_regname(regname, hostname, port, keytype);
 
-    HKEY rkey = open_regkey(true, HKEY_CURRENT_USER,
-                            PUTTY_REG_POS "\\SshHostKeys");
+    HKEY rkey = create_regkey(HKEY_CURRENT_USER,
+                              PUTTY_REG_POS "\\SshHostKeys");
     if (rkey) {
         put_reg_sz(rkey, regname->s, key);
         close_regkey(rkey);
@@ -393,7 +393,7 @@ host_ca_enum *enum_host_ca_start(void)
     host_ca_enum *e;
     HKEY key;
 
-    if (!(key = open_regkey(false, HKEY_CURRENT_USER, host_ca_key)))
+    if (!(key = open_regkey_ro(HKEY_CURRENT_USER, host_ca_key)))
         return NULL;
 
     e = snew(host_ca_enum);
@@ -428,7 +428,7 @@ host_ca *host_ca_load(const char *name)
 
     sb = strbuf_new();
     escape_registry_key(name, sb);
-    HKEY rkey = open_regkey(false, HKEY_CURRENT_USER, host_ca_key, sb->s);
+    HKEY rkey = open_regkey_ro(HKEY_CURRENT_USER, host_ca_key, sb->s);
     strbuf_free(sb);
 
     if (!rkey)
@@ -476,7 +476,7 @@ char *host_ca_save(host_ca *hca)
 
     strbuf *sb = strbuf_new();
     escape_registry_key(hca->name, sb);
-    HKEY rkey = open_regkey(true, HKEY_CURRENT_USER, host_ca_key, sb->s);
+    HKEY rkey = create_regkey(HKEY_CURRENT_USER, host_ca_key, sb->s);
     if (!rkey) {
         char *err = dupprintf("Unable to create registry key\n"
                               "HKEY_CURRENT_USER\\%s\\%s", host_ca_key, sb->s);
@@ -505,7 +505,7 @@ char *host_ca_save(host_ca *hca)
 
 char *host_ca_delete(const char *name)
 {
-    HKEY rkey = open_regkey(false, HKEY_CURRENT_USER, host_ca_key);
+    HKEY rkey = open_regkey_rw(HKEY_CURRENT_USER, host_ca_key);
     if (!rkey)
         return NULL;
 
@@ -571,7 +571,7 @@ static HANDLE access_random_seed(int action)
      * Registry, if any.
      */
     {
-        HKEY rkey = open_regkey(false, HKEY_CURRENT_USER, PUTTY_REG_POS);
+        HKEY rkey = open_regkey_ro(HKEY_CURRENT_USER, PUTTY_REG_POS);
         if (rkey) {
             char *regpath = get_reg_sz(rkey, "RandSeedFile");
             close_regkey(rkey);
@@ -699,7 +699,7 @@ void write_random_seed(void *data, int len)
 static int transform_jumplist_registry(
     const char *add, const char *rem, char **out)
 {
-    HKEY rkey = open_regkey(true, HKEY_CURRENT_USER, reg_jumplist_key);
+    HKEY rkey = create_regkey(HKEY_CURRENT_USER, reg_jumplist_key);
     if (!rkey)
         return JUMPLISTREG_ERROR_KEYOPENCREATE_FAILURE;
 
@@ -796,7 +796,7 @@ static void registry_recursive_remove(HKEY key)
 
     DWORD i = 0;
     while ((name = enum_regkey(key, i)) != NULL) {
-        HKEY subkey = open_regkey(false, key, name);
+        HKEY subkey = open_regkey_rw(key, name);
         if (subkey) {
             registry_recursive_remove(subkey);
             close_regkey(subkey);
@@ -827,7 +827,7 @@ void cleanup_all(void)
     /*
      * Open the main PuTTY registry key and remove everything in it.
      */
-    HKEY key = open_regkey(false, HKEY_CURRENT_USER, PUTTY_REG_POS);
+    HKEY key = open_regkey_rw(HKEY_CURRENT_USER, PUTTY_REG_POS);
     if (key) {
         registry_recursive_remove(key);
         close_regkey(key);
@@ -837,8 +837,7 @@ void cleanup_all(void)
      * we've done that, see if the parent key has any other
      * children.
      */
-    if ((key = open_regkey(false, HKEY_CURRENT_USER,
-                           PUTTY_REG_PARENT)) != NULL) {
+    if ((key = open_regkey_rw(HKEY_CURRENT_USER, PUTTY_REG_PARENT)) != NULL) {
         del_regkey(key, PUTTY_REG_PARENT_CHILD);
         char *name = enum_regkey(key, 0);
         close_regkey(key);
@@ -851,8 +850,8 @@ void cleanup_all(void)
         if (name) {
             sfree(name);
         } else {
-            if ((key = open_regkey(false, HKEY_CURRENT_USER,
-                                   PUTTY_REG_GPARENT)) != NULL) {
+            if ((key = open_regkey_rw(HKEY_CURRENT_USER,
+                                      PUTTY_REG_GPARENT)) != NULL) {
                 del_regkey(key, PUTTY_REG_GPARENT_CHILD);
                 close_regkey(key);
             }

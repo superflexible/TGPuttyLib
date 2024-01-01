@@ -155,7 +155,7 @@ static void gpps(settings_r *sesskey, const char *name, const char *def,
  * platform-dependent functions MUST return some sort of value.
  */
 #ifndef TGDLL
-static void gppfont(settings_r *sesskey, char *name,
+static void gppfont(settings_r *sesskey, const char *name,
                     Conf *conf, int primary)
 {
     FontSpec *result = read_setting_fontspec(sesskey, name);
