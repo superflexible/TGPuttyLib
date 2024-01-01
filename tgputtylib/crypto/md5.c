@@ -6,9 +6,6 @@
 #include <assert.h>
 #include "ssh.h"
 
-#include "tglibcver.h"
-
-
 static const uint32_t md5_initial_state[] = {
     0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476,
 };

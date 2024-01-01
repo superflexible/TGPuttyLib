@@ -12,8 +12,6 @@
 #include "ppl.h"
 #include "sshcr.h"
 
-#include "tglibcver.h"
-
 typedef struct agent_key {
     RSAKey key;
     strbuf *comment;

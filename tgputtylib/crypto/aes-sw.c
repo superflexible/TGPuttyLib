@@ -17,8 +17,6 @@
 #include "ssh.h"
 #include "aes.h"
 #include "mpint_i.h"               /* we reuse the BignumInt system */
-#include "tglibcver.h"
-
 
 static bool aes_sw_available(void)
 {

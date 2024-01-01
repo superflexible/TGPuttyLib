@@ -18,8 +18,6 @@
          (conf_get_int(conf, CONF_proxy_dns) == AUTO && \
               conf_get_int(conf, CONF_proxy_type) != PROXY_SOCKS4))
 
-#include "tglibcver.h"
-
 static void proxy_negotiator_cleanup(ProxySocket *ps)
 {
     if (ps->pn) {

@@ -20,8 +20,6 @@
 
 #include <ws2tcpip.h>
 
-#include "tglibcver.h"
-
 #if HAVE_AFUNIX_H
 #include <afunix.h>
 #endif

@@ -4,8 +4,6 @@
 #include <stddef.h>                    /* for wchar_t */
 #include <limits.h>                    /* for INT_MAX */
 
-#include "tglibcver.h"
-
 #include "defs.h"
 #include "platform.h"
 #include "network.h"
@@ -14,8 +12,9 @@
 #include "tree234.h" // TG
 #include "sftp.h" // TG
 #include "tgmem.h" // TG
-// #define DEBUG_UPLOAD
+#include "tglibcver.h"
 
+// #define DEBUG_UPLOAD
 
 #define cBufferMaxFillSizeThresholdToAcceptMoreUploadData 1024*1024 // TG
 

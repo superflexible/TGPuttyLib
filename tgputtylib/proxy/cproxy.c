@@ -15,8 +15,6 @@
 #include "proxy.h"
 #include "marshal.h"
 
-#include "tglibcver.h"
-
 const bool socks5_chap_available = true;
 const bool http_digest_available = true;
 

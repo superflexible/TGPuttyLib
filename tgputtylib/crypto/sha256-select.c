@@ -4,8 +4,6 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include "tglibcver.h"
-
 
 #include "putty.h"
 #include "ssh.h"

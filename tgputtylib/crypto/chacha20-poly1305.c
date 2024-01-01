@@ -36,8 +36,6 @@
 #define INLINE
 #endif
 
-#include "tglibcver.h"
-
 /* ChaCha20 implementation, only supporting 256-bit keys */
 
 /* State for each ChaCha20 instance */

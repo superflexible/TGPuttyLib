@@ -15,7 +15,6 @@
 #include "ssh/sftp.h"
 #include "version.h" // TG
 
-#include "tglibcver.h"
 // const char *const appname = "PSFTP"; // TG
 THREADVAR TTGLibraryContext *curlibctx; // TG
 THREADVAR int ThreadContextCounter=0; // TG
@@ -2922,14 +2921,13 @@ TGDLLCODE(static THREADVAR bool thread_vars_initialized;)
 
 TGDLLCODE(static void init_thread_vars();)
 
-static size_t psftp_output(
-    Seat *seat, bool is_stderr, const void *data, size_t len)
+static size_t psftp_output(Seat *seat, SeatOutputType type, const void *data, size_t len)
 {
     /*
      * stderr data is just spouted to local stderr (optionally via a
      * sanitiser) and otherwise ignored.
      */
-    if (is_stderr)
+    if (type==SEAT_OUTPUT_STDERR)
     {
        if (!stderr_bs || !thread_vars_initialized) // TG
           init_thread_vars(); // TG
@@ -3629,6 +3627,7 @@ EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
 	libctx->batchfile = NULL;
 #ifdef _WINDOWS
 	libctx->winselcli_event = INVALID_HANDLE_VALUE;
+        libctx->ready_event = INVALID_HANDLE_VALUE;
 #endif
 
 	// flags = (verbose ? FLAG_VERBOSE : 0)
@@ -3650,8 +3649,6 @@ EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
     libctx->pktin_freeq_head.on_free_queue = true;
 
     libctx->ic_pktin_free.fn = pktin_free_queue_callback;
-
-    libctx->ready_event = INVALID_HANDLE_VALUE;
 
     backend = NULL;
 

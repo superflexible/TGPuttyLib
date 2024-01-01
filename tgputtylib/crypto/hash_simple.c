@@ -4,7 +4,6 @@
  */
 
 #include "ssh.h"
-#include "tglibcver.h"
 
 void hash_simple(const ssh_hashalg *alg, ptrlen data, void *output)
 {

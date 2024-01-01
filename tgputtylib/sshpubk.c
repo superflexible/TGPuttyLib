@@ -17,8 +17,6 @@
 #include "ssh.h"
 #include "misc.h"
 
-#include "tglibcver.h"
-
 /*
  * Fairly arbitrary size limit on any public or private key blob.
  * Chosen to match AGENT_MAX_MSGLEN, on the basis that any key too

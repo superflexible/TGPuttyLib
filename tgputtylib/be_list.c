@@ -32,7 +32,6 @@
 
 #include <stdio.h>
 #include "putty.h"
-#include "tglibcver.h"
 
 #ifndef TGDLL
 const char *const appname = STR(APPNAME);

@@ -6,6 +6,8 @@
 #include "misc.h"
 #include "utils/utils.h"
 
+#include "tglibcver.h"
+
 struct strbuf_impl {
     size_t size;
     struct strbuf visible;

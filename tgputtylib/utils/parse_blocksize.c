@@ -12,9 +12,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "tglibcver.h"
-
-
 #include "defs.h"
 #include "misc.h"
 

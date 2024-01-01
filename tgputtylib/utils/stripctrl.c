@@ -19,8 +19,6 @@
 #define SCC_BUFSIZE 64
 #define LINE_LIMIT 77
 
-#include "tglibcver.h"
-
 typedef struct StripCtrlCharsImpl StripCtrlCharsImpl;
 struct StripCtrlCharsImpl {
     mbstate_t mbs_in, mbs_out;

@@ -11,8 +11,6 @@
 #include "mpint.h"
 #include "misc.h"
 
-#include "tglibcver.h"
-
 void BinarySource_get_rsa_ssh1_pub(
     BinarySource *src, RSAKey *rsa, RsaSsh1Order order)
 {

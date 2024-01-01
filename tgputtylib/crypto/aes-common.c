@@ -4,7 +4,6 @@
 
 #include "ssh.h"
 #include "aes.h"
-#include "tglibcver.h"
 
 const uint8_t aes_key_setup_round_constants[10] = {
     /* The first few powers of X in GF(2^8), used during key setup.

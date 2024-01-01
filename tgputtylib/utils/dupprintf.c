@@ -40,6 +40,8 @@
 #include "misc.h"
 #include "utils/utils.h"
 
+#include "tglibcver.h"
+
 /* Work around lack of va_copy in old MSC */
 #if defined _MSC_VER && !defined va_copy
 #define va_copy(a, b) TYPECHECK(                        \

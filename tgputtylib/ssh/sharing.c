@@ -140,8 +140,6 @@
 #include "ssh.h"
 #include "sshcr.h"
 
-#include "tglibcver.h"
-
 struct ssh_sharing_state {
     char *sockname;                  /* the socket name, kept for cleanup */
     Socket *listensock;              /* the master listening Socket */

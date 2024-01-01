@@ -4,7 +4,6 @@
  */
 
 #include "ssh.h"
-#include "tglibcver.h"
 
 static ssh_cipher *des_xdmauth_cipher(const void *vkeydata)
 {

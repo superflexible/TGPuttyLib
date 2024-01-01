@@ -6,7 +6,6 @@
  */
 
 #include "ssh.h"
-#include "tglibcver.h"
 
 static ssh_cipher *des3_pubkey_cipher(const void *vkey)
 {

@@ -4,7 +4,6 @@
  */
 
 #include "ssh.h"
-#include "tglibcver.h"
 
 struct hmac {
     const ssh_hashalg *hashalg;

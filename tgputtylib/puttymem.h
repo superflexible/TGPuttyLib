@@ -11,8 +11,6 @@
 #include "defs.h"
 #include "tgmem.h"
 
-#include "tglibcver.h"
-
 #ifdef DEBUG_MALLOC // TG
 
 #define smalloc(z) safemalloc(z,1,0,__FILE__,__LINE__)
@@ -137,18 +135,19 @@ void *safegrowarray(void *array, size_t *size, size_t eltsize,
 
 /*
  * This function is called by the innermost safemalloc/saferealloc
- * functions when allocation fails. Usually it's provided by misc.c
- * which ties it into an application's existing modalfatalbox()
- * system, but standalone test applications can reimplement it some
- * other way if they prefer.
+ * functions when allocation fails. Usually it's provided by an
+ * implementation in utils, which ties it into an application's
+ * existing modalfatalbox() system, but standalone test applications
+ * can reimplement it some other way if they prefer.
  */
 void out_of_memory(void); // TG
 
 #ifdef MINEFIELD
 /*
  * Definitions for Minefield, PuTTY's own Windows-specific malloc
- * debugger in the style of Electric Fence. Implemented in winmisc.c,
- * and referred to by the main malloc wrappers in memory.c.
+ * debugger in the style of Electric Fence. Implemented in
+ * windows/utils/minefield.c, and referred to by the main malloc
+ * wrappers in memory.c.
  */
 void *minefield_c_malloc(size_t size);
 void minefield_c_free(void *p);

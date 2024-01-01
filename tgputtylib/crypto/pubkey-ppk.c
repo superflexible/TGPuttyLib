@@ -5,7 +5,6 @@
  */
 
 #include "ssh.h"
-#include "tglibcver.h"
 
 static ssh_cipher *aes256_pubkey_cipher(const void *key, const void *iv)
 {

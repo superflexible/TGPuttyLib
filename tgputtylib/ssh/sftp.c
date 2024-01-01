@@ -16,8 +16,6 @@
 #include "putty.h" // needed for defines replacing printf etc.
 #endif
 
-#include "tglibcver.h"
-
 #ifdef TGDLL
 #define fxp_error_message (curlibctx->fxp_error_message)
 #define fxp_errtype (curlibctx->fxp_errtype)

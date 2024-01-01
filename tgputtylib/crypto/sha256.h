@@ -7,6 +7,9 @@
  * include information about how to check if a given implementation is
  * available at run time, and whether we've already checked.
  */
+
+#include "tglibcver.h"
+
 struct sha256_extra_mutable;
 struct sha256_extra {
     /* Function to check availability. Might be expensive, so we don't

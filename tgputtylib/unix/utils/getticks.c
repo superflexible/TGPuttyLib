@@ -6,8 +6,6 @@
 #include <sys/time.h>
 
 #include "putty.h"
-#include "tglibcver.h"
-
 
 unsigned long getticks(void)
 {

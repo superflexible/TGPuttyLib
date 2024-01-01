@@ -14,6 +14,8 @@
 #include "defs.h"
 #include "misc.h"
 
+#include "tglibcver.h"
+
 // TG: was 512
 #define BUFFER_MIN_GRANULE 65536
 

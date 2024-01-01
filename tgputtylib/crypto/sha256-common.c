@@ -4,8 +4,6 @@
 
 #include "ssh.h"
 #include "sha256.h"
-#include "tglibcver.h"
-
 
 const uint32_t sha256_initial_state[8] = {
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,

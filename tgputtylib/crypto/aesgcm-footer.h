@@ -103,6 +103,8 @@
 
 #include "aes.h" // for aes_encrypt_ecb_block
 
+#include "tglibcver.h"
+
 static const char *PREFIX(mac_text_name)(ssh2_mac *mac)
 {
     return "AES-GCM (" AESGCM_NAME ")";

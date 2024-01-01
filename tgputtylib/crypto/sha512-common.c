@@ -4,8 +4,6 @@
 
 #include "ssh.h"
 #include "sha512.h"
-#include "tglibcver.h"
-
 
 const uint64_t sha512_initial_state[8] = {
     0x6a09e667f3bcc908ULL,

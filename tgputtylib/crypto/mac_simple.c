@@ -4,7 +4,6 @@
  */
 
 #include "ssh.h"
-#include "tglibcver.h"
 
 void mac_simple(const ssh2_macalg *alg, ptrlen key, ptrlen data, void *output)
 {

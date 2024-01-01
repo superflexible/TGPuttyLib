@@ -9,8 +9,6 @@
 #include "bpp.h"
 #include "sshcr.h"
 
-#include "tglibcver.h"
-
 struct ssh1_bpp_state {
     int crState;
     long len, pad, biglen, length, maxlen;
@@ -214,7 +212,7 @@ static void ssh1_bpp_handle_input(BinaryPacketProtocol *bpp)
                 sfree(old_pktin);
             }
 
-            memcpy(s->data + s->pad, decompblk, decomplen);
+			memcpy(s->data + s->pad, decompblk, decomplen);
             sfree(decompblk);
             s->length = decomplen - 1;
         }

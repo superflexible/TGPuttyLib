@@ -4,8 +4,6 @@
 
 #include "ssh.h"
 #include "sha512.h"
-#include "tglibcver.h"
-
 
 static bool sha512_sw_available(void)
 {

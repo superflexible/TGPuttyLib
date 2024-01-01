@@ -7,6 +7,9 @@
  * include information about how to check if a given implementation is
  * available at run time, and whether we've already checked.
  */
+
+#include "tglibcver.h"
+
 struct sha512_extra_mutable;
 struct sha512_extra {
     /* Pointer to the initial state (distinguishes SHA-384 from -512) */

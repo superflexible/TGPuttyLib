@@ -6,6 +6,8 @@
 #include "network.h"
 #include "misc.h"
 
+#include "tglibcver.h"
+
 struct ssh_channel;
 
 /*

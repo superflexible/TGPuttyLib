@@ -14,8 +14,6 @@
 #include "transport2.h"
 #include "mpint.h"
 
-#include "tglibcver.h"
-
 const struct ssh_signkey_with_user_pref_id ssh2_hostkey_algs[] = {
     #define ARRAYENT_HOSTKEY_ALGORITHM(type, alg) { &alg, type },
     HOSTKEY_ALGORITHMS(ARRAYENT_HOSTKEY_ALGORITHM)

@@ -12,8 +12,6 @@
 
 #include "misc.h"
 
-#include "tglibcver.h"
-
 #define UNIX_EPOCH      11644473600ULL  /* Seconds from Windows epoch */
 #define CNS_PERSEC      10000000ULL     /* # 100ns per second */
 

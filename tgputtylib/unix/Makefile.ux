@@ -94,10 +94,10 @@ CC = $(TOOLPATH)cc
 
 -include Makefile.local
 
-# TG: removed -Werror
+# TG: removed -Werror -I../windows/
 
 CFLAGS = -O2 -fPIC -Wall -Wno-comment -Wno-unused-function -Wno-unused-const-variable -DTGDLL -std=gnu99 -Wvla -g -I.././ -I../charset/ \
-		-I../windows/ -I../unix/ -D _FILE_OFFSET_BITS=64
+         -I../unix/ -I../ssh/ -I../terminal/ -D _FILE_OFFSET_BITS=64
 ULDFLAGS = $(LDFLAGS)
 INSTALL=install
 INSTALL_PROGRAM=$(INSTALL)
@@ -112,1525 +112,601 @@ man1dir=$(mandir)/man1
 .SUFFIXES:
 
 
-all: cgtest fuzzterm osxlaunch plink pscp psftp psocks psusan puttygen \
-		testcrypt testsc testzlib uppity libtgputty.so
+all: libtgputty.so
 
-cgtest: cgtest.o conf.o console.o ecc.o import.o marshal.o memory.o \
-		millerrabin.o misc.o mpint.o mpunsafe.o notiming.o pockle.o \
-		primecandidate.o smallprimes.o sshaes.o sshargon2.o \
-		sshauxcrypt.o sshbcrypt.o sshblake2.o sshblowf.o sshdes.o \
-		sshdss.o sshdssg.o sshecc.o sshecdsag.o sshhmac.o sshmd5.o \
-		sshprime.o sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o \
-		sshsh256.o sshsh512.o sshsha.o sshsha3.o stripctrl.o time.o \
-		tree234.o utils.o uxcons.o uxgen.o uxmisc.o uxnogtk.o \
-		uxnoise.o uxpoll.o uxstore.o uxutils.o version.o wcwidth.o
-	$(CC) -o $@ cgtest.o conf.o console.o ecc.o import.o marshal.o \
-		memory.o millerrabin.o misc.o mpint.o mpunsafe.o notiming.o \
-		pockle.o primecandidate.o smallprimes.o sshaes.o sshargon2.o \
-		sshauxcrypt.o sshbcrypt.o sshblake2.o sshblowf.o sshdes.o \
-		sshdss.o sshdssg.o sshecc.o sshecdsag.o sshhmac.o sshmd5.o \
-		sshprime.o sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o \
-		sshsh256.o sshsh512.o sshsha.o sshsha3.o stripctrl.o time.o \
-		tree234.o utils.o uxcons.o uxgen.o uxmisc.o uxnogtk.o \
-		uxnoise.o uxpoll.o uxstore.o uxutils.o version.o wcwidth.o \
-		$(ULDFLAGS) 
+libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
+		network.o be_list.o bufchain.o tempseat.o \
+		callback.o cmdline.o strbuf.o antispoof.o \
+		conf.o clicons.o console.o sk_free_peer_info.o \
+                cproxy.o ecc-arithmetic.o ecc-ssh.o memxor.o \
+		errsock.o logging.o dupcat.o fgetline.o \
+		mainchan.o marshal.o local.o host_strchr.o \
+		memory.o validate_manual_hostkey.o prompts.o null-lp.o \
+		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
+		null-seat.o null-plug.o pgssapi.o smemeq.o \
+		pinger.o portfwd.o cert-expr.o \
+		null-mac.o proxy.o psftp.o default_description.o \
+		http.o psftpcommon.o null-opener.o \
+		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
+		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
+		bpp1.o censor1.o dupprintf.o host_strduptrim.o \
+		connection1.o smemclr.o backend_socket_log.o ntru.o \
+		connection1-client.o host_strrchr.o interactor.o \
+		login1.o bpp2.o null-cipher.o uxsel.o \
+		bpp-bare.o censor2.o ctrlparse.o make_spr_sw_abort_static.o \
+		connection2.o socks4.o socks5.o make_spr_sw_abort_errno.o \
+		connection2-client.o seat_connection_fatal.o host_strcspn.o \
+		kex2-client.o transient-hostkey-cache.o out_of_memory.o \
+		transport2.o userauth2-client.o key_components.o \
+                aes-select.o aes-sw.o aes-common.o make_dir_path.o \
+                aesgcm-select.o aesgcm-sw.o aesgcm-common.o \
+                argon2.o arcfour.o seat_dialog_text.o make_dir_and_check_ours.o \
+		pubkey-ppk.o pubkey-ssh1.o blake2.o blowfish.o \
+		chacha20-poly1305.o common.o base64_encode_atom.o \
+		crc32.o crc-attack-detector.o \
+		des.o diffie-hellman.o burnstr.o \
+		dsa.o telnet.o base64_decode_atom.o \
+		gssc.o hmac.o hash_simple.o mac_simple.o \
+		mac.o md5.o spr_get_error_message.o \
+		prng.o sshpubk.o write_c_string_literal.o \
+		sshrand.o rsa.o sha256-select.o \
+		sha256-sw.o sha512-sw.o sha512-select.o \
+		sha256-common.o sha512-common.o null-key.o \
+		sha1-common.o sha1-select.o sha1-sw.o sha3.o sharing.o \
+                sshutils.o get_username.o fontspec.o \
+		verstring.o zlib.o sessprep.o \
+		stripctrl.o timing.o conf_launchable.o \
+		tree234.o parse_blocksize.o percent_decode.o \
+		version.o wcwidth.o percent_encode.o \
+                base64_decode.o base64_encode.o base64_valid.o \
+		wildcard.o cliloop.o \
+		consoleu.o wordwrap.o \
+		gss.o filename.o log_proxy_stderr.o \
+		openssh-certs.o cloexec.o \
+		noise.o sshproxy.o \
+		agent-client.o nonblock.o \
+		local-proxy.o getticks.o \
+		sftpu.o sharingu.o nullstrcmp.o \
+		storage.o ltime.o open_for_write_would_lose_data.o \
+		unicode.o pollwrap.o \
+                xdmauth.o
+	$(CC) -shared -o libtgputty.so -fPIC agentf.o aqsync.o ssh2_pick_fingerprint.o \
+		network.o be_list.o bufchain.o tempseat.o uxsel.o \
+		callback.o cmdline.o strbuf.o antispoof.o getticks.o \
+		conf.o clicons.o console.o sk_free_peer_info.o nonblock.o \
+                cproxy.o ecc-arithmetic.o ecc-ssh.o memxor.o cloexec.o \
+		errsock.o logging.o dupcat.o fgetline.o pollwrap.o \
+		mainchan.o marshal.o local.o host_strchr.o fontspec.o \
+		memory.o validate_manual_hostkey.o prompts.o null-lp.o \
+		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
+		null-seat.o null-plug.o pgssapi.o smemeq.o \
+		pinger.o portfwd.o cert-expr.o make_dir_path.o \
+		null-mac.o proxy.o psftp.o default_description.o \
+		http.o psftpcommon.o null-opener.o make_dir_and_check_ours.o \
+		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
+		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
+		bpp1.o censor1.o dupprintf.o host_strduptrim.o \
+		connection1.o smemclr.o backend_socket_log.o ntru.o \
+		connection1-client.o host_strrchr.o interactor.o \
+		login1.o bpp2.o null-cipher.o \
+		bpp-bare.o censor2.o ctrlparse.o make_spr_sw_abort_static.o \
+		connection2.o socks4.o socks5.o make_spr_sw_abort_errno.o \
+		connection2-client.o seat_connection_fatal.o host_strcspn.o \
+		kex2-client.o transient-hostkey-cache.o out_of_memory.o \
+		transport2.o userauth2-client.o key_components.o \
+                aes-select.o aes-sw.o aes-common.o \
+                aesgcm-select.o aesgcm-sw.o aesgcm-common.o \
+                argon2.o arcfour.o seat_dialog_text.o \
+		pubkey-ppk.o pubkey-ssh1.o blake2.o blowfish.o \
+		chacha20-poly1305.o common.o base64_encode_atom.o \
+		crc32.o crc-attack-detector.o \
+		des.o diffie-hellman.o burnstr.o \
+		dsa.o telnet.o base64_decode_atom.o \
+		gssc.o hmac.o hash_simple.o mac_simple.o \
+		mac.o md5.o spr_get_error_message.o \
+		prng.o sshpubk.o write_c_string_literal.o \
+		sshrand.o rsa.o sha256-select.o \
+		sha256-sw.o sha512-sw.o sha512-select.o \
+		sha256-common.o sha512-common.o null-key.o \
+		sha1-common.o sha1-select.o sha1-sw.o sha3.o sharing.o \
+                sshutils.o get_username.o\
+		verstring.o zlib.o sessprep.o \
+		stripctrl.o timing.o conf_launchable.o \
+		tree234.o parse_blocksize.o percent_decode.o \
+		version.o wcwidth.o percent_encode.o \
+                base64_decode.o base64_encode.o base64_valid.o \
+		wildcard.o cliloop.o \
+		consoleu.o wordwrap.o \
+		gss.o filename.o log_proxy_stderr.o \
+		openssh-certs.o \
+		noise.o sshproxy.o \
+		agent-client.o \
+		local-proxy.o \
+		sftpu.o sharingu.o nullstrcmp.o \
+		storage.o ltime.o open_for_write_would_lose_data.o \
+		unicode.o \
+                xdmauth.o $(ULDFLAGS) 
 
-fuzzterm: be_none.o callback.o conf.o config.o dialog.o fromucs.o fuzzterm.o \
-		localenc.o logging.o macenc.o marshal.o memory.o mimeenc.o \
-		minibidi.o misc.o miscucs.o sbcs.o sbcsdat.o settings.o \
-		slookup.o stripctrl.o terminal.o time.o timing.o toucs.o \
-		tree234.o utf8.o utils.o uxcfg.o uxmisc.o uxnogtk.o \
-		uxprint.o uxstore.o uxucs.o version.o wcwidth.o xenc.o
-	$(CC) -o $@ be_none.o callback.o conf.o config.o dialog.o fromucs.o \
-		fuzzterm.o localenc.o logging.o macenc.o marshal.o memory.o \
-		mimeenc.o minibidi.o misc.o miscucs.o sbcs.o sbcsdat.o \
-		settings.o slookup.o stripctrl.o terminal.o time.o timing.o \
-		toucs.o tree234.o utf8.o utils.o uxcfg.o uxmisc.o uxnogtk.o \
-		uxprint.o uxstore.o uxucs.o version.o wcwidth.o xenc.o \
-		$(ULDFLAGS) 
-
-osxlaunch: osxlaunch.o
-	$(CC) -o $@ osxlaunch.o $(ULDFLAGS) 
-
-plink: agentf.o aqsync.o be_all_s.o be_misc.o callback.o clicons.o cmdline.o \
-		conf.o console.o cproxy.o ecc.o errsock.o ldisc.o logging.o \
-		mainchan.o marshal.o memory.o misc.o mpint.o noterm.o \
-		nullplug.o pgssapi.o pinger.o portfwd.o proxy.o raw.o \
-		rlogin.o sessprep.o settings.o ssh.o ssh1bpp.o ssh1censor.o \
-		ssh1connection.o ssh1connection-client.o ssh1login.o \
-		ssh2bpp.o ssh2bpp-bare.o ssh2censor.o ssh2connection.o \
-		ssh2connection-client.o ssh2kex-client.o ssh2transhk.o \
-		ssh2transport.o ssh2userauth.o sshaes.o ssharcf.o \
-		sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o \
-		sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o sshdss.o \
-		sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o sshprng.o \
-		sshpubk.o sshrand.o sshrsa.o sshsh256.o sshsh512.o sshsha.o \
-		sshsha3.o sshshare.o sshutils.o sshverstring.o sshzlib.o \
-		stripctrl.o supdup.o telnet.o time.o timing.o tree234.o \
-		utils.o ux_x11.o uxagentc.o uxcliloop.o uxcons.o uxfdsock.o \
-		uxgss.o uxmisc.o uxnet.o uxnogtk.o uxnoise.o uxpeer.o \
-		uxplink.o uxpoll.o uxproxy.o uxsel.o uxser.o uxshare.o \
-		uxsignal.o uxstore.o uxutils.o version.o wcwidth.o \
-		wildcard.o x11fwd.o
-	$(CC) -o $@ agentf.o aqsync.o be_all_s.o be_misc.o callback.o \
-		clicons.o cmdline.o conf.o console.o cproxy.o ecc.o \
-		errsock.o ldisc.o logging.o mainchan.o marshal.o memory.o \
-		misc.o mpint.o noterm.o nullplug.o pgssapi.o pinger.o \
-		portfwd.o proxy.o raw.o rlogin.o sessprep.o settings.o ssh.o \
-		ssh1bpp.o ssh1censor.o ssh1connection.o \
-		ssh1connection-client.o ssh1login.o ssh2bpp.o ssh2bpp-bare.o \
-		ssh2censor.o ssh2connection.o ssh2connection-client.o \
-		ssh2kex-client.o ssh2transhk.o ssh2transport.o \
-		ssh2userauth.o sshaes.o ssharcf.o sshargon2.o sshauxcrypt.o \
-		sshblake2.o sshblowf.o sshccp.o sshcommon.o sshcrc.o \
-		sshcrcda.o sshdes.o sshdh.o sshdss.o sshecc.o sshgssc.o \
-		sshhmac.o sshmac.o sshmd5.o sshprng.o sshpubk.o sshrand.o \
-		sshrsa.o sshsh256.o sshsh512.o sshsha.o sshsha3.o sshshare.o \
-		sshutils.o sshverstring.o sshzlib.o stripctrl.o supdup.o \
-		telnet.o time.o timing.o tree234.o utils.o ux_x11.o \
-		uxagentc.o uxcliloop.o uxcons.o uxfdsock.o uxgss.o uxmisc.o \
-		uxnet.o uxnogtk.o uxnoise.o uxpeer.o uxplink.o uxpoll.o \
-		uxproxy.o uxsel.o uxser.o uxshare.o uxsignal.o uxstore.o \
-		uxutils.o version.o wcwidth.o wildcard.o x11fwd.o \
-		$(ULDFLAGS) 
-
-pscp: agentf.o aqsync.o be_misc.o be_ssh.o callback.o clicons.o cmdline.o \
-		conf.o console.o cproxy.o ecc.o errsock.o logging.o \
-		mainchan.o marshal.o memory.o misc.o mpint.o nullplug.o \
-		pgssapi.o pinger.o portfwd.o proxy.o pscp.o psftpcommon.o \
-		settings.o sftp.o sftpcommon.o ssh.o ssh1bpp.o ssh1censor.o \
-		ssh1connection.o ssh1connection-client.o ssh1login.o \
-		ssh2bpp.o ssh2bpp-bare.o ssh2censor.o ssh2connection.o \
-		ssh2connection-client.o ssh2kex-client.o ssh2transhk.o \
-		ssh2transport.o ssh2userauth.o sshaes.o ssharcf.o \
-		sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o \
-		sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o sshdss.o \
-		sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o sshprng.o \
-		sshpubk.o sshrand.o sshrsa.o sshsh256.o sshsh512.o sshsha.o \
-		sshsha3.o sshshare.o sshutils.o sshverstring.o sshzlib.o \
-		stripctrl.o time.o timing.o tree234.o utils.o uxagentc.o \
-		uxcliloop.o uxcons.o uxfdsock.o uxgss.o uxmisc.o uxnet.o \
-		uxnogtk.o uxnoise.o uxpeer.o uxpoll.o uxproxy.o uxsel.o \
-		uxsftp.o uxshare.o uxstore.o uxutils.o version.o wcwidth.o \
-		wildcard.o x11fwd.o
-	$(CC) -o $@ agentf.o aqsync.o be_misc.o be_ssh.o callback.o \
-		clicons.o cmdline.o conf.o console.o cproxy.o ecc.o \
-		errsock.o logging.o mainchan.o marshal.o memory.o misc.o \
-		mpint.o nullplug.o pgssapi.o pinger.o portfwd.o proxy.o \
-		pscp.o psftpcommon.o settings.o sftp.o sftpcommon.o ssh.o \
-		ssh1bpp.o ssh1censor.o ssh1connection.o \
-		ssh1connection-client.o ssh1login.o ssh2bpp.o ssh2bpp-bare.o \
-		ssh2censor.o ssh2connection.o ssh2connection-client.o \
-		ssh2kex-client.o ssh2transhk.o ssh2transport.o \
-		ssh2userauth.o sshaes.o ssharcf.o sshargon2.o sshauxcrypt.o \
-		sshblake2.o sshblowf.o sshccp.o sshcommon.o sshcrc.o \
-		sshcrcda.o sshdes.o sshdh.o sshdss.o sshecc.o sshgssc.o \
-		sshhmac.o sshmac.o sshmd5.o sshprng.o sshpubk.o sshrand.o \
-		sshrsa.o sshsh256.o sshsh512.o sshsha.o sshsha3.o sshshare.o \
-		sshutils.o sshverstring.o sshzlib.o stripctrl.o time.o \
-		timing.o tree234.o utils.o uxagentc.o uxcliloop.o uxcons.o \
-		uxfdsock.o uxgss.o uxmisc.o uxnet.o uxnogtk.o uxnoise.o \
-		uxpeer.o uxpoll.o uxproxy.o uxsel.o uxsftp.o uxshare.o \
-		uxstore.o uxutils.o version.o wcwidth.o wildcard.o x11fwd.o \
-		$(ULDFLAGS) 
-
-psftp: agentf.o aqsync.o be_misc.o be_ssh.o callback.o clicons.o cmdline.o \
-		conf.o console.o cproxy.o ecc.o errsock.o logging.o \
-		mainchan.o marshal.o memory.o misc.o mpint.o nullplug.o \
-		pgssapi.o pinger.o portfwd.o proxy.o psftp.o psftpcommon.o \
-		settings.o sftp.o sftpcommon.o ssh.o ssh1bpp.o ssh1censor.o \
-		ssh1connection.o ssh1connection-client.o ssh1login.o \
-		ssh2bpp.o ssh2bpp-bare.o ssh2censor.o ssh2connection.o \
-		ssh2connection-client.o ssh2kex-client.o ssh2transhk.o \
-		ssh2transport.o ssh2userauth.o sshaes.o ssharcf.o \
-		sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o \
-		sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o sshdss.o \
-		sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o sshprng.o \
-		sshpubk.o sshrand.o sshrsa.o sshsh256.o sshsh512.o sshsha.o \
-		sshsha3.o sshshare.o sshutils.o sshverstring.o sshzlib.o \
-		stripctrl.o time.o timing.o tree234.o utils.o uxagentc.o \
-		uxcliloop.o uxcons.o uxfdsock.o uxgss.o uxmisc.o uxnet.o \
-		uxnogtk.o uxnoise.o uxpeer.o uxpoll.o uxproxy.o uxsel.o \
-		uxsftp.o uxshare.o uxstore.o uxutils.o version.o wcwidth.o \
-		wildcard.o x11fwd.o
-	$(CC) -o $@ agentf.o aqsync.o be_misc.o be_ssh.o callback.o \
-		clicons.o cmdline.o conf.o console.o cproxy.o ecc.o \
-		errsock.o logging.o mainchan.o marshal.o memory.o misc.o \
-		mpint.o nullplug.o pgssapi.o pinger.o portfwd.o proxy.o \
-		psftp.o psftpcommon.o settings.o sftp.o sftpcommon.o ssh.o \
-		ssh1bpp.o ssh1censor.o ssh1connection.o \
-		ssh1connection-client.o ssh1login.o ssh2bpp.o ssh2bpp-bare.o \
-		ssh2censor.o ssh2connection.o ssh2connection-client.o \
-		ssh2kex-client.o ssh2transhk.o ssh2transport.o \
-		ssh2userauth.o sshaes.o ssharcf.o sshargon2.o sshauxcrypt.o \
-		sshblake2.o sshblowf.o sshccp.o sshcommon.o sshcrc.o \
-		sshcrcda.o sshdes.o sshdh.o sshdss.o sshecc.o sshgssc.o \
-		sshhmac.o sshmac.o sshmd5.o sshprng.o sshpubk.o sshrand.o \
-		sshrsa.o sshsh256.o sshsh512.o sshsha.o sshsha3.o sshshare.o \
-		sshutils.o sshverstring.o sshzlib.o stripctrl.o time.o \
-		timing.o tree234.o utils.o uxagentc.o uxcliloop.o uxcons.o \
-		uxfdsock.o uxgss.o uxmisc.o uxnet.o uxnogtk.o uxnoise.o \
-		uxpeer.o uxpoll.o uxproxy.o uxsel.o uxsftp.o uxshare.o \
-		uxstore.o uxutils.o version.o wcwidth.o wildcard.o x11fwd.o \
-		$(ULDFLAGS) 
-
-psocks: be_misc.o callback.o conf.o console.o errsock.o logging.o marshal.o \
-		memory.o misc.o nocproxy.o norand.o portfwd.o proxy.o \
-		psocks.o sshutils.o stripctrl.o time.o timing.o tree234.o \
-		utils.o uxcliloop.o uxcons.o uxfdsock.o uxmisc.o uxnet.o \
-		uxnogtk.o uxpeer.o uxpoll.o uxproxy.o uxsel.o uxsignal.o \
-		uxsocks.o version.o wcwidth.o
-	$(CC) -o $@ be_misc.o callback.o conf.o console.o errsock.o \
-		logging.o marshal.o memory.o misc.o nocproxy.o norand.o \
-		portfwd.o proxy.o psocks.o sshutils.o stripctrl.o time.o \
-		timing.o tree234.o utils.o uxcliloop.o uxcons.o uxfdsock.o \
-		uxmisc.o uxnet.o uxnogtk.o uxpeer.o uxpoll.o uxproxy.o \
-		uxsel.o uxsignal.o uxsocks.o version.o wcwidth.o $(ULDFLAGS)
-
-psusan: be_misc.o be_none.o callback.o conf.o cproxy.o ecc.o errsock.o \
-		logging.o marshal.o memory.o millerrabin.o misc.o mpint.o \
-		mpunsafe.o nogss.o nullplug.o pgssapi.o pockle.o portfwd.o \
-		primecandidate.o procnet.o proxy.o scpserver.o sesschan.o \
-		settings.o sftpcommon.o sftpserver.o smallprimes.o ssh1bpp.o \
-		ssh1censor.o ssh1connection.o ssh1connection-server.o \
-		ssh1login-server.o ssh2bpp.o ssh2bpp-bare.o ssh2censor.o \
-		ssh2connection.o ssh2connection-server.o ssh2kex-server.o \
-		ssh2transhk.o ssh2transport.o ssh2userauth-server.o sshaes.o \
-		ssharcf.o sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o \
-		sshccp.o sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o \
-		sshdss.o sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o \
-		sshprime.o sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o \
-		sshserver.o sshsh256.o sshsh512.o sshsha.o sshsha3.o \
-		sshutils.o sshverstring.o sshzlib.o stripctrl.o time.o \
-		timing.o tree234.o utils.o ux_x11.o uxagentsock.o \
-		uxcliloop.o uxfdsock.o uxmisc.o uxnet.o uxnogtk.o uxnoise.o \
-		uxpeer.o uxpoll.o uxproxy.o uxpsusan.o uxpty.o uxsel.o \
-		uxsftpserver.o uxsignal.o uxstore.o uxutils.o version.o \
-		wcwidth.o wildcard.o x11fwd.o
-	$(CC) -o $@ be_misc.o be_none.o callback.o conf.o cproxy.o ecc.o \
-		errsock.o logging.o marshal.o memory.o millerrabin.o misc.o \
-		mpint.o mpunsafe.o nogss.o nullplug.o pgssapi.o pockle.o \
-		portfwd.o primecandidate.o procnet.o proxy.o scpserver.o \
-		sesschan.o settings.o sftpcommon.o sftpserver.o \
-		smallprimes.o ssh1bpp.o ssh1censor.o ssh1connection.o \
-		ssh1connection-server.o ssh1login-server.o ssh2bpp.o \
-		ssh2bpp-bare.o ssh2censor.o ssh2connection.o \
-		ssh2connection-server.o ssh2kex-server.o ssh2transhk.o \
-		ssh2transport.o ssh2userauth-server.o sshaes.o ssharcf.o \
-		sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o \
-		sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o sshdss.o \
-		sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o sshprime.o \
-		sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o sshserver.o \
-		sshsh256.o sshsh512.o sshsha.o sshsha3.o sshutils.o \
-		sshverstring.o sshzlib.o stripctrl.o time.o timing.o \
-		tree234.o utils.o ux_x11.o uxagentsock.o uxcliloop.o \
-		uxfdsock.o uxmisc.o uxnet.o uxnogtk.o uxnoise.o uxpeer.o \
-		uxpoll.o uxproxy.o uxpsusan.o uxpty.o uxsel.o uxsftpserver.o \
-		uxsignal.o uxstore.o uxutils.o version.o wcwidth.o \
-		wildcard.o x11fwd.o $(ULDFLAGS) 
-
-libtgputty.so: agentf.o aqsync.o be_misc.o be_ssh.o callback.o cmdline.o clicons.o conf.o \
-		console.o cproxy.o ecc.o errsock.o logging.o mainchan.o marshal.o \
-		memory.o misc.o mpint.o nullplug.o pgssapi.o pinger.o \
-		portfwd.o proxy.o psftp.o psftpcommon.o settings.o sftp.o \
-		sftpcommon.o ssh.o ssh1bpp.o ssh1censor.o ssh1connection.o \
-		ssh1connection-client.o ssh1login.o ssh2bpp.o ssh2bpp-bare.o \
-		ssh2censor.o ssh2connection.o ssh2connection-client.o \
-		ssh2kex-client.o ssh2transhk.o ssh2transport.o \
-		ssh2userauth.o sshaes.o ssharcf.o sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o \
-		sshccp.o sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o \
-		sshdss.o sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o \
-		sshprng.o sshpubk.o sshrand.o sshrsa.o sshsh256.o sshsh512.o \
-		sshsha.o sshsha3.o sshshare.o sshutils.o sshverstring.o sshzlib.o stripctrl.o \
-		time.o timing.o tree234.o utils.o uxagentc.o uxcliloop.o uxcons.o \
-		uxfdsock.o uxgss.o uxmisc.o uxnet.o uxnogtk.o uxnoise.o \
-		uxpeer.o uxpoll.o uxproxy.o uxsel.o uxsftp.o uxshare.o \
-		uxstore.o uxutils.o version.o wcwidth.o wildcard.o x11fwd.o
-	$(CC) -shared -o libtgputty.so -fPIC agentf.o aqsync.o be_misc.o be_ssh.o callback.o \
-		clicons.o cmdline.o conf.o console.o cproxy.o ecc.o errsock.o logging.o \
-		mainchan.o marshal.o memory.o misc.o mpint.o nullplug.o \
-		pgssapi.o pinger.o portfwd.o proxy.o psftp.o psftpcommon.o \
-		settings.o sftp.o sftpcommon.o ssh.o ssh1bpp.o ssh1censor.o \
-		ssh1connection.o ssh1connection-client.o ssh1login.o \
-		ssh2bpp.o ssh2bpp-bare.o ssh2censor.o ssh2connection.o \
-		ssh2connection-client.o ssh2kex-client.o ssh2transhk.o \
-		ssh2transport.o ssh2userauth.o sshaes.o ssharcf.o sshargon2.o \
-		sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o sshcommon.o sshcrc.o \
-		sshcrcda.o sshdes.o sshdh.o sshdss.o sshecc.o sshgssc.o \
-		sshhmac.o sshmac.o sshmd5.o sshprng.o sshpubk.o sshrand.o \
-		sshrsa.o sshsh256.o sshsh512.o sshsha.o sshsha3.o sshshare.o \
-		sshutils.o sshverstring.o sshzlib.o stripctrl.o time.o timing.o \
-		tree234.o utils.o uxagentc.o uxcliloop.o uxcons.o uxfdsock.o uxgss.o \
-		uxmisc.o uxnet.o uxnogtk.o uxnoise.o uxpeer.o uxpoll.o \
-		uxproxy.o uxsel.o uxsftp.o uxshare.o uxstore.o uxutils.o \
-		version.o wcwidth.o wildcard.o x11fwd.o $(ULDFLAGS) 
-
-puttygen: cmdgen.o conf.o console.o ecc.o import.o marshal.o memory.o \
-		millerrabin.o misc.o mpint.o mpunsafe.o notiming.o pockle.o \
-		primecandidate.o smallprimes.o sshaes.o sshargon2.o \
-		sshauxcrypt.o sshbcrypt.o sshblake2.o sshblowf.o sshdes.o \
-		sshdss.o sshdssg.o sshecc.o sshecdsag.o sshhmac.o sshmd5.o \
-		sshprime.o sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o \
-		sshsh256.o sshsh512.o sshsha.o sshsha3.o stripctrl.o time.o \
-		tree234.o utils.o uxcons.o uxgen.o uxmisc.o uxnogtk.o \
-		uxnoise.o uxpoll.o uxstore.o uxutils.o version.o wcwidth.o
-	$(CC) -o $@ cmdgen.o conf.o console.o ecc.o import.o marshal.o \
-		memory.o millerrabin.o misc.o mpint.o mpunsafe.o notiming.o \
-		pockle.o primecandidate.o smallprimes.o sshaes.o sshargon2.o \
-		sshauxcrypt.o sshbcrypt.o sshblake2.o sshblowf.o sshdes.o \
-		sshdss.o sshdssg.o sshecc.o sshecdsag.o sshhmac.o sshmd5.o \
-		sshprime.o sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o \
-		sshsh256.o sshsh512.o sshsha.o sshsha3.o stripctrl.o time.o \
-		tree234.o utils.o uxcons.o uxgen.o uxmisc.o uxnogtk.o \
-		uxnoise.o uxpoll.o uxstore.o uxutils.o version.o wcwidth.o \
-		$(ULDFLAGS) 
-
-testcrypt: ecc.o marshal.o memory.o millerrabin.o mpint.o mpunsafe.o \
-		pockle.o primecandidate.o smallprimes.o sshaes.o ssharcf.o \
-		sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o \
-		sshcrc.o sshcrcda.o sshdes.o sshdh.o sshdss.o sshdssg.o \
-		sshecc.o sshecdsag.o sshhmac.o sshmd5.o sshprime.o sshprng.o \
-		sshpubk.o sshrsa.o sshrsag.o sshsh256.o sshsh512.o sshsha.o \
-		sshsha3.o testcrypt.o tree234.o utils.o uxutils.o
-	$(CC) -o $@ ecc.o marshal.o memory.o millerrabin.o mpint.o \
-		mpunsafe.o pockle.o primecandidate.o smallprimes.o sshaes.o \
-		ssharcf.o sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o \
-		sshccp.o sshcrc.o sshcrcda.o sshdes.o sshdh.o sshdss.o \
-		sshdssg.o sshecc.o sshecdsag.o sshhmac.o sshmd5.o sshprime.o \
-		sshprng.o sshpubk.o sshrsa.o sshrsag.o sshsh256.o sshsh512.o \
-		sshsha.o sshsha3.o testcrypt.o tree234.o utils.o uxutils.o \
-		$(ULDFLAGS) 
-
-testsc: ecc.o marshal.o memory.o mpint.o sshaes.o ssharcf.o sshargon2.o \
-		sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o sshcrc.o \
-		sshcrcda.o sshdes.o sshdh.o sshdss.o sshecc.o sshhmac.o \
-		sshmac.o sshmd5.o sshpubk.o sshrsa.o sshsh256.o sshsh512.o \
-		sshsha.o sshsha3.o testsc.o tree234.o utils.o uxutils.o \
-		wildcard.o
-	$(CC) -o $@ ecc.o marshal.o memory.o mpint.o sshaes.o ssharcf.o \
-		sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o sshccp.o \
-		sshcrc.o sshcrcda.o sshdes.o sshdh.o sshdss.o sshecc.o \
-		sshhmac.o sshmac.o sshmd5.o sshpubk.o sshrsa.o sshsh256.o \
-		sshsh512.o sshsha.o sshsha3.o testsc.o tree234.o utils.o \
-		uxutils.o wildcard.o $(ULDFLAGS) 
-
-testzlib: marshal.o memory.o sshzlib.o testzlib.o utils.o
-	$(CC) -o $@ marshal.o memory.o sshzlib.o testzlib.o utils.o \
-		$(ULDFLAGS) 
-
-uppity: be_misc.o be_none.o callback.o conf.o cproxy.o ecc.o errsock.o \
-		logging.o marshal.o memory.o millerrabin.o misc.o mpint.o \
-		mpunsafe.o nullplug.o pgssapi.o pockle.o portfwd.o \
-		primecandidate.o procnet.o proxy.o scpserver.o sesschan.o \
-		settings.o sftpcommon.o sftpserver.o smallprimes.o ssh1bpp.o \
-		ssh1censor.o ssh1connection.o ssh1connection-server.o \
-		ssh1login-server.o ssh2bpp.o ssh2bpp-bare.o ssh2censor.o \
-		ssh2connection.o ssh2connection-server.o ssh2kex-server.o \
-		ssh2transhk.o ssh2transport.o ssh2userauth-server.o sshaes.o \
-		ssharcf.o sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o \
-		sshccp.o sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o \
-		sshdss.o sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o \
-		sshprime.o sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o \
-		sshserver.o sshsh256.o sshsh512.o sshsha.o sshsha3.o \
-		sshutils.o sshverstring.o sshzlib.o stripctrl.o time.o \
-		timing.o tree234.o utils.o ux_x11.o uxagentsock.o \
-		uxcliloop.o uxfdsock.o uxgss.o uxmisc.o uxnet.o uxnogtk.o \
-		uxnoise.o uxpeer.o uxpoll.o uxproxy.o uxpty.o uxsel.o \
-		uxserver.o uxsftpserver.o uxsignal.o uxstore.o uxutils.o \
-		version.o wcwidth.o wildcard.o x11fwd.o
-	$(CC) -o $@ be_misc.o be_none.o callback.o conf.o cproxy.o ecc.o \
-		errsock.o logging.o marshal.o memory.o millerrabin.o misc.o \
-		mpint.o mpunsafe.o nullplug.o pgssapi.o pockle.o portfwd.o \
-		primecandidate.o procnet.o proxy.o scpserver.o sesschan.o \
-		settings.o sftpcommon.o sftpserver.o smallprimes.o ssh1bpp.o \
-		ssh1censor.o ssh1connection.o ssh1connection-server.o \
-		ssh1login-server.o ssh2bpp.o ssh2bpp-bare.o ssh2censor.o \
-		ssh2connection.o ssh2connection-server.o ssh2kex-server.o \
-		ssh2transhk.o ssh2transport.o ssh2userauth-server.o sshaes.o \
-		ssharcf.o sshargon2.o sshauxcrypt.o sshblake2.o sshblowf.o \
-		sshccp.o sshcommon.o sshcrc.o sshcrcda.o sshdes.o sshdh.o \
-		sshdss.o sshecc.o sshgssc.o sshhmac.o sshmac.o sshmd5.o \
-		sshprime.o sshprng.o sshpubk.o sshrand.o sshrsa.o sshrsag.o \
-		sshserver.o sshsh256.o sshsh512.o sshsha.o sshsha3.o \
-		sshutils.o sshverstring.o sshzlib.o stripctrl.o time.o \
-		timing.o tree234.o utils.o ux_x11.o uxagentsock.o \
-		uxcliloop.o uxfdsock.o uxgss.o uxmisc.o uxnet.o uxnogtk.o \
-		uxnoise.o uxpeer.o uxpoll.o uxproxy.o uxpty.o uxsel.o \
-		uxserver.o uxsftpserver.o uxsignal.o uxstore.o uxutils.o \
-		version.o wcwidth.o wildcard.o x11fwd.o $(ULDFLAGS) 
-
-agentf.o: ../agentf.c ../putty.h ../ssh.h ../pageant.h ../sshchan.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../agentf.c
-aqsync.o: ../aqsync.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../aqsync.c
-be_all_s.o: ../be_all_s.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../be_all_s.c
-be_misc.o: ../be_misc.c ../putty.h ../network.h ../defs.h ../puttyps.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../be_misc.c
-be_none.o: ../be_none.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../be_none.c
-be_nos_s.o: ../be_nos_s.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../be_nos_s.c
-be_ssh.o: ../be_ssh.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../be_ssh.c
-callback.o: ../callback.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../callback.c
-cgtest.o: ../cgtest.c ../cmdgen.c ../putty.h ../ssh.h ../sshkeygen.h \
-		../mpint.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../cgtest.c
-clicons.o: ../clicons.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../clicons.c
-cmdgen.o: ../cmdgen.c ../putty.h ../ssh.h ../sshkeygen.h ../mpint.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../cmdgen.c
-cmdline.o: ../cmdline.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
+sshpubk.o: ../sshpubk.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshpubk.c
+be_list.o: ../be_list.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../be_list.c
+cmdline.o: ../cmdline.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../cmdline.c
-conf.o: ../conf.c ../tree234.h ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../conf.c
-config.o: ../config.c ../putty.h ../dialog.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../config.c
-console.o: ../console.c ../putty.h ../misc.h ../console.h ../defs.h \
-		../puttyps.h ../network.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../windows/winstuff.h ../unix/unix.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
+console.o: ../console.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../console.c
-cproxy.o: ../cproxy.c ../putty.h ../ssh.h ../network.h ../proxy.h \
-		../marshal.h ../defs.h ../puttyps.h ../misc.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../cproxy.c
-dialog.o: ../dialog.c ../putty.h ../dialog.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../dialog.c
-ecc.o: ../ecc.c ../ssh.h ../mpint.h ../ecc.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ecc.c
-errsock.o: ../errsock.c ../tree234.h ../putty.h ../network.h ../defs.h \
-		../puttyps.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
+clicons.o: ../clicons.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../clicons.c
+errsock.o: ../errsock.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../errsock.c
-fromucs.o: ../charset/fromucs.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/fromucs.c
-fuzzterm.o: ../fuzzterm.c ../putty.h ../dialog.h ../terminal.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../tree234.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../fuzzterm.c
-gtkapp.o: ../unix/gtkapp.c ../putty.h ../unix/gtkmisc.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkapp.c
-gtkask.o: ../unix/gtkask.c ../defs.h ../unix/gtkfont.h ../unix/gtkcompat.h \
-		../unix/gtkmisc.h ../putty.h ../ssh.h ../misc.h ../puttyps.h \
-		../network.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkask.c
-gtkcfg.o: ../unix/gtkcfg.c ../putty.h ../dialog.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkcfg.c
-gtkcols.o: ../unix/gtkcols.c ../defs.h ../unix/gtkcompat.h ../unix/gtkcols.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkcols.c
-gtkcomm.o: ../unix/gtkcomm.c ../putty.h ../terminal.h ../unix/gtkcompat.h \
-		../unix/gtkfont.h ../unix/gtkmisc.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../tree234.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkcomm.c
-gtkdlg.o: ../unix/gtkdlg.c ../putty.h ../unix/gtkcompat.h ../unix/gtkcols.h \
-		../unix/gtkfont.h ../unix/gtkmisc.h ../unix/x11misc.h \
-		../storage.h ../dialog.h ../tree234.h ../licence.h ../ssh.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkdlg.c
-gtkfont.o: ../unix/gtkfont.c ../putty.h ../unix/gtkfont.h \
-		../unix/gtkcompat.h ../unix/gtkmisc.h ../tree234.h \
-		../unix/x11misc.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkfont.c
-gtkmain.o: ../unix/gtkmain.c ../putty.h ../terminal.h ../unix/gtkcompat.h \
-		../unix/gtkfont.h ../unix/gtkmisc.h ../unix/x11misc.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../tree234.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkmain.c
-gtkmisc.o: ../unix/gtkmisc.c ../putty.h ../unix/gtkcompat.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkmisc.c
-gtkwin.o: ../unix/gtkwin.c ../putty.h ../terminal.h ../unix/gtkcompat.h \
-		../unix/gtkfont.h ../unix/gtkmisc.h ../unix/x11misc.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../tree234.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtkwin.c
-import.o: ../import.c ../putty.h ../ssh.h ../mpint.h ../misc.h ../defs.h \
-		../puttyps.h ../network.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../import.c
-ldisc.o: ../ldisc.c ../putty.h ../terminal.h ../ldisc.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../tree234.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ldisc.c
-localenc.o: ../charset/localenc.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/localenc.c
-logging.o: ../logging.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
+logging.o: ../logging.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../logging.c
-macenc.o: ../charset/macenc.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/macenc.c
-mainchan.o: ../mainchan.c ../putty.h ../ssh.h ../sshppl.h ../sshchan.h \
-		../sshsignals.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../mainchan.c
-marshal.o: ../marshal.c ../marshal.h ../misc.h ../defs.h ../puttymem.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../marshal.c
-memory.o: ../memory.c ../defs.h ../puttymem.h ../misc.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../memory.c
-millerrabin.o: ../millerrabin.c ../ssh.h ../sshkeygen.h ../mpint.h \
-		../mpunsafe.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../millerrabin.c
-mimeenc.o: ../charset/mimeenc.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/mimeenc.c
-minibidi.o: ../minibidi.c ../putty.h ../misc.h ../defs.h ../puttyps.h \
-		../network.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../windows/winstuff.h ../unix/unix.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../minibidi.c
-misc.o: ../misc.c ../defs.h ../putty.h ../misc.h ../puttyps.h ../network.h \
-		../marshal.h ../sshsignals.h ../puttymem.h \
-		../windows/winstuff.h ../unix/unix.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../misc.c
-miscucs.o: ../miscucs.c ../putty.h ../misc.h ../defs.h ../puttyps.h \
-		../network.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../windows/winstuff.h ../unix/unix.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../miscucs.c
-mpint.o: ../mpint.c ../defs.h ../misc.h ../puttymem.h ../mpint.h \
-		../mpint_i.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../mpint.c
-mpunsafe.o: ../mpunsafe.c ../defs.h ../misc.h ../puttymem.h ../mpint.h \
-		../mpint_i.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../mpunsafe.c
-nocmdline.o: ../nocmdline.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../nocmdline.c
-nocproxy.o: ../nocproxy.c ../putty.h ../network.h ../proxy.h ../defs.h \
-		../puttyps.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../nocproxy.c
-nogss.o: ../nogss.c ../putty.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../nogss.c
-norand.o: ../norand.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../norand.c
-noterm.o: ../noterm.c ../putty.h ../terminal.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../tree234.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../noterm.c
-notiming.o: ../notiming.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../notiming.c
-nullplug.o: ../nullplug.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../nullplug.c
+settings.o: ../settings.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../settings.c
+timing.o: ../timing.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../timing.c
+psftpcommon.o: ../psftpcommon.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../psftpcommon.c
+aqsync.o: ../aqsync.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../aqsync.c
+callback.o: ../callback.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../callback.c
+pinger.o: ../pinger.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pinger.c
+psftp.o: ../psftp.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../psftp.c
+sshrand.o: ../sshrand.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshrand.c
+sha1-ni.o: ../crypto/sha1-ni.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha1-ni.c
+bcrypt.o: ../crypto/bcrypt.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/bcrypt.c
+aesgcm-ref-poly.o: ../crypto/aesgcm-ref-poly.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aesgcm-ref-poly.c
+ntru.o: ../crypto/ntru.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/ntru.c
+crc32.o: ../crypto/crc32.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/crc32.c
+blake2.o: ../crypto/blake2.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/blake2.c
+argon2.o: ../crypto/argon2.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/argon2.c
+sha1-select.o: ../crypto/sha1-select.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha1-select.c
+aesgcm-sw.o: ../crypto/aesgcm-sw.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aesgcm-sw.c
+xdmauth.o: ../crypto/xdmauth.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/xdmauth.c
+interactor.o: ../proxy/interactor.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/interactor.c
+transient-hostkey-cache.o: ../ssh/transient-hostkey-cache.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/transient-hostkey-cache.c
+blowfish.o: ../crypto/blowfish.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/blowfish.c
+http.o: ../proxy/http.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/http.c
+aes-sw.o: ../crypto/aes-sw.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aes-sw.c
+common.o: ../ssh/common.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/common.c
+mac_simple.o: ../crypto/mac_simple.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/mac_simple.c
+socks5.o: ../proxy/socks5.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/socks5.c
+censor2.o: ../ssh/censor2.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/censor2.c
+chacha20-poly1305.o: ../crypto/chacha20-poly1305.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/chacha20-poly1305.c
+local.o: ../proxy/local.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/local.c
+bpp-bare.o: ../ssh/bpp-bare.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/bpp-bare.c
+aes-select.o: ../crypto/aes-select.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aes-select.c
+telnet.o: ../proxy/telnet.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/telnet.c
+connection1-client.o: ../ssh/connection1-client.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/connection1-client.c
+sshproxy.o: ../proxy/sshproxy.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/sshproxy.c
+sha1-common.o: ../crypto/sha1-common.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha1-common.c
+sftp.o: ../ssh/sftp.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/sftp.c
+proxy.o: ../proxy/proxy.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/proxy.c
+gssc.o: ../ssh/gssc.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/gssc.c
+socks4.o: ../proxy/socks4.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/socks4.c
+sha512-select.o: ../crypto/sha512-select.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha512-select.c
+connection2-client.o: ../ssh/connection2-client.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/connection2-client.c
+cproxy.o: ../proxy/cproxy.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/cproxy.c
+aes-ni.o: ../crypto/aes-ni.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aes-ni.c
+login1.o: ../ssh/login1.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/login1.c
+dsa.o: ../crypto/dsa.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/dsa.c
+null-opener.o: ../stubs/null-opener.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-opener.c
+zlib.o: ../ssh/zlib.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/zlib.c
+sha256-sw.o: ../crypto/sha256-sw.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha256-sw.c
+null-seat.o: ../stubs/null-seat.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-seat.c
+pubkey-ppk.o: ../crypto/pubkey-ppk.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/pubkey-ppk.c
+sftpcommon.o: ../ssh/sftpcommon.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/sftpcommon.c
+null-lp.o: ../stubs/null-lp.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-lp.c
+mpint.o: ../crypto/mpint.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/mpint.c
+mainchan.o: ../ssh/mainchan.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/mainchan.c
+null-cipher.o: ../stubs/null-cipher.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-cipher.c
+hmac.o: ../crypto/hmac.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/hmac.c
+connection2.o: ../ssh/connection2.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/connection2.c
+sha256-select.o: ../crypto/sha256-select.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha256-select.c
+null-key.o: ../stubs/null-key.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-key.c
+md5.o: ../crypto/md5.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/md5.c
+bpp2.o: ../ssh/bpp2.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/bpp2.c
+null-mac.o: ../stubs/null-mac.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-mac.c
+pubkey-pem.o: ../crypto/pubkey-pem.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/pubkey-pem.c
+verstring.o: ../ssh/verstring.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/verstring.c
+null-plug.o: ../stubs/null-plug.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-plug.c
+ecc-ssh.o: ../crypto/ecc-ssh.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/ecc-ssh.c
+sha512-common.o: ../crypto/sha512-common.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha512-common.c
+dupcat.o: ../utils/dupcat.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/dupcat.c
+mac.o: ../crypto/mac.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/mac.c
+printing.o: ../unix/printing.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/printing.c
+ssh.o: ../ssh/ssh.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/ssh.c
+aes-neon.o: ../crypto/aes-neon.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aes-neon.c
+fgetline.o: ../utils/fgetline.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/fgetline.c
+askpass.o: ../unix/askpass.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/askpass.c
+des.o: ../crypto/des.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/des.c
+base64_decode_atom.o: ../utils/base64_decode_atom.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/base64_decode_atom.c
+connection1.o: ../ssh/connection1.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/connection1.c
+aes-common.o: ../crypto/aes-common.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aes-common.c
+main-gtk-simple.o: ../unix/main-gtk-simple.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/main-gtk-simple.c
+bpp1.o: ../ssh/bpp1.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/bpp1.c
+openssh-certs.o: ../crypto/openssh-certs.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/openssh-certs.c
+host_strchr.o: ../utils/host_strchr.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/host_strchr.c
+local-proxy.o: ../unix/local-proxy.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/local-proxy.c
+transport2.o: ../ssh/transport2.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/transport2.c
+aesgcm-clmul.o: ../crypto/aesgcm-clmul.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aesgcm-clmul.c
+marshal.o: ../utils/marshal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/marshal.c
+userauth2-client.o: ../ssh/userauth2-client.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/userauth2-client.c
+dialog.o: ../unix/dialog.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/dialog.c
+hash_simple.o: ../crypto/hash_simple.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/hash_simple.c
+strbuf.o: ../utils/strbuf.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/strbuf.c
+agentf.o: ../ssh/agentf.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/agentf.c
+consoleu.o: ../unix/consoleu.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/consoleu.c
+sha1-neon.o: ../crypto/sha1-neon.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha1-neon.c
+host_strrchr.o: ../utils/host_strrchr.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/host_strrchr.c
+noise.o: ../unix/noise.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/noise.c
+censor1.o: ../ssh/censor1.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/censor1.c
+sha256-ni.o: ../crypto/sha256-ni.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha256-ni.c
+stripctrl.o: ../utils/stripctrl.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/stripctrl.c
+config-unix.o: ../unix/config-unix.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/config-unix.c
+kex2-client.o: ../ssh/kex2-client.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/kex2-client.c
+sha512-neon.o: ../crypto/sha512-neon.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha512-neon.c
+conf.o: ../utils/conf.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/conf.c
+window.o: ../unix/window.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/window.c
+diffie-hellman.o: ../crypto/diffie-hellman.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/diffie-hellman.c
+host_ca_new_free.o: ../utils/host_ca_new_free.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/host_ca_new_free.c
+sharing.o: ../ssh/sharing.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/sharing.c
+putty-xpm.o: ../unix/putty-xpm.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/putty-xpm.c
+crc-attack-detector.o: ../ssh/crc-attack-detector.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/crc-attack-detector.c
+prng.o: ../crypto/prng.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/prng.c
+validate_manual_hostkey.o: ../utils/validate_manual_hostkey.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/validate_manual_hostkey.c
+portfwd.o: ../ssh/portfwd.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/portfwd.c
+sha256-common.o: ../crypto/sha256-common.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha256-common.c
+pterm.o: ../unix/pterm.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/pterm.c
+seat_connection_fatal.o: ../utils/seat_connection_fatal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/seat_connection_fatal.c
+pgssapi.o: ../ssh/pgssapi.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/pgssapi.c
+sha1-sw.o: ../crypto/sha1-sw.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha1-sw.c
+default_description.o: ../utils/default_description.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/default_description.c
+no-gtk.o: ../unix/no-gtk.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/no-gtk.c
+aesgcm-neon.o: ../crypto/aesgcm-neon.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aesgcm-neon.c
+out_of_memory.o: ../utils/out_of_memory.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/out_of_memory.c
+rsa.o: ../crypto/rsa.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/rsa.c
+sftpserver.o: ../unix/sftpserver.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/sftpserver.c
+conf_launchable.o: ../utils/conf_launchable.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/conf_launchable.c
+sha512-sw.o: ../crypto/sha512-sw.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha512-sw.c
+version.o: ../utils/version.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/version.c
+pubkey-ssh1.o: ../crypto/pubkey-ssh1.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/pubkey-ssh1.c
+encode_utf8.o: ../utils/encode_utf8.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/encode_utf8.c
+aesgcm-select.o: ../crypto/aesgcm-select.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aesgcm-select.c
+x11.o: ../unix/x11.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/x11.c
+percent_decode.o: ../utils/percent_decode.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/percent_decode.c
+aesgcm-common.o: ../crypto/aesgcm-common.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aesgcm-common.c
+serial.o: ../unix/serial.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/serial.c
+prompts.o: ../utils/prompts.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/prompts.c
+sha3.o: ../crypto/sha3.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha3.c
+psusan.o: ../unix/psusan.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/psusan.c
+smemclr.o: ../utils/smemclr.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/smemclr.c
+ecc-arithmetic.o: ../crypto/ecc-arithmetic.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/ecc-arithmetic.c
+memory.o: ../utils/memory.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/memory.c
+arcfour.o: ../crypto/arcfour.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/arcfour.c
+memxor.o: ../utils/memxor.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/memxor.c
+pterm-config-xpm.o: ../unix/pterm-config-xpm.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/pterm-config-xpm.c
+sha256-neon.o: ../crypto/sha256-neon.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha256-neon.c
+base64_valid.o: ../utils/base64_valid.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/base64_valid.c
+agent-client.o: ../unix/agent-client.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/agent-client.c
+backend_socket_log.o: ../utils/backend_socket_log.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/backend_socket_log.c
+sftpu.o: ../unix/sftpu.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/sftpu.c
+base64_encode.o: ../utils/base64_encode.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/base64_encode.c
+unicode.o: ../unix/unicode.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/unicode.c
+percent_encode.o: ../utils/percent_encode.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/percent_encode.c
+putty.o: ../unix/putty.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/putty.c
+wildcard.o: ../utils/wildcard.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/wildcard.c
+procnet.o: ../unix/procnet.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/procnet.c
+make_spr_sw_abort_static.o: ../utils/make_spr_sw_abort_static.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/make_spr_sw_abort_static.c
+sessprep.o: ../utils/sessprep.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/sessprep.c
+main-gtk-application.o: ../unix/main-gtk-application.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/main-gtk-application.c
+base64_decode.o: ../utils/base64_decode.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/base64_decode.c
+uppity.o: ../unix/uppity.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uppity.c
+key_components.o: ../utils/key_components.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/key_components.c
+pty.o: ../unix/pty.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/pty.c
+antispoof.o: ../utils/antispoof.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/antispoof.c
+pageant.o: ../unix/pageant.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/pageant.c
+parse_blocksize.o: ../utils/parse_blocksize.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/parse_blocksize.c
+tempseat.o: ../utils/tempseat.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/tempseat.c
+agent-socket.o: ../unix/agent-socket.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/agent-socket.c
+ctrlparse.o: ../utils/ctrlparse.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/ctrlparse.c
+plink.o: ../unix/plink.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/plink.c
+host_strchr_internal.o: ../utils/host_strchr_internal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/host_strchr_internal.c
+smemeq.o: ../utils/smemeq.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/smemeq.c
+noaskpass.o: ../unix/noaskpass.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/noaskpass.c
+write_c_string_literal.o: ../utils/write_c_string_literal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/write_c_string_literal.c
+sharingu.o: ../unix/sharingu.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/sharingu.c
+sk_free_peer_info.o: ../utils/sk_free_peer_info.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/sk_free_peer_info.c
+ltime.o: ../utils/ltime.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/ltime.c
+columns.o: ../unix/columns.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/columns.c
+wcwidth.o: ../utils/wcwidth.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/wcwidth.c
+tree234.o: ../utils/tree234.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/tree234.c
+gss.o: ../unix/gss.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gss.c
+log_proxy_stderr.o: ../utils/log_proxy_stderr.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/log_proxy_stderr.c
+storage.o: ../unix/storage.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/storage.c
+burnstr.o: ../utils/burnstr.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/burnstr.c
+dupprintf.o: ../utils/dupprintf.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/dupprintf.c
+peerinfo.o: ../unix/peerinfo.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/peerinfo.c
+dup_mb_to_wc.o: ../utils/dup_mb_to_wc.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/dup_mb_to_wc.c
 osxlaunch.o: ../unix/osxlaunch.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/osxlaunch.c
-pageant.o: ../pageant.c ../putty.h ../mpint.h ../ssh.h ../sshcr.h \
-		../pageant.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pageant.c
-pgssapi.o: ../pgssapi.c ../putty.h ../pgssapi.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pgssapi.c
-pinger.o: ../pinger.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pinger.c
-pockle.o: ../pockle.c ../ssh.h ../sshkeygen.h ../mpint.h ../mpunsafe.h \
-		../tree234.h ../puttymem.h ../network.h ../misc.h \
-		../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pockle.c
-portfwd.o: ../portfwd.c ../putty.h ../ssh.h ../sshchan.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../portfwd.c
-primecandidate.o: ../primecandidate.c ../ssh.h ../mpint.h ../mpunsafe.h \
-		../sshkeygen.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../primecandidate.c
-procnet.o: ../unix/procnet.c ../misc.h ../defs.h ../puttymem.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/procnet.c
-proxy.o: ../proxy.c ../putty.h ../network.h ../proxy.h ../defs.h \
-		../puttyps.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy.c
-pscp.o: ../pscp.c ../putty.h ../psftp.h ../ssh.h ../sftp.h ../storage.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pscp.c
-psftp.o: ../psftp.c ../putty.h ../psftp.h ../storage.h ../ssh.h ../sftp.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../psftp.c
-psftpcommon.o: ../psftpcommon.c ../putty.h ../sftp.h ../psftp.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../psftpcommon.c
-psocks.o: ../psocks.c ../putty.h ../misc.h ../ssh.h ../sshchan.h ../psocks.h \
-		../defs.h ../puttyps.h ../network.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../psocks.c
-raw.o: ../raw.c ../putty.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../raw.c
-rlogin.o: ../rlogin.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../rlogin.c
-sbcs.o: ../charset/sbcs.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/sbcs.c
-sbcsdat.o: ../charset/sbcsdat.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/sbcsdat.c
-scpserver.o: ../scpserver.c ../putty.h ../ssh.h ../sshcr.h ../sshchan.h \
-		../sftp.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../scpserver.c
-sesschan.o: ../sesschan.c ../putty.h ../ssh.h ../sshchan.h ../sshserver.h \
-		../sftp.h ../sshsignals.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sesschan.c
-sessprep.o: ../sessprep.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sessprep.c
-settings.o: ../settings.c ../putty.h ../storage.h ../sshgssc.h ../sshgss.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../pgssapi.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../settings.c
-sftp.o: ../sftp.c ../misc.h ../tree234.h ../sftp.h ../defs.h ../puttymem.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sftp.c
-sftpcommon.o: ../sftpcommon.c ../misc.h ../sftp.h ../defs.h ../puttymem.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sftpcommon.c
-sftpserver.o: ../sftpserver.c ../putty.h ../ssh.h ../sftp.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sftpserver.c
-sizetip.o: ../windows/sizetip.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/sizetip.c
-slookup.o: ../charset/slookup.c ../charset/charset.h ../charset/internal.h \
-		../charset/enum.c ../charset/sbcsdat.c ../charset/utf8.c
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/slookup.c
-smallprimes.o: ../smallprimes.c ../ssh.h ../sshkeygen.h ../puttymem.h \
-		../tree234.h ../network.h ../misc.h ../sshttymodes.h \
-		../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../smallprimes.c
-ssh.o: ../ssh.c ../putty.h ../pageant.h ../tree234.h ../storage.h \
-		../marshal.h ../ssh.h ../sshcr.h ../sshbpp.h ../sshppl.h \
-		../sshchan.h ../sshgssc.h ../sshgss.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../sshsignals.h ../puttymem.h \
-		../sshttymodes.h ../pgssapi.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh.c
-ssh1bpp.o: ../ssh1bpp.c ../putty.h ../ssh.h ../sshbpp.h ../sshcr.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh1bpp.c
-ssh1censor.o: ../ssh1censor.c ../putty.h ../ssh.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh1censor.c
-ssh1connection.o: ../ssh1connection.c ../putty.h ../ssh.h ../sshbpp.h \
-		../sshppl.h ../sshchan.h ../sshcr.h ../ssh1connection.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh1connection.c
-ssh1connection-client.o: ../ssh1connection-client.c ../putty.h ../ssh.h \
-		../sshbpp.h ../sshppl.h ../sshchan.h ../sshcr.h \
-		../ssh1connection.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh1connection-client.c
-ssh1connection-server.o: ../ssh1connection-server.c ../putty.h ../ssh.h \
-		../sshbpp.h ../sshppl.h ../sshchan.h ../sshcr.h \
-		../ssh1connection.h ../sshserver.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh1connection-server.c
-ssh1login.o: ../ssh1login.c ../putty.h ../ssh.h ../mpint.h ../sshbpp.h \
-		../sshppl.h ../sshcr.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh1login.c
-ssh1login-server.o: ../ssh1login-server.c ../putty.h ../mpint.h ../ssh.h \
-		../sshbpp.h ../sshppl.h ../sshcr.h ../sshserver.h \
-		../sshkeygen.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh1login-server.c
-ssh2bpp.o: ../ssh2bpp.c ../putty.h ../ssh.h ../sshbpp.h ../sshcr.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2bpp.c
-ssh2bpp-bare.o: ../ssh2bpp-bare.c ../putty.h ../ssh.h ../sshbpp.h ../sshcr.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2bpp-bare.c
-ssh2censor.o: ../ssh2censor.c ../putty.h ../ssh.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2censor.c
-ssh2connection.o: ../ssh2connection.c ../putty.h ../ssh.h ../sshbpp.h \
-		../sshppl.h ../sshchan.h ../sshcr.h ../ssh2connection.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2connection.c
-ssh2connection-client.o: ../ssh2connection-client.c ../putty.h ../ssh.h \
-		../sshbpp.h ../sshppl.h ../sshchan.h ../sshcr.h \
-		../ssh2connection.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2connection-client.c
-ssh2connection-server.o: ../ssh2connection-server.c ../putty.h ../ssh.h \
-		../sshbpp.h ../sshppl.h ../sshchan.h ../sshcr.h \
-		../ssh2connection.h ../sshserver.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2connection-server.c
-ssh2kex-client.o: ../ssh2kex-client.c ../putty.h ../ssh.h ../sshbpp.h \
-		../sshppl.h ../sshcr.h ../storage.h ../ssh2transport.h \
-		../mpint.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../sshgssc.h ../sshgss.h \
-		../windows/winstuff.h ../unix/unix.h ../pgssapi.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2kex-client.c
-ssh2kex-server.o: ../ssh2kex-server.c ../putty.h ../ssh.h ../sshbpp.h \
-		../sshppl.h ../sshcr.h ../sshserver.h ../sshkeygen.h \
-		../storage.h ../ssh2transport.h ../mpint.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../sshgssc.h ../sshgss.h ../windows/winstuff.h \
-		../unix/unix.h ../pgssapi.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2kex-server.c
-ssh2transhk.o: ../ssh2transhk.c ../putty.h ../ssh.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2transhk.c
-ssh2transport.o: ../ssh2transport.c ../putty.h ../ssh.h ../sshbpp.h \
-		../sshppl.h ../sshcr.h ../sshserver.h ../storage.h \
-		../ssh2transport.h ../mpint.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h ../sshgssc.h \
-		../sshgss.h ../windows/winstuff.h ../unix/unix.h \
-		../pgssapi.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2transport.c
-ssh2userauth.o: ../ssh2userauth.c ../putty.h ../ssh.h ../sshbpp.h \
-		../sshppl.h ../sshcr.h ../sshgssc.h ../sshgss.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../pgssapi.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2userauth.c
-ssh2userauth-server.o: ../ssh2userauth-server.c ../putty.h ../ssh.h \
-		../sshbpp.h ../sshppl.h ../sshcr.h ../sshserver.h \
-		../sshgssc.h ../sshgss.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../pgssapi.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh2userauth-server.c
-sshaes.o: ../sshaes.c ../ssh.h ../mpint_i.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshaes.c
-ssharcf.o: ../ssharcf.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssharcf.c
-sshargon2.o: ../sshargon2.c ../putty.h ../ssh.h ../marshal.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshargon2.c
-sshauxcrypt.o: ../sshauxcrypt.c ../ssh.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshauxcrypt.c
-sshbcrypt.o: ../sshbcrypt.c ../ssh.h ../sshblowf.h ../puttymem.h \
-		../tree234.h ../network.h ../misc.h ../sshttymodes.h \
-		../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshbcrypt.c
-sshblake2.o: ../sshblake2.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshblake2.c
-sshblowf.o: ../sshblowf.c ../ssh.h ../sshblowf.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshblowf.c
-sshccp.o: ../sshccp.c ../ssh.h ../mpint_i.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshccp.c
-sshcommon.o: ../sshcommon.c ../putty.h ../mpint.h ../ssh.h ../sshbpp.h \
-		../sshppl.h ../sshchan.h ../sshttymodes.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshcommon.c
-sshcrc.o: ../sshcrc.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshcrc.c
-sshcrcda.o: ../sshcrcda.c ../misc.h ../ssh.h ../defs.h ../puttymem.h \
-		../marshal.h ../tree234.h ../network.h ../sshttymodes.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshcrcda.c
-sshdes.o: ../sshdes.c ../ssh.h ../mpint_i.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshdes.c
-sshdh.o: ../sshdh.c ../ssh.h ../misc.h ../mpint.h ../puttymem.h ../tree234.h \
-		../network.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshdh.c
-sshdss.o: ../sshdss.c ../ssh.h ../mpint.h ../misc.h ../puttymem.h \
-		../tree234.h ../network.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshdss.c
-sshdssg.o: ../sshdssg.c ../misc.h ../ssh.h ../sshkeygen.h ../mpint.h \
-		../defs.h ../puttymem.h ../marshal.h ../tree234.h \
-		../network.h ../sshttymodes.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshdssg.c
-sshecc.o: ../sshecc.c ../ssh.h ../mpint.h ../ecc.h ../puttymem.h \
-		../tree234.h ../network.h ../misc.h ../sshttymodes.h \
-		../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshecc.c
-sshecdsag.o: ../sshecdsag.c ../ssh.h ../sshkeygen.h ../mpint.h ../puttymem.h \
-		../tree234.h ../network.h ../misc.h ../sshttymodes.h \
-		../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshecdsag.c
-sshgssc.o: ../sshgssc.c ../putty.h ../sshgssc.h ../misc.h ../defs.h \
-		../puttyps.h ../network.h ../marshal.h ../sshsignals.h \
-		../pgssapi.h ../sshgss.h ../puttymem.h ../windows/winstuff.h \
-		../unix/unix.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshgssc.c
-sshhmac.o: ../sshhmac.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshhmac.c
-sshmac.o: ../sshmac.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshmac.c
-sshmd5.o: ../sshmd5.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshmd5.c
-sshprime.o: ../sshprime.c ../ssh.h ../mpint.h ../mpunsafe.h ../sshkeygen.h \
-		../puttymem.h ../tree234.h ../network.h ../misc.h \
-		../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshprime.c
-sshprng.o: ../sshprng.c ../putty.h ../ssh.h ../mpint_i.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshprng.c
-sshpubk.o: ../sshpubk.c ../putty.h ../mpint.h ../ssh.h ../misc.h ../defs.h \
-		../puttyps.h ../network.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshpubk.c
-sshrand.o: ../sshrand.c ../putty.h ../ssh.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshrand.c
-sshrsa.o: ../sshrsa.c ../ssh.h ../mpint.h ../misc.h ../puttymem.h \
-		../tree234.h ../network.h ../sshttymodes.h ../defs.h \
-		../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshrsa.c
-sshrsag.o: ../sshrsag.c ../ssh.h ../sshkeygen.h ../mpint.h ../puttymem.h \
-		../tree234.h ../network.h ../misc.h ../sshttymodes.h \
-		../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshrsag.c
-sshserver.o: ../sshserver.c ../putty.h ../ssh.h ../sshbpp.h ../sshppl.h \
-		../sshchan.h ../sshserver.h ../sshgssc.h ../sshgss.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../pgssapi.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshserver.c
-sshsh256.o: ../sshsh256.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshsh256.c
-sshsh512.o: ../sshsh512.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshsh512.c
-sshsha.o: ../sshsha.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshsha.c
-sshsha3.o: ../sshsha3.c ../ssh.h ../puttymem.h ../tree234.h ../network.h \
-		../misc.h ../sshttymodes.h ../defs.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshsha3.c
-sshshare.o: ../sshshare.c ../putty.h ../tree234.h ../ssh.h ../sshcr.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshshare.c
-sshutils.o: ../sshutils.c ../putty.h ../ssh.h ../sshchan.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshutils.c
-sshverstring.o: ../sshverstring.c ../putty.h ../ssh.h ../sshbpp.h ../sshcr.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshverstring.c
-sshzlib.o: ../sshzlib.c ../defs.h ../ssh.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshzlib.c
-stripctrl.o: ../stripctrl.c ../putty.h ../terminal.h ../misc.h ../marshal.h \
-		../defs.h ../puttyps.h ../network.h ../sshsignals.h \
-		../tree234.h ../puttymem.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stripctrl.c
-supdup.o: ../supdup.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../supdup.c
-telnet.o: ../telnet.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../telnet.c
-terminal.o: ../terminal.c ../putty.h ../terminal.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../tree234.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../terminal.c
-testcrypt.o: ../testcrypt.c ../defs.h ../ssh.h ../sshkeygen.h ../misc.h \
-		../mpint.h ../ecc.h ../testcrypt.h ../puttymem.h \
-		../tree234.h ../network.h ../sshttymodes.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../testcrypt.c
-testsc.o: ../testsc.c ../defs.h ../putty.h ../ssh.h ../misc.h ../mpint.h \
-		../ecc.h ../puttyps.h ../network.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../testsc.c
-testzlib.o: ../testzlib.c ../defs.h ../ssh.h ../puttymem.h ../tree234.h \
-		../network.h ../misc.h ../sshttymodes.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../testzlib.c
-time.o: ../time.c
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../time.c
-timing.o: ../timing.c ../putty.h ../tree234.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../timing.c
-toucs.o: ../charset/toucs.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/toucs.c
-tree234.o: ../tree234.c ../defs.h ../tree234.h ../puttymem.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../tree234.c
-utf8.o: ../charset/utf8.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/utf8.c
-utils.o: ../utils.c ../defs.h ../misc.h ../ssh.h ../puttymem.h ../marshal.h \
-		../tree234.h ../network.h ../sshttymodes.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils.c
-ux_x11.o: ../unix/ux_x11.c ../putty.h ../ssh.h ../network.h ../defs.h \
-		../puttyps.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/ux_x11.c
-uxagentc.o: ../unix/uxagentc.c ../putty.h ../misc.h ../tree234.h \
-		../puttymem.h ../defs.h ../puttyps.h ../network.h \
-		../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxagentc.c
-uxagentsock.o: ../unix/uxagentsock.c ../putty.h ../ssh.h ../misc.h \
-		../pageant.h ../defs.h ../puttyps.h ../network.h \
-		../marshal.h ../sshsignals.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxagentsock.c
-uxcfg.o: ../unix/uxcfg.c ../putty.h ../dialog.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxcfg.c
-uxcliloop.o: ../unix/uxcliloop.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxcliloop.c
-uxcons.o: ../unix/uxcons.c ../putty.h ../storage.h ../ssh.h ../console.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxcons.c
-uxfdsock.o: ../unix/uxfdsock.c ../tree234.h ../putty.h ../network.h \
-		../defs.h ../puttyps.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxfdsock.c
-uxgen.o: ../unix/uxgen.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxgen.c
-uxgss.o: ../unix/uxgss.c ../putty.h ../pgssapi.h ../sshgss.h ../sshgssc.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxgss.c
-uxmisc.o: ../unix/uxmisc.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxmisc.c
-uxnet.o: ../unix/uxnet.c ../putty.h ../network.h ../tree234.h ../defs.h \
-		../puttyps.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxnet.c
-uxnogtk.o: ../unix/uxnogtk.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxnogtk.c
-uxnoise.o: ../unix/uxnoise.c ../putty.h ../ssh.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxnoise.c
-uxpeer.o: ../unix/uxpeer.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxpeer.c
-uxpgnt.o: ../unix/uxpgnt.c ../putty.h ../ssh.h ../misc.h ../pageant.h \
-		../defs.h ../puttyps.h ../network.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxpgnt.c
-uxplink.o: ../unix/uxplink.c ../putty.h ../ssh.h ../storage.h ../tree234.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxplink.c
-uxpoll.o: ../unix/uxpoll.c ../putty.h ../tree234.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxpoll.c
-uxprint.o: ../unix/uxprint.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxprint.c
-uxproxy.o: ../unix/uxproxy.c ../tree234.h ../putty.h ../network.h ../proxy.h \
-		../defs.h ../puttyps.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxproxy.c
-uxpsusan.o: ../unix/uxpsusan.c ../putty.h ../mpint.h ../ssh.h ../sshserver.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxpsusan.c
-uxpterm.o: ../unix/uxpterm.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxpterm.c
-uxpty.o: ../unix/uxpty.c ../putty.h ../ssh.h ../sshserver.h ../tree234.h \
-		../sshttymodes.h ../sshsignals.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../puttymem.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxpty.c
-uxputty.o: ../unix/uxputty.c ../putty.h ../ssh.h ../storage.h \
-		../unix/gtkcompat.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxputty.c
-uxsel.o: ../unix/uxsel.c ../putty.h ../tree234.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
+base64_encode_atom.o: ../utils/base64_encode_atom.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/base64_encode_atom.c
+host_strduptrim.o: ../utils/host_strduptrim.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/host_strduptrim.c
+pterm-xpm.o: ../unix/pterm-xpm.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/pterm-xpm.c
+ptrlen.o: ../utils/ptrlen.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/ptrlen.c
+gtk-common.o: ../unix/gtk-common.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/gtk-common.c
+string_length_for_printf.o: ../utils/string_length_for_printf.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/string_length_for_printf.c
+unifont.o: ../unix/unifont.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/unifont.c
+bufchain.o: ../utils/bufchain.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/bufchain.c
+putty-config-xpm.o: ../unix/putty-config-xpm.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/putty-config-xpm.c
+dupstr.o: ../utils/dupstr.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/dupstr.c
+fd-socket.o: ../unix/fd-socket.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/fd-socket.c
+nullstrcmp.o: ../utils/nullstrcmp.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/nullstrcmp.c
+keygen-noise.o: ../unix/keygen-noise.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/keygen-noise.c
+seat_dialog_text.o: ../utils/seat_dialog_text.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/seat_dialog_text.c
+cert-expr.o: ../utils/cert-expr.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/cert-expr.c
+psocks.o: ../unix/psocks.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/psocks.c
+ssh2_pick_fingerprint.o: ../utils/ssh2_pick_fingerprint.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/ssh2_pick_fingerprint.c
+sshutils.o: ../utils/sshutils.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/sshutils.c
+spr_get_error_message.o: ../utils/spr_get_error_message.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/spr_get_error_message.c
+config-gtk.o: ../unix/config-gtk.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/config-gtk.c
+wordwrap.o: ../utils/wordwrap.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/wordwrap.c
+network.o: ../unix/network.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/network.c
+host_strcspn.o: ../utils/host_strcspn.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/host_strcspn.c
+uxsel.o: ../unix/uxsel.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxsel.c
-uxser.o: ../unix/uxser.c ../putty.h ../tree234.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxser.c
-uxserver.o: ../unix/uxserver.c ../putty.h ../mpint.h ../ssh.h ../sshserver.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxserver.c
-uxsftp.o: ../unix/uxsftp.c ../putty.h ../ssh.h ../psftp.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxsftp.c
-uxsftpserver.o: ../unix/uxsftpserver.c ../putty.h ../ssh.h ../sshserver.h \
-		../sftp.h ../tree234.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxsftpserver.c
-uxshare.o: ../unix/uxshare.c ../tree234.h ../putty.h ../network.h ../proxy.h \
-		../ssh.h ../defs.h ../puttyps.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxshare.c
-uxsignal.o: ../unix/uxsignal.c ../defs.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxsignal.c
-uxsocks.o: ../unix/uxsocks.c ../putty.h ../ssh.h ../psocks.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxsocks.c
-uxstore.o: ../unix/uxstore.c ../putty.h ../storage.h ../tree234.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxstore.c
-uxucs.o: ../unix/uxucs.c ../putty.h ../charset/charset.h ../terminal.h \
-		../misc.h ../defs.h ../puttyps.h ../network.h ../marshal.h \
-		../sshsignals.h ../tree234.h ../puttymem.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxucs.c
-uxutils.o: ../unix/uxutils.c ../putty.h ../ssh.h ../unix/uxutils.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxutils.c
-version.o: ../version.c ../putty.h ../ssh.h ../empty.h ../version.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../version.c
-wcwidth.o: ../wcwidth.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../wcwidth.c
-wildcard.o: ../wildcard.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../wildcard.c
-wincapi.o: ../windows/wincapi.c ../putty.h ../ssh.h ../windows/wincapi.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/wincapi.c
-wincfg.o: ../windows/wincfg.c ../putty.h ../dialog.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/wincfg.c
-wincliloop.o: ../windows/wincliloop.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/wincliloop.c
-wincons.o: ../windows/wincons.c ../putty.h ../storage.h ../ssh.h \
-		../console.h ../defs.h ../puttyps.h ../network.h ../misc.h \
-		../marshal.h ../sshsignals.h ../puttymem.h ../tree234.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/wincons.c
-winctrls.o: ../windows/winctrls.c ../putty.h ../misc.h ../dialog.h ../defs.h \
-		../puttyps.h ../network.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../windows/winstuff.h ../unix/unix.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winctrls.c
-windefs.o: ../windows/windefs.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/windefs.c
-windlg.o: ../windows/windlg.c ../putty.h ../ssh.h ../windows/win_res.h \
-		../windows/winseat.h ../storage.h ../dialog.h ../licence.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/windlg.c
-window.o: ../windows/window.c ../putty.h ../terminal.h ../storage.h \
-		../windows/win_res.h ../windows/winsecur.h \
-		../windows/winseat.h ../tree234.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/window.c
-wingss.o: ../windows/wingss.c ../putty.h ../pgssapi.h ../sshgss.h \
-		../sshgssc.h ../misc.h ../defs.h ../puttyps.h ../network.h \
-		../marshal.h ../sshsignals.h ../puttymem.h \
-		../windows/winstuff.h ../unix/unix.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/wingss.c
-winhandl.o: ../windows/winhandl.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winhandl.c
-winhelp.o: ../windows/winhelp.c ../putty.h ../windows/win_res.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winhelp.c
-winhsock.o: ../windows/winhsock.c ../tree234.h ../putty.h ../network.h \
-		../defs.h ../puttyps.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winhsock.c
-winjump.o: ../windows/winjump.c ../putty.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winjump.c
-winmisc.o: ../windows/winmisc.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winmisc.c
-winmiscs.o: ../windows/winmiscs.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winmiscs.c
-winnet.o: ../windows/winnet.c ../putty.h ../network.h ../tree234.h ../ssh.h \
-		../defs.h ../puttyps.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winnet.c
-winnohlp.o: ../windows/winnohlp.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winnohlp.c
-winnoise.o: ../windows/winnoise.c ../putty.h ../ssh.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winnoise.c
-winnojmp.o: ../windows/winnojmp.c
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winnojmp.c
-winnpc.o: ../windows/winnpc.c ../tree234.h ../putty.h ../network.h \
-		../proxy.h ../ssh.h ../windows/winsecur.h ../defs.h \
-		../puttyps.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winnpc.c
-winnps.o: ../windows/winnps.c ../tree234.h ../putty.h ../network.h \
-		../proxy.h ../ssh.h ../windows/winsecur.h ../defs.h \
-		../puttyps.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winnps.c
-winpgen.o: ../windows/winpgen.c ../putty.h ../ssh.h ../sshkeygen.h \
-		../licence.h ../windows/winsecur.h ../windows/puttygen-rc.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winpgen.c
-winpgnt.o: ../windows/winpgnt.c ../putty.h ../ssh.h ../misc.h ../tree234.h \
-		../windows/winsecur.h ../windows/wincapi.h ../pageant.h \
-		../licence.h ../windows/pageant-rc.h ../defs.h ../puttyps.h \
-		../network.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winpgnt.c
-winpgntc.o: ../windows/winpgntc.c ../putty.h ../pageant.h \
-		../windows/winsecur.h ../windows/wincapi.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winpgntc.c
-winplink.o: ../windows/winplink.c ../putty.h ../storage.h ../tree234.h \
-		../windows/winsecur.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winplink.c
-winprint.o: ../windows/winprint.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winprint.c
-winproxy.o: ../windows/winproxy.c ../tree234.h ../putty.h ../network.h \
-		../proxy.h ../defs.h ../puttyps.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winproxy.c
-winsecur.o: ../windows/winsecur.c ../putty.h ../windows/winsecur.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winsecur.c
-winselcli.o: ../windows/winselcli.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winselcli.c
-winselgui.o: ../windows/winselgui.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winselgui.c
-winser.o: ../windows/winser.c ../putty.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../windows/winstuff.h \
-		../unix/unix.h ../puttymem.h ../tree234.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winser.c
-winsftp.o: ../windows/winsftp.c ../putty.h ../psftp.h ../ssh.h \
-		../windows/winsecur.h ../defs.h ../puttyps.h ../network.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../tree234.h ../sshttymodes.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winsftp.c
-winshare.o: ../windows/winshare.c ../tree234.h ../putty.h ../network.h \
-		../proxy.h ../ssh.h ../windows/wincapi.h \
-		../windows/winsecur.h ../noshare.c ../defs.h ../puttyps.h \
-		../misc.h ../marshal.h ../sshsignals.h ../puttymem.h \
-		../sshttymodes.h ../windows/winstuff.h ../unix/unix.h \
-		../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winshare.c
-winsocks.o: ../windows/winsocks.c ../putty.h ../ssh.h ../psocks.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winsocks.c
-winstore.o: ../windows/winstore.c ../putty.h ../storage.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winstore.c
-wintime.o: ../windows/wintime.c ../putty.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../windows/winstuff.h ../unix/unix.h ../puttymem.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/wintime.c
-winucs.o: ../windows/winucs.c ../putty.h ../terminal.h ../misc.h ../defs.h \
-		../puttyps.h ../network.h ../marshal.h ../sshsignals.h \
-		../tree234.h ../puttymem.h ../windows/winstuff.h \
-		../unix/unix.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winucs.c
-winutils.o: ../windows/winutils.c ../putty.h ../misc.h ../defs.h \
-		../puttyps.h ../network.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../windows/winstuff.h ../unix/unix.h \
-		../tree234.h ../windows/winhelp.h ../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winutils.c
-winx11.o: ../windows/winx11.c ../putty.h ../ssh.h ../defs.h ../puttyps.h \
-		../network.h ../misc.h ../marshal.h ../sshsignals.h \
-		../puttymem.h ../tree234.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../windows/winx11.c
-x11fwd.o: ../x11fwd.c ../putty.h ../ssh.h ../sshchan.h ../tree234.h \
-		../defs.h ../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../puttymem.h ../sshttymodes.h \
-		../windows/winstuff.h ../unix/unix.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../x11fwd.c
-x11misc.o: ../unix/x11misc.c ../putty.h ../unix/x11misc.h ../defs.h \
-		../puttyps.h ../network.h ../misc.h ../marshal.h \
-		../sshsignals.h ../windows/winstuff.h ../unix/unix.h \
-		../puttymem.h ../tree234.h ../windows/winhelp.h \
-		../charset/charset.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/x11misc.c
-xenc.o: ../charset/xenc.c ../charset/charset.h ../charset/internal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../charset/xenc.c
-xkeysym.o: ../unix/xkeysym.c ../misc.h ../defs.h ../puttymem.h ../marshal.h
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/xkeysym.c
-xpmptcfg.o: ../unix/xpmptcfg.c
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/xpmptcfg.c
-xpmpterm.o: ../unix/xpmpterm.c
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/xpmpterm.c
-xpmpucfg.o: ../unix/xpmpucfg.c
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/xpmpucfg.c
-xpmputty.o: ../unix/xpmputty.c
-	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/xpmputty.c
-
+cliloop.o: ../unix/cliloop.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/cliloop.c
+get_username.o: ../unix/utils/get_username.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/get_username.c
+get_label_text_dimensions.o: ../unix/utils/get_label_text_dimensions.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/get_label_text_dimensions.c
+x11_ignore_error.o: ../unix/utils/x11_ignore_error.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/x11_ignore_error.c
+keysym_to_unicode.o: ../unix/utils/keysym_to_unicode.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/keysym_to_unicode.c
+fontspec.o: ../unix/utils/fontspec.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/fontspec.c
+string_width.o: ../unix/utils/string_width.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/string_width.c
+make_dir_path.o: ../unix/utils/make_dir_path.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/make_dir_path.c
+open_for_write_would_lose_data.o: ../unix/utils/open_for_write_would_lose_data.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/open_for_write_would_lose_data.c
+buildinfo_gtk_version.o: ../unix/utils/buildinfo_gtk_version.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/buildinfo_gtk_version.c
+signal.o: ../unix/utils/signal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/signal.c
+pgp_fingerprints.o: ../unix/utils/pgp_fingerprints.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/pgp_fingerprints.c
+cloexec.o: ../unix/utils/cloexec.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/cloexec.c
+filename.o: ../unix/utils/filename.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/filename.c
+make_spr_sw_abort_errno.o: ../unix/utils/make_spr_sw_abort_errno.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/make_spr_sw_abort_errno.c
+getticks.o: ../unix/utils/getticks.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/getticks.c
+block_signal.o: ../unix/utils/block_signal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/block_signal.c
+nonblock.o: ../unix/utils/nonblock.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/nonblock.c
+get_x11_display.o: ../unix/utils/get_x11_display.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/get_x11_display.c
+align_label_left.o: ../unix/utils/align_label_left.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/align_label_left.c
+make_dir_and_check_ours.o: ../unix/utils/make_dir_and_check_ours.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/make_dir_and_check_ours.c
+arm_arch_queries.o: ../unix/utils/arm_arch_queries.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/arm_arch_queries.c
+dputs.o: ../unix/utils/dputs.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/dputs.c
+our_dialog.o: ../unix/utils/our_dialog.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/our_dialog.c
+pollwrap.o: ../unix/utils/pollwrap.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/pollwrap.c
 
 clean:
 	rm -f *.o cgtest fuzzterm osxlaunch plink pscp psftp psocks psusan puttygen testcrypt testsc testzlib uppity

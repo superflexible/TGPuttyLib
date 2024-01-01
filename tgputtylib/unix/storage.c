@@ -26,8 +26,6 @@
 #define FNLEN 1024 /* XXX */
 #endif
 
-#include "tglibcver.h"
-
 enum {
     INDEX_DIR, INDEX_HOSTKEYS, INDEX_HOSTKEYS_TMP, INDEX_RANDSEED,
     INDEX_SESSIONDIR, INDEX_SESSION, INDEX_HOSTCADIR, INDEX_HOSTCA
@@ -570,7 +568,7 @@ struct settings_e {
     DIR *dp;
 };
 
-#ifndef TGDLL
+
 settings_e *enum_settings_start(void)
 {
     DIR *dp;
@@ -630,7 +628,6 @@ void enum_settings_finish(settings_e *handle)
         closedir(handle->dp);
     sfree(handle);
 }
-#endif
 
 struct host_ca_enum {
     DIR *dp;

@@ -12,8 +12,6 @@
 #include "security-api.h"
 #include "cryptoapi.h"
 
-#include "tglibcver.h"
-
 static bool wm_copydata_agent_exists(void)
 {
     HWND hwnd;

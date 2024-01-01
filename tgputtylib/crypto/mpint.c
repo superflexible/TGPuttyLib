@@ -13,6 +13,8 @@
 #include "mpint.h"
 #include "mpint_i.h"
 
+#include "tglibcver.h"
+
 #define SIZE_T_BITS (CHAR_BIT * sizeof(size_t))
 
 /*

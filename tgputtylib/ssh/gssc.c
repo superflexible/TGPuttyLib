@@ -7,8 +7,6 @@
 
 #ifndef NO_GSSAPI
 
-#include "tglibcver.h"
-
 static Ssh_gss_stat ssh_gssapi_indicate_mech(struct ssh_gss_library *lib,
                                              Ssh_gss_buf *mech)
 {
@@ -186,7 +184,7 @@ static Ssh_gss_stat ssh_gssapi_display_status(struct ssh_gss_library *lib,
     /* copy mem */
     memcpy((char *)buf->value, msg_maj.value, msg_maj.length);
     ((char *)buf->value)[msg_maj.length] = ' ';
-    memcpy((char *)buf->value + msg_maj.length + 1, msg_min.value, msg_min.length);
+	memcpy((char *)buf->value + msg_maj.length + 1, msg_min.value, msg_min.length);
     ((char *)buf->value)[buf->length] = 0;
     /* free mem & exit */
     gss->release_buffer(&lmin, &msg_maj);

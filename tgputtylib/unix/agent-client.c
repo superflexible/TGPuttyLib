@@ -15,8 +15,6 @@
 #include "tree234.h"
 #include "puttymem.h"
 
-#include "tglibcver.h"
-
 bool agent_exists(void)
 {
     const char *p = getenv("SSH_AUTH_SOCK");

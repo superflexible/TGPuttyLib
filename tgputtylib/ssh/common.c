@@ -14,8 +14,6 @@
 #include "ppl.h"
 #include "channel.h"
 
-#include "tglibcver.h"
-
 /* ----------------------------------------------------------------------
  * Implementation of PacketQueue.
  */
