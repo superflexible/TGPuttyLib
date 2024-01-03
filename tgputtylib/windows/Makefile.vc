@@ -387,18 +387,6 @@ $(BUILDDIR)notiming.obj: ..\notiming.c ..\putty.h ..\defs.h \
 		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
 		..\windows\platform.h ..\puttymem.h \
 		..\tree234.h ..\charset\charset.h
-$(BUILDDIR)pageant.obj: ..\pageant.c ..\putty.h ..\mpint.h ..\ssh.h \
-		..\sshcr.h ..\pageant.h ..\defs.h ..\network.h \
-		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\puttymem.h \
-		..\tree234.h ..\ssh\ttymode-list.h ..\windows\platform.h \
-		..\charset\charset.h
-$(BUILDDIR)pageant.res: ..\windows\pageant.rc ..\windows\rcstuff.h \
-		..\windows\pageant-rc.h ..\windows\winhelp.rc2 \
-		..\windows\pageant.ico ..\windows\pageants.ico \
-		..\windows\version.rc2 ..\windows\pageant.mft \
-		..\windows\win_res.h ..\version.h
-	rc /Fo$(BUILDDIR)pageant.res $(RCFL) -r $(RCFLAGS) ..\windows\pageant.rc
-
 $(BUILDDIR)pgssapi.obj: ..\ssh\pgssapi.c ..\putty.h ..\ssh\pgssapi.h ..\defs.h \
 		..\network.h ..\misc.h ..\marshal.h \
 		..\ssh\signal-list.h ..\windows\platform.h \
@@ -408,10 +396,6 @@ $(BUILDDIR)pinger.obj: ..\pinger.c ..\putty.h ..\defs.h \
 		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
 		..\windows\platform.h ..\puttymem.h \
 		..\tree234.h ..\charset\charset.h
-$(BUILDDIR)plink.res: ..\windows\plink.rc ..\windows\rcstuff.h \
-		..\windows\putty.ico ..\windows\version.rc2 ..\version.h
-	rc /Fo$(BUILDDIR)plink.res $(RCFL) -r $(RCFLAGS) ..\windows\plink.rc
-
 $(BUILDDIR)pockle.obj: ..\pockle.c ..\ssh.h ..\sshkeygen.h ..\mpint.h \
 		..\mpunsafe.h ..\tree234.h ..\puttymem.h ..\network.h \
 		..\misc.h ..\ssh\ttymode-list.h ..\defs.h ..\marshal.h
@@ -434,17 +418,13 @@ $(BUILDDIR)pscp.obj: ..\pscp.c ..\putty.h ..\psftp.h ..\ssh.h ..\ssh\sftp.h \
 		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
 		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)pscp.res: ..\windows\pscp.rc ..\windows\rcstuff.h \
-		..\windows\pscp.ico ..\windows\version.rc2 ..\version.h
-	rc /Fo$(BUILDDIR)pscp.res $(RCFL) -r $(RCFLAGS) ..\windows\pscp.rc
-
 $(BUILDDIR)psftp.obj: ..\psftp.c ..\putty.h ..\psftp.h ..\storage.h ..\ssh.h \
 		..\ssh\sftp.h ..\defs.h ..\network.h ..\misc.h \
 		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
 		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h ..\version.h
 $(BUILDDIR)tgputtylib.res: ..\windows\tgputtylib.rc ..\windows\rcstuff.h \
-		..\windows\pscp.ico ..\windows\version.rc2 ..\version.h
+		..\windows\version.rc2 ..\version.h
 	rc /Fo$(BUILDDIR)tgputtylib.res $(RCFL) -r $(RCFLAGS) ..\windows\tgputtylib.rc
 
 $(BUILDDIR)psftpcommon.obj: ..\psftpcommon.c ..\putty.h ..\ssh\sftp.h ..\psftp.h \
@@ -457,26 +437,6 @@ $(BUILDDIR)psocks.obj: ..\psocks.c ..\putty.h ..\misc.h ..\ssh.h \
 		..\marshal.h ..\ssh\signal-list.h ..\puttymem.h ..\tree234.h \
 		..\ssh\ttymode-list.h ..\windows\platform.h \
 		..\charset\charset.h
-$(BUILDDIR)putty.res: ..\windows\putty.rc ..\windows\rcstuff.h \
-		..\windows\winhelp.rc2 ..\windows\win_res.rc2 \
-		..\windows\putty.mft ..\windows\win_res.h \
-		..\windows\putty.ico ..\windows\puttycfg.ico \
-		..\windows\version.rc2 ..\version.h
-	rc /Fo$(BUILDDIR)putty.res $(RCFL) -r $(RCFLAGS) ..\windows\putty.rc
-
-$(BUILDDIR)puttygen.res: ..\windows\puttygen.rc ..\windows\rcstuff.h \
-		..\windows\winhelp.rc2 ..\windows\puttygen-rc.h \
-		..\windows\puttygen.ico ..\windows\version.rc2 \
-		..\windows\puttygen.mft ..\windows\win_res.h ..\version.h
-	rc /Fo$(BUILDDIR)puttygen.res $(RCFL) -r $(RCFLAGS) ..\windows\puttygen.rc
-
-$(BUILDDIR)puttytel.res: ..\windows\puttytel.rc ..\windows\rcstuff.h \
-		..\windows\winhelp.rc2 ..\windows\win_res.rc2 \
-		..\windows\puttytel.mft ..\windows\win_res.h \
-		..\windows\putty.ico ..\windows\puttycfg.ico \
-		..\windows\version.rc2 ..\version.h
-	rc /Fo$(BUILDDIR)puttytel.res $(RCFL) -r $(RCFLAGS) ..\windows\puttytel.rc
-
 $(BUILDDIR)raw.obj: ..\raw.c ..\putty.h ..\defs.h ..\network.h \
 		..\misc.h ..\marshal.h ..\ssh\signal-list.h ..\windows\platform.h \
 		..\puttymem.h ..\tree234.h \
