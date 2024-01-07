@@ -59,7 +59,6 @@ static void make_session_filename(const char *in, strbuf *out)
     }
 }
 
-#ifndef TGDLL
 static void decode_session_filename(const char *in, strbuf *out)
 {
     while (*in) {
@@ -78,7 +77,6 @@ static void decode_session_filename(const char *in, strbuf *out)
         }
     }
 }
-#endif
 
 static char *make_filename(int index, const char *subname)
 {

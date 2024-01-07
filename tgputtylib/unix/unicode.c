@@ -24,6 +24,7 @@ bool is_dbcs_leadbyte(int codepage, char byte)
 int mb_to_wc(int codepage, int flags, const char *mbstr, int mblen,
              wchar_t *wcstr, int wclen)
 {
+#ifndef TGDLL
     if (codepage == DEFAULT_CODEPAGE) {
         int n = 0;
         mbstate_t state;
@@ -42,7 +43,9 @@ int mb_to_wc(int codepage, int flags, const char *mbstr, int mblen,
         }
 
         return n;
-    } else if (codepage == CS_NONE) {
+    } else if (codepage == CS_NONE)
+#endif
+    {
         int n = 0;
 
         while (mblen > 0) {
@@ -55,14 +58,18 @@ int mb_to_wc(int codepage, int flags, const char *mbstr, int mblen,
         }
 
         return n;
-    } else
+    }
+#ifndef TGDLL
+    else
         return charset_to_unicode(&mbstr, &mblen, wcstr, wclen, codepage,
                                   NULL, NULL, 0);
+#endif
 }
 
 int wc_to_mb(int codepage, int flags, const wchar_t *wcstr, int wclen,
              char *mbstr, int mblen, const char *defchr)
 {
+#ifndef TGDLL
     if (codepage == DEFAULT_CODEPAGE) {
         char output[MB_LEN_MAX];
         mbstate_t state;
@@ -81,7 +88,10 @@ int wc_to_mb(int codepage, int flags, const wchar_t *wcstr, int wclen,
         }
 
         return n;
-    } else if (codepage == CS_NONE) {
+    } else
+    if (codepage == CS_NONE)
+#endif
+    {
         int n = 0;
         while (wclen > 0 && n < mblen) {
             if (*wcstr >= 0xD800 && *wcstr < 0xD900)
@@ -92,15 +102,19 @@ int wc_to_mb(int codepage, int flags, const wchar_t *wcstr, int wclen,
             wclen--;
         }
         return n;
-    } else {
+    }
+#ifndef TGDLL
+    else {
         return charset_from_unicode(&wcstr, &wclen, mbstr, mblen, codepage,
                                     NULL, defchr?defchr:NULL, defchr?1:0);
     }
+#endif
 }
 
 /*
  * Return value is true if pterm is to run in direct-to-font mode.
  */
+#ifndef TGDLL
 bool init_ucs(struct unicode_data *ucsdata, char *linecharset,
               bool utf8_override, int font_charset, int vtmode)
 {
@@ -242,14 +256,18 @@ bool init_ucs(struct unicode_data *ucsdata, char *linecharset,
 
     return ret;
 }
+#endif
 
+#ifndef TGDLL
 const char *cp_name(int codepage)
 {
     if (codepage == CS_NONE)
         return "Use font encoding";
     return charset_to_localenc(codepage);
 }
+#endif
 
+#ifndef TGDLL
 const char *cp_enumerate(int index)
 {
     int charset;
@@ -262,10 +280,15 @@ const char *cp_enumerate(int index)
     }
     return charset_to_localenc(charset);
 }
+#endif
 
 int decode_codepage(const char *cp_name)
 {
+#ifdef TGDLL
+    return CS_UTF8; // TGPuttyLib uses UTF-8 always, or just raw 8-bit strings
+#else
     if (!cp_name || !*cp_name)
         return CS_UTF8;
     return charset_from_localenc(cp_name);
+#endif
 }

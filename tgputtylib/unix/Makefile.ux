@@ -124,9 +124,9 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		memory.o validate_manual_hostkey.o prompts.o null-lp.o \
 		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
 		null-seat.o null-plug.o pgssapi.o smemeq.o \
-		pinger.o portfwd.o cert-expr.o \
+		pinger.o portfwd.o cert-expr.o fd-socket.o \
 		null-mac.o proxy.o psftp.o default_description.o \
-		http.o psftpcommon.o null-opener.o \
+		http.o psftpcommon.o null-opener.o peerinfo.o \
 		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
 		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
 		bpp1.o censor1.o dupprintf.o host_strduptrim.o \
@@ -171,7 +171,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		unicode.o pollwrap.o \
                 xdmauth.o
 	$(CC) -shared -o libtgputty.so -fPIC agentf.o aqsync.o ssh2_pick_fingerprint.o \
-		network.o be_list.o bufchain.o tempseat.o uxsel.o \
+		network.o be_list.o bufchain.o tempseat.o uxsel.o fd-socket.o \
 		callback.o cmdline.o strbuf.o antispoof.o getticks.o \
 		conf.o clicons.o console.o sk_free_peer_info.o nonblock.o \
                 cproxy.o ecc-arithmetic.o ecc-ssh.o memxor.o cloexec.o \
@@ -179,7 +179,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		mainchan.o marshal.o local.o host_strchr.o fontspec.o \
 		memory.o validate_manual_hostkey.o prompts.o null-lp.o \
 		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
-		null-seat.o null-plug.o pgssapi.o smemeq.o \
+		null-seat.o null-plug.o pgssapi.o smemeq.o peerinfo.o \
 		pinger.o portfwd.o cert-expr.o make_dir_path.o \
 		null-mac.o proxy.o psftp.o default_description.o \
 		http.o psftpcommon.o null-opener.o make_dir_and_check_ours.o \
