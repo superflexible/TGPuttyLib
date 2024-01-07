@@ -1233,10 +1233,15 @@ void ssh_check_sendok(Ssh *ssh)
 
 void ssh_ldisc_update(Ssh *ssh)
 {
+#ifndef TGDLL
+// TGPuttyLib tries to avoid ldisc.c because of its references to Terminal
+// TGPuttyLib does not use a Terminal
+
     /* Called when the connection layer wants to propagate an update
      * to the line discipline options */
     if (ssh->ldisc)
         ldisc_echoedit_update(ssh->ldisc);
+#endif
 }
 
 static bool ssh_ldisc(Backend *be, int option)
