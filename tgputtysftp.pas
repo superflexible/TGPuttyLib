@@ -386,7 +386,7 @@ begin
 procedure TTGPuttySFTP.Connect;
 var res:Integer;
 begin
-  FPasswordAttempts:=0;
+  FAttempts:=0;
   FLastMessages:='';
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
   res:=tgsftp_connect(PAnsiChar(FHostName),PAnsiChar(FUserName),FPort,PAnsiChar(FPassword),@Fcontext);
