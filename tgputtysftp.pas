@@ -152,6 +152,8 @@ type TGPuttySFTPException=class(Exception);
 
          procedure SetBooleanConfigValue(const OptionName:AnsiString;const OptionValue:Boolean);
          procedure SetIntegerConfigValue(const OptionName:AnsiString;const OptionValue:Integer);
+         procedure SetIntegerConfigValueWithSubkey(const OptionName:AnsiString;const OptionSubKey,OptionValue:Integer);
+         procedure SetStringConfigValue(const OptionName,OptionValue:AnsiString);
 
          property HostName:AnsiString read FHostName write FHostName;
          property UserName:AnsiString read FUserName write FUserName;
@@ -307,6 +309,8 @@ begin
      TGPSFTP.FStreamWriteExceptionMessage:='';
      try
        Result:=TGPSFTP.FDownloadStream.Write(buffer^,bufsize);
+       if Result<>bufsize then
+          raise TGPuttySFTPException.Create('Stream write error in TGPuttyLib write_to_stream');
        if Assigned(TGPSFTP.OnProgress) then
           TGPSFTP.OnProgress(Int64(Offset)+bufsize,false);
        except
@@ -564,7 +568,9 @@ begin
 	if Fcontext.timeoutticks<1000 then
 	   Fcontext.timeoutticks:=60000;
 
-	Result := true;
+    Result := true;
+    EClass := nil;
+    ErrAddr:= nil;
 	starttick:=GetTickCount64();
 	idlesincetick:=0;
 	TotalBytes:=0;
@@ -596,6 +602,7 @@ begin
 
         if AStream.Position<>Offset then
            AStream.Position:=Offset;
+        wlen:=0;
         try
           wlen:=AStream.Write((buf + wpos)^,len - wpos);
           except
@@ -919,6 +926,11 @@ begin
   tgputty_conf_set_int(GetPuttyConfIndex(string(OptionName)),OptionValue,@FContext);
   end;
 
+procedure TTGPuttySFTP.SetIntegerConfigValueWithSubkey(const OptionName: AnsiString; const OptionSubKey, OptionValue: Integer);
+begin
+  tgputty_conf_set_int_int(GetPuttyConfIndex(string(OptionName)),OptionSubKey,OptionValue,@FContext);
+  end;
+
 procedure TTGPuttySFTP.SetKeyfile(const Value: AnsiString);
 begin
   tgputty_setkeyfile(PAnsiChar(Value),@Fcontext);
@@ -1003,6 +1015,11 @@ begin
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
   if not tgsftp_setstat(PAnsiChar(AFileName),@Attrs,@Fcontext) then
      raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_setstat'));
+  end;
+
+procedure TTGPuttySFTP.SetStringConfigValue(const OptionName, OptionValue: AnsiString);
+begin
+  tgputty_conf_set_str(GetPuttyConfIndex(string(OptionName)),PAnsiChar(OptionValue),@FContext);
   end;
 
 procedure TTGPuttySFTP.SetTimeoutTicks(const Value: Integer);

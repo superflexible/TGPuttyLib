@@ -3,4 +3,4 @@
 #define TEXTVER "Release 0.80"
 #define SSHVER "-Release-0.80"
 #define BINARY_VERSION 0,80,0,0
-#define TGDLLBUILDNUM 26
+#define TGDLLBUILDNUM 27

@@ -15,6 +15,10 @@
 #include "ssh/sftp.h"
 #include "version.h" // TG
 
+const int cSetUploadBufSizeConfNum=-1001;
+
+int GUploadBufSize=16384*4; // TG: much more is not possible, 1MB will definitely fail!
+
 // const char *const appname = "PSFTP"; // TG
 THREADVAR TTGLibraryContext *curlibctx; // TG
 THREADVAR int ThreadContextCounter=0; // TG
@@ -979,7 +983,7 @@ bool sftp_put_file(char *fname, char *outfname, bool recurse, bool restart)
     printf("calling xfer_upload_init with offset %" PRIu64 "\n",offset); // TG
 #endif
 	eof = false;
-	const int sftpbufsize=16384*4; // TG: much more is not possible, 1MB will definitely fail!
+	const int sftpbufsize=GUploadBufSize;
 	char *buffer=malloc(sftpbufsize); // TG
 	uint64_t starttick=TGGetTickCount64(); // TG
 	uint64_t TotalBytes=0; // TG
@@ -4324,8 +4328,15 @@ EXPORT void tgputty_conf_set_bool(int key, bool value,TTGLibraryContext *libctx)
 
 EXPORT void tgputty_conf_set_int(int key, int value,TTGLibraryContext *libctx)
 {
-   curlibctx=libctx;
-   conf_set_int(conf,key,value);
+   if (key==cSetUploadBufSizeConfNum)
+   {
+      GUploadBufSize=value;
+   }
+   else
+   {
+	 curlibctx=libctx;
+	 conf_set_int(conf,key,value);
+   }
 }
 
 EXPORT void tgputty_conf_set_int_int(int key, int subkey, int value,TTGLibraryContext *libctx)

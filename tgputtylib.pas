@@ -85,6 +85,8 @@ const
    TYPE_STR  = 3;
    TYPE_FILENAME = 4;
 
+   cSetUploadBufSizeConfNum=-1001;
+
    txtPuttyConfTypes:array[0..4] of string=('none','Boolean','Integer','AnsiString','Filename');
 
    cPuttyConf_host='host'; // AnsiString default ''
