@@ -222,16 +222,16 @@ int seek_file(WFile *f, uint64_t offset, int whence)
     DWORD movemethod;
 
     switch (whence) {
-    case FROM_START:
+      case FROM_START:
         movemethod = FILE_BEGIN;
         break;
-    case FROM_CURRENT:
+      case FROM_CURRENT:
         movemethod = FILE_CURRENT;
         break;
-    case FROM_END:
+      case FROM_END:
         movemethod = FILE_END;
         break;
-    default:
+      default:
         return -1;
     }
 
@@ -577,11 +577,14 @@ int ssh_sftp_loop_iteration(void)
 struct command_read_ctx {
     HANDLE event;
     char *line;
+	TTGLibraryContext *libctx;         // TG DLL context
 };
 
 static DWORD WINAPI command_read_thread(void *param)
 {
     struct command_read_ctx *ctx = (struct command_read_ctx *) param;
+
+    curlibctx = ctx->libctx;
 
     ctx->line = fgetline(stdin);
 
@@ -610,7 +613,8 @@ char *ssh_sftp_get_cmdline(const char *prompt, bool no_fds_ok)
      * and timing events until it terminates.
      */
     ctx->event = CreateEvent(NULL, false, false, NULL);
-    ctx->line = NULL;
+	ctx->line = NULL;
+	ctx->libctx = curlibctx;
 
     hThread = CreateThread(NULL, 0, command_read_thread, ctx, 0, &threadid);
     if (!hThread) {

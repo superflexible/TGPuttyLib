@@ -54,7 +54,7 @@ static void add_to_ready_list(handle_list_node *node);
 
 struct handle_generic {
     /*
-     * Initial fields common to both handle_input and handle_output
+	 * Initial fields common to both handle_input and handle_output
      * structures.
      *
      * The three HANDLEs are set up at initialisation time and are
@@ -66,12 +66,13 @@ struct handle_generic {
      */
     HANDLE h;                          /* the handle itself */
     handle_list_node ready_node;       /* for linking on to the ready list */
-    HANDLE ev_from_main;               /* event used to signal back to us */
-    bool moribund;                     /* are we going to kill this soon? */
-    bool done;                         /* request subthread to terminate */
-    bool defunct;                      /* has the subthread already gone? */
-    bool busy;                         /* operation currently in progress? */
-    void *privdata;                    /* for client to remember who they are */
+	HANDLE ev_from_main;               /* event used to signal back to us */
+	bool moribund;                     /* are we going to kill this soon? */
+	bool done;                         /* request subthread to terminate */
+	bool defunct;                      /* has the subthread already gone? */
+	bool busy;                         /* operation currently in progress? */
+	void *privdata;                    /* for client to remember who they are */
+	TTGLibraryContext *libctx;         // TG DLL context
 };
 
 typedef enum { HT_INPUT, HT_OUTPUT } HandleType;
@@ -94,7 +95,8 @@ struct handle_input {
     bool done;                         /* request subthread to terminate */
     bool defunct;                      /* has the subthread already gone? */
     bool busy;                         /* operation currently in progress? */
-    void *privdata;                    /* for client to remember who they are */
+	void *privdata;                    /* for client to remember who they are */
+	TTGLibraryContext *libctx;         // TG DLL context
 
     /*
      * Data set at initialisation and then read-only.
@@ -102,9 +104,9 @@ struct handle_input {
     int flags;
 
     /*
-     * Data set by the input thread before marking the handle ready,
+	 * Data set by the input thread before marking the handle ready,
      * and read by the main thread after receiving that signal.
-     */
+	 */
     char buffer[4096];                 /* the data read from the handle */
     DWORD len;                         /* how much data that was */
     int readerr;                       /* lets us know about read errors */
@@ -121,14 +123,16 @@ struct handle_input {
  */
 static DWORD WINAPI handle_input_threadfunc(void *param)
 {
-    struct handle_input *ctx = (struct handle_input *) param;
+	struct handle_input *ctx = (struct handle_input *) param;
     OVERLAPPED ovl, *povl;
     HANDLE oev;
     bool readret, finished;
-    int readlen;
+	int readlen;
+
+	curlibctx = ctx->libctx; // TG
 
     if (ctx->flags & HANDLE_FLAG_OVERLAPPED) {
-        povl = &ovl;
+		povl = &ovl;
         oev = CreateEvent(NULL, true, false, NULL);
     } else {
         povl = NULL;
@@ -154,7 +158,7 @@ static DWORD WINAPI handle_input_threadfunc(void *param)
             readret = GetOverlappedResult(ctx->h, povl, &ctx->len, false);
             if (!readret)
                 ctx->readerr = GetLastError();
-            else
+			else
                 ctx->readerr = 0;
         }
 
@@ -255,7 +259,8 @@ struct handle_output {
     bool done;                         /* request subthread to terminate */
     bool defunct;                      /* has the subthread already gone? */
     bool busy;                         /* operation currently in progress? */
-    void *privdata;                    /* for client to remember who they are */
+	void *privdata;                    /* for client to remember who they are */
+	TTGLibraryContext *libctx;         // TG DLL context
 
     /*
      * Data set at initialisation and then read-only.
@@ -296,6 +301,8 @@ static DWORD WINAPI handle_output_threadfunc(void *param)
     OVERLAPPED ovl, *povl;
     HANDLE oev;
     bool writeret;
+
+	curlibctx = ctx->libctx; // TG
 
     if (ctx->flags & HANDLE_FLAG_OVERLAPPED) {
         povl = &ovl;
@@ -490,7 +497,8 @@ struct handle *handle_input_new(HANDLE handle, handle_inputfn_t gotdata,
     h->u.i.moribund = false;
     h->u.i.done = false;
     h->u.i.privdata = privdata;
-    h->u.i.flags = flags;
+	h->u.i.libctx =curlibctx; // TG
+	h->u.i.flags = flags;
 
     ensure_ready_event_setup();
     HANDLE hThread = CreateThread(NULL, 0, handle_input_threadfunc,
@@ -515,12 +523,13 @@ struct handle *handle_output_new(HANDLE handle, handle_outputfn_t sentdata,
     h->u.o.defunct = false;
     h->u.o.moribund = false;
     h->u.o.done = false;
-    h->u.o.privdata = privdata;
-    bufchain_init(&h->u.o.queued_data);
-    h->u.o.outgoingeof = EOF_NO;
-    h->u.o.sentdata = sentdata;
-    h->u.o.sentdata_param = h;
-    h->u.o.flags = flags;
+	h->u.o.privdata = privdata;
+	h->u.o.libctx = curlibctx; // TG
+	bufchain_init(&h->u.o.queued_data);
+	h->u.o.outgoingeof = EOF_NO;
+	h->u.o.sentdata = sentdata;
+	h->u.o.sentdata_param = h;
+	h->u.o.flags = flags;
 
     ensure_ready_event_setup();
     HANDLE hThread = CreateThread(NULL, 0, handle_output_threadfunc,
