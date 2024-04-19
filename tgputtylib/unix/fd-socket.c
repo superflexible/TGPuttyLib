@@ -38,9 +38,15 @@ static void fdsocket_select_result_input_error(int fd, int event);
 /*
  * Trees to look up the fds in.
  */
+#ifdef TGDLL
+#define fdsocket_by_outfd (curlibctx->fdsocket_by_outfd)
+#define fdsocket_by_infd (curlibctx->fdsocket_by_infd)
+#define fdsocket_by_inerrfd (curlibctx->fdsocket_by_inerrfd)
+#else
 static tree234 *fdsocket_by_outfd;
 static tree234 *fdsocket_by_infd;
 static tree234 *fdsocket_by_inerrfd;
+#endif
 
 static int fdsocket_infd_cmp(void *av, void *bv)
 {

@@ -308,7 +308,8 @@ begin
      TGPSFTP.FStreamWriteExceptionClassType:=nil;
      TGPSFTP.FStreamWriteExceptionMessage:='';
      try
-       Result:=TGPSFTP.FDownloadStream.Write(buffer^,bufsize);
+       TGPSFTP.FDownloadStream.WriteBuffer(buffer^,bufsize);
+       Result:=bufsize;
        if Result<>bufsize then
           raise TGPuttySFTPException.Create('Stream write error in TGPuttyLib write_to_stream');
        if Assigned(TGPSFTP.OnProgress) then
@@ -503,13 +504,19 @@ procedure TTGPuttySFTP.DownloadStream(const ARemoteFilename: AnsiString; const A
 var res:Integer;
 begin
   FLastMessages:='';
-  FDownloadStream:=AStream;
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
+  FStreamWriteExceptionClassName:='';
+  FStreamWriteExceptionClassType:=nil;
+  FStreamWriteExceptionMessage:='';
+  FDownloadStream:=AStream;
   try
     res:=tgsftp_getfile(PAnsiChar(ARemoteFilename),nil,anAppend,@Fcontext);
 
     if Assigned(FStreamWriteExceptionClassType) then
        raise FStreamWriteExceptionClassType.Create(FStreamWriteExceptionMessage);
+
+    if Fcontext.aborted then
+       raise TGPuttySFTPException.Create('DOWNLOAD OPERATION CANCELED');
 
     if res<>1 then
        raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_getfile'));
@@ -568,9 +575,9 @@ begin
 	if Fcontext.timeoutticks<1000 then
 	   Fcontext.timeoutticks:=60000;
 
-    Result := true;
-    EClass := nil;
-    ErrAddr:= nil;
+	Result := true;
+	EClass := nil;
+	ErrAddr:= nil;
 	starttick:=GetTickCount64();
 	idlesincetick:=0;
 	TotalBytes:=0;
@@ -702,6 +709,9 @@ begin
 
   CloseFile(fh);
 
+  if canceled or Fcontext.aborted then
+     Result:=false;
+
   if not Result then
      if WriteException then
         raise EClass.Create(ErrMsg) at ErrAddr
@@ -709,7 +719,10 @@ begin
        if ErrMsg<>'' then
           raise TGPuttySFTPException.Create(ErrMsg)
        else
-          raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('DownloadStreamP'));
+          if canceled or Fcontext.aborted then
+             TGPuttySFTPException.Create('DOWNLOAD OPERATION CANCELED')
+          else
+             raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('DownloadStreamP'));
 
 	CP('psgetf103');
   end;

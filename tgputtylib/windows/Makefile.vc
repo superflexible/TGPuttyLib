@@ -161,7 +161,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
 		$(BUILDDIR)local-proxy.obj $(BUILDDIR)security.obj $(BUILDDIR)select-cli.obj \
 		$(BUILDDIR)sftpw.obj $(BUILDDIR)sharingw.obj $(BUILDDIR)nullstrcmp.obj \
 		$(BUILDDIR)storage.obj $(BUILDDIR)ltime.obj $(BUILDDIR)open_for_write_would_lose_data.obj \
-		$(BUILDDIR)unicode.obj \
+		$(BUILDDIR)unicode.obj $(BUILDDIR)rfc6979.obj \
                 $(BUILDDIR)xdmauth.obj
 	type <<link_psftp
  advapi32.lib $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDIR)bufchain.obj $(BUILDDIR)ctrlparse.obj
@@ -188,7 +188,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
  $(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)des.obj $(BUILDDIR)sk_free_peer_info.obj
  $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)dsa.obj $(BUILDDIR)default_description.obj $(BUILDDIR)host_strcspn.obj
  $(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)mac.obj $(BUILDDIR)platform_get_x_display.obj $(BUILDDIR)sessprep.obj
- $(BUILDDIR)md5.obj $(BUILDDIR)prng.obj $(BUILDDIR)sshpubk.obj $(BUILDDIR)seat_connection_fatal.obj
+ $(BUILDDIR)md5.obj $(BUILDDIR)prng.obj $(BUILDDIR)sshpubk.obj $(BUILDDIR)seat_connection_fatal.obj $(BUILDDIR)rfc6979.obj 
  $(BUILDDIR)sshrand.obj $(BUILDDIR)rsa.obj $(BUILDDIR)sha256-sw.obj $(BUILDDIR)encode_utf8.obj $(BUILDDIR)sha256-select.obj
  $(BUILDDIR)sha512-sw.obj $(BUILDDIR)agent_named_pipe_name.obj $(BUILDDIR)get_username.obj $(BUILDDIR)log_proxy_stderr.obj
  $(BUILDDIR)sha256-common.obj $(BUILDDIR)sha512-common.obj $(BUILDDIR)sha1-select.obj $(BUILDDIR)make_spr_sw_abort_static.obj
@@ -709,6 +709,9 @@ $(BUILDDIR)server.obj: ..\ssh\server.c ..\putty.h ..\ssh.h ..\ssh\bpp.h \
 		..\charset\charset.h
 $(BUILDDIR)sha256-sw.obj: ..\crypto\sha256-sw.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
 		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \
+		..\marshal.h
+$(BUILDDIR)rfc6979.obj: ..\crypto\rfc6979.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
+		..\network.h ..\misc.h ..\defs.h \
 		..\marshal.h
 $(BUILDDIR)sha512-sw.obj: ..\crypto\sha512-sw.c ..\putty.h ..\ssh.h ..\puttymem.h ..\tree234.h \
 		..\network.h ..\misc.h ..\ssh\ttymode-list.h ..\defs.h \

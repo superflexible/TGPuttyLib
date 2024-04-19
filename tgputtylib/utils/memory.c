@@ -2,6 +2,12 @@
  * PuTTY's memory allocation wrappers.
  */
 
+#ifdef ALLOCATION_ALIGNMENT
+/* Before we include standard headers, define _ISOC11_SOURCE so that
+ * we get the declaration of aligned_alloc(). */
+#define _ISOC11_SOURCE
+#endif
+
 #include <assert.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -35,12 +41,12 @@ void *safemalloc(size_t factor1, size_t factor2, size_t addend)
     void *p;
 #ifdef MINEFIELD
     p = minefield_c_malloc(size);
-#else
-#ifdef DEBUG_MALLOC // TG
+#elif defined DEBUG_MALLOC // TG
     p = tgdlldebugmalloc(size,filename,line);
+#elif defined ALLOCATION_ALIGNMENT
+    p = aligned_alloc(ALLOCATION_ALIGNMENT, size);
 #else
     p = malloc(size);
-#endif
 #endif
 
     if (!p)
@@ -69,12 +75,12 @@ void *saferealloc(void *ptr, size_t n, size_t size)
         if (!ptr) {
 #ifdef MINEFIELD
             p = minefield_c_malloc(size);
-#else
-#ifdef DEBUG_MALLOC // TG
+#elif defined DEBUG_MALLOC // TG
             p = tgdlldebugmalloc(size,filename,line);
+#elif defined ALLOCATION_ALIGNMENT
+            p = aligned_alloc(ALLOCATION_ALIGNMENT, size);
 #else
             p = malloc(size);
-#endif
 #endif
         } else {
 #ifdef MINEFIELD
