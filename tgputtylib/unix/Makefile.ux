@@ -132,7 +132,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		bpp1.o censor1.o dupprintf.o host_strduptrim.o \
 		connection1.o smemclr.o backend_socket_log.o ntru.o \
 		connection1-client.o host_strrchr.o interactor.o \
-		login1.o bpp2.o null-cipher.o uxsel.o \
+		login1.o bpp2.o null-cipher.o uxsel.o rfc6979.o \
 		bpp-bare.o censor2.o ctrlparse.o make_spr_sw_abort_static.o \
 		connection2.o socks4.o socks5.o make_spr_sw_abort_errno.o \
 		connection2-client.o seat_connection_fatal.o host_strcspn.o \
@@ -171,7 +171,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		unicode.o pollwrap.o \
                 xdmauth.o
 	$(CC) -shared -o libtgputty.so -fPIC agentf.o aqsync.o ssh2_pick_fingerprint.o \
-		network.o be_list.o bufchain.o tempseat.o uxsel.o fd-socket.o \
+		network.o be_list.o bufchain.o tempseat.o uxsel.o rfc6979.o fd-socket.o \
 		callback.o cmdline.o strbuf.o antispoof.o getticks.o \
 		conf.o clicons.o console.o sk_free_peer_info.o nonblock.o \
                 cproxy.o ecc-arithmetic.o ecc-ssh.o memxor.o cloexec.o \
@@ -657,6 +657,8 @@ host_strcspn.o: ../utils/host_strcspn.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/host_strcspn.c
 uxsel.o: ../unix/uxsel.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/uxsel.c
+rfc6979.o: ../crypto/rfc6979.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/rfc6979.c
 cliloop.o: ../unix/cliloop.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/cliloop.c
 get_username.o: ../unix/utils/get_username.c
