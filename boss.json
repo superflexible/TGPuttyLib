@@ -1,0 +1,9 @@
+{
+	"name": "TGPuttyLib",
+	"description": "A shared library / DLL with Delphi and C++ bindings based on PuTTY, for Windows, macOS, and Linux.",
+	"version": "1.0.0",
+	"homepage": "https://www.syncovery.com/tgputtylib/",
+	"mainsrc": ".",
+	"projects": [],
+	"dependencies": {}
+}
