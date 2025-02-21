@@ -99,7 +99,7 @@ typedef struct
 #endif
 
   // STRICTLY LIBRARY PRIVATE FIELDS FOLLOW
-  char reservedbytes[301];
+  char reservedbytes[600];
 
 } TTGLibraryContext;
 
