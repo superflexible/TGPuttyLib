@@ -68,18 +68,18 @@ tree234 *realnewtree234(cmpfn234 cmp,const char *filename,const int line)
 #else
 tree234 *newtree234(cmpfn234 cmp)
 {
-    tree234 *ret = snew(tree234);
+    tree234 *t = snew(tree234);
 #endif
-    LOG(("created tree %p\n", ret));
-    ret->root = NULL;
-    ret->cmp = cmp;
-    return ret;
+    LOG(("created tree %p\n", t));
+    t->root = NULL;
+    t->cmp = cmp;
+    return t;
 }
 
 /*
  * Free a 2-3-4 tree (not including freeing the elements).
  */
-static void freenode234(node234 * n)
+static void freenode234(node234 *n)
 {
     if (!n)
         return;
@@ -90,7 +90,7 @@ static void freenode234(node234 * n)
     sfree(n);
 }
 
-void freetree234(tree234 * t)
+void freetree234(tree234 *t)
 {
     freenode234(t->root);
     sfree(t);
@@ -99,7 +99,7 @@ void freetree234(tree234 * t)
 /*
  * Internal function to count a node.
  */
-static int countnode234(node234 * n)
+static int countnode234(node234 *n)
 {
     int count = 0;
     int i;
@@ -128,7 +128,7 @@ static int elements234(node234 *n)
 /*
  * Count the elements in a tree.
  */
-int count234(tree234 * t)
+int count234(tree234 *t)
 {
     if (t->root)
         return countnode234(t->root);
@@ -140,7 +140,7 @@ int count234(tree234 * t)
  * Add an element e to a 2-3-4 tree t. Returns e on success, or if
  * an existing element compares equal, returns that.
  */
-static void *add234_internal(tree234 * t, void *e, int index)
+static void *add234_internal(tree234 *t, void *e, int index)
 {
     node234 *n, **np, *left, *right;
     void *orig_e = e;
@@ -469,14 +469,14 @@ static void *add234_internal(tree234 * t, void *e, int index)
     return orig_e;
 }
 
-void *add234(tree234 * t, void *e)
+void *add234(tree234 *t, void *e)
 {
     if (!t->cmp)                       /* tree is unsorted */
         return NULL;
 
     return add234_internal(t, e, -1);
 }
-void *addpos234(tree234 * t, void *e, int index)
+void *addpos234(tree234 *t, void *e, int index)
 {
     if (index < 0 ||                   /* index out of range */
         t->cmp)                        /* tree is sorted */
@@ -489,7 +489,7 @@ void *addpos234(tree234 * t, void *e, int index)
  * Look up the element at a given numeric index in a 2-3-4 tree.
  * Returns NULL if the index is out of range.
  */
-void *index234(tree234 * t, int index)
+void *index234(tree234 *t, int index)
 {
     node234 *n;
 
@@ -529,7 +529,7 @@ void *index234(tree234 * t, int index)
  * as NULL, in which case the compare function from the tree proper
  * will be used.
  */
-void *findrelpos234(tree234 * t, void *e, cmpfn234 cmp,
+void *findrelpos234(tree234 *t, void *e, cmpfn234 cmp,
                     int relation, int *index)
 {
     search234_state ss;
@@ -604,15 +604,15 @@ void *findrelpos234(tree234 * t, void *e, cmpfn234 cmp,
         *index = ss.index;
     return toret;
 }
-void *find234(tree234 * t, void *e, cmpfn234 cmp)
+void *find234(tree234 *t, void *e, cmpfn234 cmp)
 {
     return findrelpos234(t, e, cmp, REL234_EQ, NULL);
 }
-void *findrel234(tree234 * t, void *e, cmpfn234 cmp, int relation)
+void *findrel234(tree234 *t, void *e, cmpfn234 cmp, int relation)
 {
     return findrelpos234(t, e, cmp, relation, NULL);
 }
-void *findpos234(tree234 * t, void *e, cmpfn234 cmp, int *index)
+void *findpos234(tree234 *t, void *e, cmpfn234 cmp, int *index)
 {
     return findrelpos234(t, e, cmp, REL234_EQ, index);
 }
@@ -692,7 +692,7 @@ void search234_step(search234_state *state, int direction)
  * Delete an element e in a 2-3-4 tree. Does not free the element,
  * merely removes all links to it from the tree nodes.
  */
-static void *delpos234_internal(tree234 * t, int index)
+static void *delpos234_internal(tree234 *t, int index)
 {
     node234 *n;
     void *retval;
@@ -1030,13 +1030,13 @@ static void *delpos234_internal(tree234 * t, int index)
         }
     }
 }
-void *delpos234(tree234 * t, int index)
+void *delpos234(tree234 *t, int index)
 {
     if (index < 0 || index >= countnode234(t->root))
         return NULL;
     return delpos234_internal(t, index);
 }
-void *del234(tree234 * t, void *e)
+void *del234(tree234 *t, void *e)
 {
     int index;
     if (!findrelpos234(t, e, NULL, REL234_EQ, &index))
@@ -1101,7 +1101,7 @@ typedef struct {
     int elemcount;
 } chkctx;
 
-int chknode(chkctx * ctx, int level, node234 * node,
+int chknode(chkctx *ctx, int level, node234 *node,
             void *lowbound, void *highbound)
 {
     int nkids, nelems;
@@ -1404,7 +1404,8 @@ void findtest(void)
 
             lo = 0;
             hi = arraylen - 1;
-            while (lo <= hi) {
+            assert(lo <= hi);
+            do {
                 mid = (lo + hi) / 2;
                 c = strcmp(p, array[mid]);
                 if (c < 0)
@@ -1413,7 +1414,7 @@ void findtest(void)
                     lo = mid + 1;
                 else
                     break;
-            }
+            } while (lo <= hi);
 
             if (c == 0) {
                 if (rel == REL234_LT)
@@ -1434,10 +1435,11 @@ void findtest(void)
                     ret = NULL;
             }
 
+            index = -1;
             realret = findrelpos234(tree, p, NULL, rel, &index);
             if (realret != ret) {
                 error("find(\"%s\",%s) gave %s should be %s",
-                      p, relnames[j], realret, ret);
+                      p, relnames[j], realret ? realret : "NULL", ret);
             }
             if (realret && index != mid) {
                 error("find(\"%s\",%s) gave %d should be %d",

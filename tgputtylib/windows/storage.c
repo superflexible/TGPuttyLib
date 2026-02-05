@@ -56,9 +56,9 @@ settings_w *open_settings_w(const char *sessionname, char **errmsg)
     }
     strbuf_free(sb);
 
-    settings_w *toret = snew(settings_w);
-    toret->sesskey = sesskey;
-    return toret;
+    settings_w *handle = snew(settings_w);
+    handle->sesskey = sesskey;
+    return handle;
 #endif
 }
 
@@ -98,9 +98,9 @@ settings_r *open_settings_r(const char *sessionname)
     if (!sesskey)
         return NULL;
 
-    settings_r *toret = snew(settings_r);
-    toret->sesskey = sesskey;
-    return toret;
+    settings_r *handle = snew(settings_r);
+    handle->sesskey = sesskey;
+    return handle;
 }
 
 char *read_setting_s(settings_r *handle, const char *key)
@@ -190,7 +190,23 @@ Filename *read_setting_filename(settings_r *handle, const char *name)
 void write_setting_filename(settings_w *handle,
                             const char *name, Filename *result)
 {
-    write_setting_s(handle, name, result->path);
+    /*
+     * When saving a session involving a Filename, we use the 'cpath'
+     * member of the Filename structure, because otherwise we break
+     * backwards compatibility with existing saved sessions.
+     *
+     * This means that 'exotic' filenames - those including Unicode
+     * characters outside the host system's CP_ACP default code page -
+     * cannot be represented faithfully, and saving and reloading a
+     * Conf including one will break it.
+     *
+     * This can't be fixed without breaking backwards compatibility,
+     * and if we're going to break compatibility then we should break
+     * it good and hard (the Nanny Ogg principle), and devise a
+     * completely fresh storage representation that fixes as many
+     * other legacy problems as possible at the same time.
+     */
+    write_setting_s(handle, name, result->cpath); /* FIXME */
 }
 
 void close_settings_r(settings_r *handle)
@@ -230,13 +246,13 @@ settings_e *enum_settings_start(void)
     if (!key)
         return NULL;
 
-    settings_e *ret = snew(settings_e);
-    if (ret) {
-        ret->key = key;
-        ret->i = 0;
+    settings_e *e = snew(settings_e);
+    if (e) {
+        e->key = key;
+        e->i = 0;
     }
 
-    return ret;
+    return e;
 }
 
 bool enum_settings_next(settings_e *e, strbuf *sb)
@@ -367,7 +383,7 @@ bool have_ssh_host_key(const char *hostname, int port,
     return check_stored_host_key(hostname, port, keytype, "") != 1;
 }
 
-void store_host_key(const char *hostname, int port,
+void store_host_key(Seat *seat, const char *hostname, int port,
                     const char *keytype, const char *key)
 {
     strbuf *regname = strbuf_new();

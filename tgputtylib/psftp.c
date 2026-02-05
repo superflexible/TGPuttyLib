@@ -126,6 +126,7 @@ static const SeatVtable psftp_seat_vt = {
     .notify_remote_exit = nullseat_notify_remote_exit,
     .notify_remote_disconnect = nullseat_notify_remote_disconnect,
     .connection_fatal = console_connection_fatal,
+    .nonfatal = console_nonfatal,
     .update_specials_menu = nullseat_update_specials_menu,
     .get_ttymode = nullseat_get_ttymode,
     .set_busy_status = nullseat_set_busy_status,
@@ -2840,7 +2841,7 @@ void free_sftp_command(struct sftp_command **acmd) // TG
   *acmd = NULL;
 }
 
-int do_sftp(int mode, int modeflags, char *batchfile)
+int do_sftp(int mode, int modeflags, Filename *batchfile)
 {
     FILE *fp;
     int ret;
@@ -2864,9 +2865,9 @@ int do_sftp(int mode, int modeflags, char *batchfile)
                 break;
         }
     } else {
-        fp = fopen(batchfile, "r");
+        fp = f_open(batchfile, "r", false);
         if (!fp) {
-            printf("Fatal: unable to open %s\n", batchfile);
+            printf("Fatal: unable to open %s\n", filename_to_str(batchfile));
             return 1;
         }
         ret = 0;
@@ -3398,7 +3399,7 @@ static void init_thread_vars() // TG
    //   printf("init_thread_vars() redundant call, Thread ID: %ud\n",GetCurrentThreadId());
 
    #ifndef _WINDOWS
-   if (!curlibctx->fds) // just to double-check
+   if (curlibctx && !curlibctx->fds) // just to double-check
       uxsel_init();
    #endif
 }
@@ -3438,7 +3439,7 @@ const unsigned cmdline_tooltype = TOOLTYPE_FILETRANSFER;
  * Main program. Parse arguments etc.
  */
 #ifdef WITHCMDLINEXXXX
-TGDLLCODE(EXPORT) int psftp_main(int argc, char *argv[]) // TG 2019
+TGDLLCODE(EXPORT) int psftp_main(CmdlineArgList *arglist) // TG 2019
 {
     int i, toret;
     int portnumber = 0;
@@ -3456,57 +3457,58 @@ TGDLLCODE(EXPORT) int psftp_main(int argc, char *argv[]) // TG 2019
     conf = conf_new();
     do_defaults(NULL, conf);
 
-    for (i = 1; i < argc; i++) {
-        int retd;
-        if (argv[i][0] != '-') {
+    size_t arglistpos = 0;
+    while (arglist->args[arglistpos]) {
+        CmdlineArg *arg = arglist->args[arglistpos++];
+        CmdlineArg *nextarg = arglist->args[arglistpos];
+        const char *argstr = cmdline_arg_to_str(arg);
+
+        if (argstr[0] != '-') {
             if (userhost)
-                usage();
+                cmdline_error("unexpected extra argument \"%s\"", argstr);
             else
-                userhost = dupstr(argv[i]);
+                userhost = dupstr(argstr);
             continue;
         }
-        retd = cmdline_process_param(
-            argv[i], i+1 < argc ? argv[i+1] : NULL, 1, conf);
+        int retd = cmdline_process_param(arg, nextarg, 1, conf);
         if (retd == -2) {
-            cmdline_error("option \"%s\" requires an argument", argv[i]);
+            cmdline_error("option \"%s\" requires an argument", argstr);
         } else if (retd == 2) {
-            i++;               /* skip next argument */
+            arglistpos++;              /* skip next argument */
         } else if (retd == 1) {
             /* We have our own verbosity in addition to `flags'. */
             if (cmdline_verbose())
                 verbose = true;
-        } else if (strcmp(argv[i], "-h") == 0 ||
-                   strcmp(argv[i], "-?") == 0 ||
-                   strcmp(argv[i], "--help") == 0) {
+        } else if (strcmp(argstr, "-h") == 0 ||
+                   strcmp(argstr, "-?") == 0 ||
+                   strcmp(argstr, "--help") == 0) {
             usage();
-        } else if (strcmp(argv[i], "-pgpfp") == 0) {
+            cleanup_exit(0);
+        } else if (strcmp(argstr, "-pgpfp") == 0) {
             pgp_fingerprints();
-            return 1;
-        } else if (strcmp(argv[i], "-V") == 0 ||
-                   strcmp(argv[i], "--version") == 0) {
+            return 0;
+        } else if (strcmp(argstr, "-V") == 0 ||
+                   strcmp(argstr, "--version") == 0) {
             version();
-        } else if (strcmp(argv[i], "-batch") == 0) {
-            console_batch_mode = true;
-        } else if (strcmp(argv[i], "-b") == 0 && i + 1 < argc) {
+        } else if (strcmp(argstr, "-b") == 0 && nextarg) {
             mode = 1;
-            batchfile = argv[++i];
-        } else if (strcmp(argv[i], "-bc") == 0) {
+            batchfile = cmdline_arg_to_filename(nextarg);
+            arglistpos++;
+        } else if (strcmp(argstr, "-bc") == 0) {
             modeflags = modeflags | 1;
-        } else if (strcmp(argv[i], "-be") == 0) {
+        } else if (strcmp(argstr, "-be") == 0) {
             modeflags = modeflags | 2;
-        } else if (strcmp(argv[i], "-sanitise-stderr") == 0) {
+        } else if (strcmp(argstr, "-sanitise-stderr") == 0) {
             sanitise_stderr = true;
-        } else if (strcmp(argv[i], "-no-sanitise-stderr") == 0) {
+        } else if (strcmp(argstr, "-no-sanitise-stderr") == 0) {
             sanitise_stderr = false;
-        } else if (strcmp(argv[i], "--") == 0) {
-            i++;
+        } else if (strcmp(argstr, "--") == 0) {
+            arglistpos++;
             break;
         } else {
-            cmdline_error("unknown option \"%s\"", argv[i]);
+            cmdline_error("unknown option \"%s\"", argstr);
         }
     }
-    argc -= i;
-    argv += i;
     backend = NULL;
 
     stdio_sink_init(&stderr_ss, stderr);
@@ -3542,6 +3544,8 @@ TGDLLCODE(EXPORT) int psftp_main(int argc, char *argv[]) // TG 2019
     } else {
 		printf("psftp: no hostname specified\n"); // TG
     }
+
+    cmdline_arg_list_free(arglist);
 
     toret = do_sftp(mode, modeflags, batchfile);
 
@@ -3764,7 +3768,13 @@ EXPORT int tgputty_initwithcmdline(int argc, char *argv[], TTGLibraryContext *li
 EXPORT int tgputtyrunpsftp(TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
-  return do_sftp(libctx->mode, libctx->modeflags, libctx->batchfile);
+  wchar_t *wfn = dup_mb_to_wc(CP_UTF8,libctx->batchfile);
+  Filename fn= { wfn };
+  int result=do_sftp(libctx->mode, libctx->modeflags, &fn);
+
+  sfree(wfn);
+
+  return result;
 }
 
 EXPORT void tgputtysetappname(const char *newappname,const char *appversion) // TG 2019
@@ -4281,12 +4291,29 @@ EXPORT void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
   return;
 }
 
+int *Gconfigtypes=NULL;
+int *Gconfigsubtypes=NULL;
+const char **Gconfignames=NULL;
+
 EXPORT bool tgputty_getconfigarrays(const void **types,const void **subtypes,const void **names,int *count)
 {
-  (*types) = valuetypes;
-  (*subtypes) = subkeytypes;
-  (*names) = confnames;
-  (*count) = MAXCONFKEY+1;
+  if (!Gconfigtypes)
+  {
+	 Gconfigtypes=malloc(N_CONFIG_OPTIONS * sizeof(int));
+	 Gconfigsubtypes=malloc(N_CONFIG_OPTIONS * sizeof(int));
+	 Gconfignames=malloc(N_CONFIG_OPTIONS * sizeof(char*));
+	 for (int i=0;i<N_CONFIG_OPTIONS;i++)
+	 {
+		 Gconfigtypes[i]=conf_key_info[i].value_type;
+		 Gconfigsubtypes[i]=conf_key_info[i].subkey_type;
+		 Gconfignames[i]=conf_key_info[i].id_keyword;
+	 }
+  }
+
+  (*types) = Gconfigtypes;
+  (*subtypes) = Gconfigsubtypes;
+  (*names) = Gconfignames;
+  (*count) = N_CONFIG_OPTIONS;
   return true;
 }
 
@@ -4437,7 +4464,7 @@ char *printnow(const char *msg,bool *needfree)
   printbuf[printbufpos] = 0;
   if (newtotallen>=printbufsize)
   {
-     char *newstr=malloc(newtotallen+1);
+	 char *newstr=malloc(newtotallen+1);
      newstr[0]=0;
      strcpy(newstr,printbuf);
      strcat(newstr,msg);

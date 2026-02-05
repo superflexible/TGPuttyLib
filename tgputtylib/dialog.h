@@ -348,21 +348,8 @@ struct dlgcontrol {
              * files the file selector would do well to only show .PPK
              * files (on those systems where this is the chosen
              * extension).
-             *
-             * The precise contents of `filter' are platform-defined,
-             * unfortunately. The special value NULL means `all files'
-             * and is always a valid fallback.
-             *
-             * Unlike almost all strings in this structure, this value
-             * is NOT expected to require freeing (although of course
-             * you can always use ctrl_alloc if you do need to create
-             * one on the fly). This is because the likely mode of use
-             * is to define string constants in a platform-specific
-             * header file, and directly reference those. Or worse, a
-             * particular platform might choose to cast integers into
-             * this pointer type...
              */
-            char const *filter;
+            FilereqFilter filter;
             /*
              * Some systems like to know whether a file selector is
              * choosing a file to read or one to write (and possibly
@@ -552,8 +539,8 @@ dlgcontrol *ctrl_draglist(struct controlset *, const char *label,
                           char shortcut, HelpCtx helpctx,
                           handler_fn handler, intorptr context);
 dlgcontrol *ctrl_filesel(struct controlset *, const char *label,
-                         char shortcut, const char *filter, bool write,
-                         const char *title, HelpCtx helpctx,
+                         char shortcut, FilereqFilter filter,
+                         bool write, const char *title, HelpCtx helpctx,
                          handler_fn handler, intorptr context);
 dlgcontrol *ctrl_fontsel(struct controlset *, const char *label,
                          char shortcut, HelpCtx helpctx,
@@ -574,7 +561,9 @@ int dlg_radiobutton_get(dlgcontrol *ctrl, dlgparam *dp);
 void dlg_checkbox_set(dlgcontrol *ctrl, dlgparam *dp, bool checked);
 bool dlg_checkbox_get(dlgcontrol *ctrl, dlgparam *dp);
 void dlg_editbox_set(dlgcontrol *ctrl, dlgparam *dp, char const *text);
+void dlg_editbox_set_utf8(dlgcontrol *ctrl, dlgparam *dp, char const *text);
 char *dlg_editbox_get(dlgcontrol *ctrl, dlgparam *dp);   /* result must be freed by caller */
+char *dlg_editbox_get_utf8(dlgcontrol *ctrl, dlgparam *dp);   /* result must be freed by caller */
 void dlg_editbox_select_range(dlgcontrol *ctrl, dlgparam *dp,
                               size_t start, size_t len);
 /* The `listbox' functions can also apply to combo boxes. */

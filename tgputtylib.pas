@@ -462,8 +462,12 @@ var libpath:string;
     ulongsize,namesize,attrsize,namessize:Integer;
 procedure CheckStructSizes;
 begin
-  if sizeof(TTGLibraryContext)<tggetlibrarycontextsize then
-     raise Exception.Create('Invalid '+tgputtydll+': uses incorrect TTGLibraryContext record size');
+  try
+    if sizeof(TTGLibraryContext)<tggetlibrarycontextsize then
+       raise Exception.Create('Invalid '+tgputtydll+': uses incorrect TTGLibraryContext record size');
+    except
+      raise Exception.Create('TGPuttyLib loading problem - most likely the DLL is missing or a 32 versus 64 bit mismatch!');
+    end;
   tggetstructsizes(@ulongsize,@namesize,@attrsize,@namessize);
   if (ulongsize<>sizeof(TUnsignedLong)) or
      (namesize<>sizeof(fxp_name)) or

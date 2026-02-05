@@ -941,7 +941,7 @@ SeatPromptResult verify_ssh_host_key(
 	   bool OK=curlibctx->verify_host_key_callback(host, port, keytype, keystr,
 						   fp, storage_status, &storeit, curlibctx);
 	   if (storeit)
-		  store_host_key(host, port, keytype, keystr);
+		  store_host_key(iseat.seat, host, port, keytype, keystr);
 	   if (OK)
 		  return SPR_OK;
 	   else

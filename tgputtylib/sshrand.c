@@ -106,8 +106,10 @@ void random_save_seed(void)
 
 void random_ref(void)
 {
-    if (!random_active++)
+    if (!random_active++) {
+        enable_dit(); /* just in case main() forgot */
         random_create(&ssh_sha256);
+    }
 #ifdef DEBUG_MALLOC // TG
   printf("random_ref: random_active is now %d\n",random_active);
 #endif

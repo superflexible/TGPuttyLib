@@ -3,6 +3,13 @@
 #include "putty.h"
 #include "pgssapi.h"
 
+/* This struct is defined even in NO_GSSAPI mode, so that stubs/no-gss.c can
+ * return an instance of it containing no libraries */
+struct ssh_gss_liblist {
+    struct ssh_gss_library *libraries;
+    int nlibraries;
+};
+
 #ifndef NO_GSSAPI
 
 #define SSH2_GSS_OIDTYPE 0x06
@@ -32,7 +39,7 @@ typedef gss_name_t Ssh_gss_name;
 
 #define GSS_DEF_REKEY_MINS 2    /* Default minutes between GSS cache checks */
 
-/* Functions, provided by either wingss.c or sshgssc.c */
+/* Functions, provided by either {windows,unix}/gss.c or gssc.c */
 
 struct ssh_gss_library;
 
@@ -49,10 +56,6 @@ struct ssh_gss_library;
  * The free function cleans up the structure, and its associated
  * libraries (if any).
  */
-struct ssh_gss_liblist {
-    struct ssh_gss_library *libraries;
-    int nlibraries;
-};
 struct ssh_gss_liblist *ssh_gss_setup(Conf *conf);
 void ssh_gss_cleanup(struct ssh_gss_liblist *list);
 

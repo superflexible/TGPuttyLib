@@ -146,7 +146,7 @@ static void mainchan_open_confirmation(Channel *chan)
         bool retry_cmd_now = false;
 
 #ifndef TGDLL
-        if (conf_get_bool(mc->conf, CONF_x11_forward)) {;
+        if (conf_get_bool(mc->conf, CONF_x11_forward)) {
             char *x11_setup_err;
             if ((x11disp = x11_setup_display(
                      conf_get_str(mc->conf, CONF_x11_display),
@@ -186,7 +186,9 @@ static void mainchan_open_confirmation(Channel *chan)
         if (mc->n_req_env)
             ppl_logevent("Sent %d environment variables", mc->n_req_env);
 
-        cmd = conf_get_str(mc->conf, CONF_remote_cmd);
+        /* Ignore encoding of CONF_remote_cmd so as not to disturb
+         * legacy handling of non-UTF-8 commands */
+        cmd = conf_get_str_ambi(mc->conf, CONF_remote_cmd, NULL);
         if (conf_get_bool(mc->conf, CONF_ssh_subsys)) {
             retry_cmd_now = !sshfwd_start_subsystem(mc->sc, true, cmd);
         } else if (*cmd) {
@@ -209,7 +211,9 @@ static void mainchan_open_confirmation(Channel *chan)
 
 static void mainchan_try_fallback_command(mainchan *mc)
 {
-    const char *cmd = conf_get_str(mc->conf, CONF_remote_cmd2);
+    /* Ignore encoding of CONF_remote_cmd2 so as not to disturb legacy
+     * handling of non-UTF-8 commands */
+    const char *cmd = conf_get_str_ambi(mc->conf, CONF_remote_cmd2, NULL);
     if (conf_get_bool(mc->conf, CONF_ssh_subsys2)) {
         sshfwd_start_subsystem(mc->sc, true, cmd);
     } else {
@@ -292,7 +296,7 @@ static void mainchan_request_response(Channel *chan, bool success)
         if (success) {
             ppl_logevent("Started a shell/command");
             mainchan_ready(mc);
-        } else if (*conf_get_str(mc->conf, CONF_remote_cmd2)) {
+        } else if (*conf_get_str_ambi(mc->conf, CONF_remote_cmd2, NULL)) {
             ppl_logevent("Primary command failed; attempting fallback");
             mainchan_try_fallback_command(mc);
         } else {
@@ -348,7 +352,7 @@ static void mainchan_open_failure(Channel *chan, const char *errtext)
 }
 
 static size_t mainchan_send(Channel *chan, bool is_stderr,
-                         const void *data, size_t length)
+                            const void *data, size_t length)
 {
     assert(chan->vt == &mainchan_channelvt);
     mainchan *mc = container_of(chan, mainchan, chan);

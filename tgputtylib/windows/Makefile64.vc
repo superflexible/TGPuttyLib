@@ -107,15 +107,16 @@ all: $(BUILDDIR)tgputtylib.dll
 $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDIR)ssh2_pick_fingerprint.obj \
 		$(BUILDDIR)network.obj $(BUILDDIR)be_list.obj $(BUILDDIR)bufchain.obj $(BUILDDIR)tempseat.obj \
 		$(BUILDDIR)callback.obj $(BUILDDIR)cmdline.obj $(BUILDDIR)strbuf.obj $(BUILDDIR)antispoof.obj \
-		$(BUILDDIR)conf.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj $(BUILDDIR)sk_free_peer_info.obj \
+		$(BUILDDIR)conf.obj $(BUILDDIR)conf_data.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj $(BUILDDIR)sk_free_peer_info.obj \
                 $(BUILDDIR)cproxy.obj $(BUILDDIR)ecc-arithmetic.obj $(BUILDDIR)ecc-ssh.obj $(BUILDDIR)memxor.obj \
 		$(BUILDDIR)errsock.obj $(BUILDDIR)logging.obj $(BUILDDIR)dupcat.obj $(BUILDDIR)fgetline.obj \
 		$(BUILDDIR)mainchan.obj $(BUILDDIR)marshal.obj $(BUILDDIR)local.obj $(BUILDDIR)host_strchr.obj \
 		$(BUILDDIR)memory.obj $(BUILDDIR)validate_manual_hostkey.obj $(BUILDDIR)prompts.obj $(BUILDDIR)null-lp.obj \
-		$(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)mpint.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)host_strchr_internal.obj \
-		$(BUILDDIR)null-seat.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)pgssapi.obj $(BUILDDIR)smemeq.obj $(BUILDDIR)interprocess_mutex.obj \
+		$(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)dup_wc_to_mb.obj $(BUILDDIR)dupwcs.obj $(BUILDDIR)mpint.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)host_strchr_internal.obj \
+		$(BUILDDIR)null-seat.obj $(BUILDDIR)null-socket.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)pgssapi.obj $(BUILDDIR)smemeq.obj $(BUILDDIR)interprocess_mutex.obj \
 		$(BUILDDIR)pinger.obj $(BUILDDIR)portfwd.obj $(BUILDDIR)cert-expr.obj $(BUILDDIR)registry.obj \
-		$(BUILDDIR)null-mac.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)default_description.obj \
+		$(BUILDDIR)null-mac.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)default_description.obj $(BUILDDIR)decode_utf8_to_wide_string.obj $(BUILDDIR)encode_wide_string_as_utf8.obj \
+                $(BUILDDIR)decode_utf8.obj $(BUILDDIR)decode_utf8_to_wchar.obj \
 		$(BUILDDIR)http.obj $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj $(BUILDDIR)null-opener.obj \
 		$(BUILDDIR)settings.obj $(BUILDDIR)sftp.obj $(BUILDDIR)string_length_for_printf.obj $(BUILDDIR)host_ca_new_free.obj \
 		$(BUILDDIR)sftpcommon.obj $(BUILDDIR)ssh.obj $(BUILDDIR)dupstr.obj $(BUILDDIR)encode_utf8.obj \
@@ -130,14 +131,14 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
 		$(BUILDDIR)transport2.obj $(BUILDDIR)userauth2-client.obj $(BUILDDIR)key_components.obj \
                 $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-common.obj \
                 $(BUILDDIR)aesgcm-select.obj $(BUILDDIR)aesgcm-sw.obj $(BUILDDIR)aesgcm-common.obj \
-                $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)seat_dialog_text.obj \
+                $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)seat_dialog_text.obj $(BUILDDIR)seat_nonfatal.obj \
 		$(BUILDDIR)pubkey-ppk.obj $(BUILDDIR)pubkey-ssh1.obj $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj \
 		$(BUILDDIR)chacha20-poly1305.obj $(BUILDDIR)common.obj $(BUILDDIR)base64_encode_atom.obj \
 		$(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)load_system32_dll.obj \
 		$(BUILDDIR)des.obj $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)burnstr.obj $(BUILDDIR)get_system_dir.obj \
 		$(BUILDDIR)dsa.obj $(BUILDDIR)telnet.obj $(BUILDDIR)base64_decode_atom.obj \
-		$(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)hash_simple.obj $(BUILDDIR)mac_simple.obj \
-		$(BUILDDIR)mac.obj $(BUILDDIR)md5.obj $(BUILDDIR)spr_get_error_message.obj \
+		$(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)kex-hybrid.obj $(BUILDDIR)hash_simple.obj $(BUILDDIR)mac_simple.obj \
+		$(BUILDDIR)mac.obj $(BUILDDIR)md5.obj $(BUILDDIR)mlkem.obj $(BUILDDIR)spr_get_error_message.obj \
 		$(BUILDDIR)prng.obj $(BUILDDIR)sshpubk.obj $(BUILDDIR)write_c_string_literal.obj \
 		$(BUILDDIR)sshrand.obj $(BUILDDIR)rsa.obj $(BUILDDIR)sha256-select.obj \
 		$(BUILDDIR)sha256-sw.obj $(BUILDDIR)sha512-sw.obj $(BUILDDIR)sha512-select.obj \
@@ -161,23 +162,23 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
 		$(BUILDDIR)local-proxy.obj $(BUILDDIR)security.obj $(BUILDDIR)select-cli.obj \
 		$(BUILDDIR)sftpw.obj $(BUILDDIR)sharingw.obj $(BUILDDIR)nullstrcmp.obj \
 		$(BUILDDIR)storage.obj $(BUILDDIR)ltime.obj $(BUILDDIR)open_for_write_would_lose_data.obj \
-		$(BUILDDIR)unicode.obj $(BUILDDIR)rfc6979.obj \
+		$(BUILDDIR)unicode.obj $(BUILDDIR)rfc6979.obj $(BUILDDIR)logeventf.obj \
                 $(BUILDDIR)xdmauth.obj
 	type <<link_psftp
  advapi32.lib $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDIR)bufchain.obj $(BUILDDIR)ctrlparse.obj
  $(BUILDDIR)network.obj $(BUILDDIR)be_list.obj $(BUILDDIR)callback.obj $(BUILDDIR)strbuf.obj $(BUILDDIR)antispoof.obj
- $(BUILDDIR)cmdline.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj comdlg32.lib $(BUILDDIR)conf.obj
+ $(BUILDDIR)cmdline.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj comdlg32.lib $(BUILDDIR)conf.obj $(BUILDDIR)conf_data.obj
  $(BUILDDIR)cproxy.obj $(BUILDDIR)local.obj $(BUILDDIR)ecc-arithmetic.obj $(BUILDDIR)ecc-ssh.obj $(BUILDDIR)errsock.obj
  gdi32.lib imm32.lib $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj $(BUILDDIR)ssh2_pick_fingerprint.obj
  $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)validate_manual_hostkey.obj $(BUILDDIR)dupstr.obj $(BUILDDIR)wordwrap.obj
- $(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)mpint.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)dupcat.obj $(BUILDDIR)null-lp.obj
+ $(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)dupwcs.obj $(BUILDDIR)dup_wc_to_mb.obj $(BUILDDIR)mpint.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)dupcat.obj $(BUILDDIR)null-lp.obj
  ole32.lib $(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj $(BUILDDIR)dupprintf.obj $(BUILDDIR)cert-expr.obj
  $(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)prompts.obj
  $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj $(BUILDDIR)settings.obj $(BUILDDIR)tempseat.obj $(BUILDDIR)ntru.obj
  $(BUILDDIR)sftp.obj $(BUILDDIR)sftpcommon.obj shell32.lib $(BUILDDIR)smemeq.obj $(BUILDDIR)fgetline.obj
  $(BUILDDIR)ssh.obj $(BUILDDIR)bpp1.obj $(BUILDDIR)censor1.obj $(BUILDDIR)string_length_for_printf.obj
  $(BUILDDIR)aesgcm-select.obj $(BUILDDIR)aesgcm-sw.obj $(BUILDDIR)aesgcm-common.obj $(BUILDDIR)key_components.obj
- $(BUILDDIR)connection1.obj $(BUILDDIR)connection1-client.obj $(BUILDDIR)host_strchr.obj $(BUILDDIR)null-seat.obj
+ $(BUILDDIR)connection1.obj $(BUILDDIR)connection1-client.obj $(BUILDDIR)host_strchr.obj $(BUILDDIR)null-seat.obj $(BUILDDIR)null-socket.obj
  $(BUILDDIR)login1.obj $(BUILDDIR)bpp2.obj $(BUILDDIR)host_strchr_internal.obj $(BUILDDIR)registry.obj
  $(BUILDDIR)bpp-bare.obj $(BUILDDIR)censor2.obj $(BUILDDIR)interprocess_mutex.obj $(BUILDDIR)null-opener.obj
  $(BUILDDIR)connection2.obj $(BUILDDIR)connection2-client.obj $(BUILDDIR)smemclr.obj $(BUILDDIR)memxor.obj
@@ -186,11 +187,12 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
  $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-common.obj $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)pubkey-ssh1.obj
  $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj $(BUILDDIR)chacha20-poly1305.obj $(BUILDDIR)common.obj
  $(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)des.obj $(BUILDDIR)sk_free_peer_info.obj
- $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)dsa.obj $(BUILDDIR)default_description.obj $(BUILDDIR)host_strcspn.obj
- $(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)mac.obj $(BUILDDIR)platform_get_x_display.obj $(BUILDDIR)sessprep.obj
- $(BUILDDIR)md5.obj $(BUILDDIR)prng.obj $(BUILDDIR)sshpubk.obj $(BUILDDIR)seat_connection_fatal.obj $(BUILDDIR)rfc6979.obj 
+ $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)dsa.obj $(BUILDDIR)default_description.obj $(BUILDDIR)decode_utf8_to_wide_string.obj
+ $(BUILDDIR)encode_wide_string_as_utf8.obj $(BUILDDIR)host_strcspn.obj $(BUILDDIR)decode_utf8.obj $(BUILDDIR)decode_utf8_to_wchar.obj
+ $(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)kex-hybrid.obj $(BUILDDIR)mac.obj $(BUILDDIR)platform_get_x_display.obj $(BUILDDIR)sessprep.obj
+ $(BUILDDIR)md5.obj $(BUILDDIR)mlkem.obj $(BUILDDIR)prng.obj $(BUILDDIR)sshpubk.obj $(BUILDDIR)seat_connection_fatal.obj $(BUILDDIR)rfc6979.obj
  $(BUILDDIR)sshrand.obj $(BUILDDIR)rsa.obj $(BUILDDIR)sha256-sw.obj $(BUILDDIR)encode_utf8.obj $(BUILDDIR)sha256-select.obj
- $(BUILDDIR)sha512-sw.obj $(BUILDDIR)agent_named_pipe_name.obj $(BUILDDIR)get_username.obj $(BUILDDIR)log_proxy_stderr.obj
+ $(BUILDDIR)sha512-sw.obj $(BUILDDIR)agent_named_pipe_name.obj $(BUILDDIR)get_username.obj $(BUILDDIR)log_proxy_stderr.obj $(BUILDDIR)logeventf.obj
  $(BUILDDIR)sha256-common.obj $(BUILDDIR)sha512-common.obj $(BUILDDIR)sha1-select.obj $(BUILDDIR)make_spr_sw_abort_static.obj
  $(BUILDDIR)sha1-common.obj $(BUILDDIR)sha1-sw.obj $(BUILDDIR)sha3.obj $(BUILDDIR)sharing.obj $(BUILDDIR)win_strerror.obj
  $(BUILDDIR)sshutils.obj $(BUILDDIR)verstring.obj $(BUILDDIR)zlib.obj $(BUILDDIR)interactor.obj $(BUILDDIR)backend_socket_log.obj
@@ -207,7 +209,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
  $(BUILDDIR)storage.obj $(BUILDDIR)ltime.obj $(BUILDDIR)unicode.obj $(BUILDDIR)sha512-select.obj $(BUILDDIR)make_spr_sw_abort_winerror.obj
  $(BUILDDIR)xdmauth.obj $(BUILDDIR)http.obj $(BUILDDIR)conf_launchable.obj $(BUILDDIR)null-mac.obj $(BUILDDIR)openssh-certs.obj
  $(BUILDDIR)base64_decode.obj $(BUILDDIR)base64_encode.obj $(BUILDDIR)base64_valid.obj $(BUILDDIR)percent_encode.obj
- $(BUILDDIR)mac_simple.obj $(BUILDDIR)out_of_memory.obj $(BUILDDIR)seat_dialog_text.obj $(BUILDDIR)percent_decode.obj
+ $(BUILDDIR)mac_simple.obj $(BUILDDIR)out_of_memory.obj $(BUILDDIR)seat_dialog_text.obj $(BUILDDIR)percent_decode.obj  $(BUILDDIR)seat_nonfatal.obj
 <<
 	link $(LFLAGSDLL) $(XLFLAGS) -out:$(BUILDDIR)tgputtylib.dll -map:$(BUILDDIR)tgputtylib.map -subsystem:console$(SUBSYSVER) -nologo -dll @link_psftp
 	copy tgputtylib.* ..\..\Win64\Release
@@ -324,6 +326,7 @@ $(BUILDDIR)import.obj: ..\import.c ..\putty.h ..\ssh.h ..\mpint.h ..\misc.h \
 		..\charset\charset.h
 $(BUILDDIR)localenc.obj: ..\charset\localenc.c ..\charset\charset.h \
 		..\charset\internal.h
+$(BUILDDIR)logeventf.obj: ..\utils\logeventf.c
 $(BUILDDIR)logging.obj: ..\logging.c ..\putty.h ..\defs.h \
 		..\network.h ..\misc.h ..\marshal.h ..\ssh\signal-list.h \
 		..\windows\platform.h ..\puttymem.h \

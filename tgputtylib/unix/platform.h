@@ -60,10 +60,12 @@ struct Filename {
 };
 FILE *f_open(const struct Filename *, char const *, bool);
 
+#ifndef SUPERSEDE_FONTSPEC_FOR_TESTING
 struct FontSpec {
     char *name;    /* may be "" to indicate no selected font at all */
 };
 struct FontSpec *fontspec_new(const char *name);
+#endif
 
 extern const struct BackendVtable pty_backend;
 
@@ -81,8 +83,6 @@ extern const struct BackendVtable pty_backend;
 typedef void *HelpCtx;
 #define NULL_HELPCTX ((HelpCtx)NULL)
 #define HELPCTX(x) NULL
-#define FILTER_KEY_FILES NULL          /* FIXME */
-#define FILTER_DYNLIB_FILES NULL       /* FIXME */
 
 /*
  * Under X, selection data must not be NUL-terminated.
@@ -333,6 +333,8 @@ void gtk_setup_config_box(
  */
 #define DEFAULT_CODEPAGE 0xFFFF
 #define CP_UTF8 CS_UTF8                /* from libcharset */
+#define CP_437 CS_CP437                /* used for test suites */
+#define CP_ISO8859_1 CS_ISO8859_1      /* used for test suites */
 
 #define strnicmp strncasecmp
 #define stricmp strcasecmp
@@ -393,13 +395,23 @@ void setup_fd_socket(Socket *s, int infd, int outfd, int inerrfd);
 void fd_socket_set_psb_prefix(Socket *s, const char *prefix);
 
 /*
- * Default font setting, which can vary depending on NOT_X_WINDOWS.
+ * Default font settings. We have a default font for each of
+ * client-side and server-side, so that we can use one of each as a
+ * fallback, and we also have a single overall default which goes into
+ * Conf to populate the initial state of Default Settings.
+ *
+ * In the past, this default varied with NOT_X_WINDOWS. But these days
+ * non-X11 environments like Wayland with only client-side fonts are
+ * common, and even an X11-capable _build_ of PuTTY is quite likely to
+ * find out at run time that X11 and its bitmap fonts aren't
+ * available. Also, a fixed-size bitmap font doesn't play nicely with
+ * high-DPI displays. And the GTK1 build of PuTTY, which can _only_
+ * handle server-side fonts, is legacy. So the default font is
+ * unconditionally the client-side one.
  */
-#ifdef NOT_X_WINDOWS
-#define DEFAULT_GTK_FONT "client:Monospace 12"
-#else
-#define DEFAULT_GTK_FONT "server:fixed"
-#endif
+#define DEFAULT_GTK_CLIENT_FONT "client:Monospace 12"
+#define DEFAULT_GTK_SERVER_FONT "server:fixed"
+#define DEFAULT_GTK_FONT DEFAULT_GTK_CLIENT_FONT
 
 /*
  * pty.c.
@@ -471,5 +483,9 @@ bool cliloop_always_continue(void *ctx, bool, bool);
 void plug_closing_errno(Plug *plug, int error);
 
 SeatPromptResult make_spr_sw_abort_errno(const char *prefix, int errno_value);
+
+/* Unix-specific extra functions in cmdline_arg.c */
+CmdlineArgList *cmdline_arg_list_from_argv(int argc, char **argv);
+char **cmdline_arg_remainder(CmdlineArg *argp);
 
 #endif /* PUTTY_UNIX_PLATFORM_H */

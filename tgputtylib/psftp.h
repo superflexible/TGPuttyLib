@@ -56,7 +56,7 @@ void platform_psftp_pre_conn_setup(LogPolicy *lp);
  * specific code, after doing any platform-specific initialisation.
  */
 #ifdef WITHCMDLINEXXXX
-TGDLLCODE(__declspec(dllexport)) int psftp_main(int argc, char *argv[]); // TG 2019
+TGDLLCODE(__declspec(dllexport)) int psftp_main(CmdlineArgList *arglist); // TG
 #endif
 
 /*
