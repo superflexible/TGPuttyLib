@@ -25,7 +25,9 @@ bool BinarySink_put_mb_to_wc(
     BinarySink *bs, int codepage, const char *mbstr, int mblen)
 {
 #ifndef TGDLL
-    if (codepage == DEFAULT_CODEPAGE) {
+    if (codepage == DEFAULT_CODEPAGE) 
+#endif
+	{
         mbstate_t state;
 
         memset(&state, 0, sizeof state);
@@ -39,8 +41,9 @@ bool BinarySink_put_mb_to_wc(
             mbstr += i;
             mblen -= i;
         }
-    } else if (codepage == CS_NONE) {
-#endif
+    } 
+#ifndef TGDLL
+	else if (codepage == CS_NONE) {
         while (mblen > 0) {
             wchar_t wc = 0xD800 | (mbstr[0] & 0xFF);
             put_data(bs, &wc, sizeof(wc));
@@ -55,6 +58,7 @@ bool BinarySink_put_mb_to_wc(
             put_data(bs, wbuf, wlen * sizeof(wchar_t));
         }
     }
+#endif
 
     /* We never expect to receive invalid charset values on Unix,
      * because we're not dependent on an externally defined space of
@@ -66,11 +70,13 @@ bool BinarySink_put_wc_to_mb(
     BinarySink *bs, int codepage, const wchar_t *wcstr, int wclen,
     const char *defchr)
 {
-#ifndef TGDLL
     size_t defchr_len = 0;
     bool defchr_len_known = false;
 
-    if (codepage == DEFAULT_CODEPAGE) {
+#ifndef TGDLL
+    if (codepage == DEFAULT_CODEPAGE) 
+#endif
+	{
         char output[MB_LEN_MAX];
         mbstate_t state;
 
@@ -90,8 +96,9 @@ bool BinarySink_put_wc_to_mb(
             wcstr++;
             wclen--;
         }
-    } else if (codepage == CS_NONE) 
-#endif
+    } 
+#ifndef TGDLL
+	else if (codepage == CS_NONE) 
     {
         while (wclen > 0) {
             if (*wcstr >= 0xD800 && *wcstr < 0xD900) {
@@ -117,6 +124,7 @@ bool BinarySink_put_wc_to_mb(
             put_data(bs, buf, len);
         }
     }
+#endif
 
     return true;
 }

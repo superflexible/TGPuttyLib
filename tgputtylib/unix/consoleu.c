@@ -226,7 +226,7 @@ SeatPromptResult console_confirm_ssh_host_key(
     if (line[0] != '\0' && line[0] != '\r' && line[0] != '\n' &&
         line[0] != 'q' && line[0] != 'Q') {
         if (line[0] == 'y' || line[0] == 'Y')
-            store_host_key(host, port, keytype, keystr);
+            store_host_key(seat, host, port, keytype, keystr);
         postmsg(&cf);
         return SPR_OK;
     } else {
@@ -622,6 +622,24 @@ bool is_interactive(void)
     return false;
 #else	
     return isatty(0);
+#endif	
+}
+
+bool console_set_stdio_prompts(bool newvalue)
+{
+    /* Sending prompts to stdio in place of /dev/tty is not supported
+     * in the Unix tools. It's only supported on Windows because of
+     * years of history making it likely someone was depending on it. */
+    return false;
+}
+
+bool set_legacy_charset_handling(bool newvalue)
+{
+#ifdef TGDLL
+    return false;
+#else	
+    /* This probably _will_ need to be supported, but isn't yet. */
+    return false;
 #endif	
 }
 

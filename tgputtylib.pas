@@ -484,109 +484,116 @@ begin
 begin
   {$ifdef MSWINDOWS}
   Result:=true;
-  CheckStructSizes;
-  {$else}
-  if TGPLH>0 then begin
-     Result:=Assigned(tgputty_initcontext);
-     Exit;
-     end;
-  libpath:=ExtractFilePath(ParamStr(0))+tgputtydll;
-  if not FileExists(libpath) then begin
-     TGPuttyLibLoadError:='File '+libpath+' does not exist.';
-     Result:=false;
-     Exit;
-     end;
-  TGPLH:=TLibHandle(dlopen(PAnsiChar(libpath), RTLD_LAZY ));
-  // TGPLH:=LoadLibrary(libpath);
-  Result:=TGPLH<>0;
-  if Result then begin
-     TGPuttyLibLoadError:='';
-     @tggetlibrarycontextsize:=GetProcedureAddress(TGPLH,'tggetlibrarycontextsize');
-     @tggetstructsizes:=GetProcedureAddress(TGPLH,'tggetstructsizes');
-     @tgputty_initcontext:=GetProcedureAddress(TGPLH,'tgputty_initcontext');
-     @tgputtysetappname:=GetProcedureAddress(TGPLH,'tgputtysetappname');
-     @tgputty_setverbose:=GetProcedureAddress(TGPLH,'tgputty_setverbose');
-     @tgputtyfree:=GetProcedureAddress(TGPLH,'tgputtyfree');
-     @tgputtygetversions:=GetProcedureAddress(TGPLH,'tgputtygetversions');
-     @tgputty_getconfigarrays:=GetProcedureAddress(TGPLH,'tgputty_getconfigarrays');
+  try
+    CheckStructSizes;
+    {$else}
+    if TGPLH>0 then begin
+       Result:=Assigned(tgputty_initcontext);
+       Exit;
+       end;
+    libpath:=ExtractFilePath(ParamStr(0))+tgputtydll;
+    if not FileExists(libpath) then begin
+       TGPuttyLibLoadError:='File '+libpath+' does not exist.';
+       Result:=false;
+       Exit;
+       end;
+    TGPLH:=TLibHandle(dlopen(PAnsiChar(libpath), RTLD_LAZY ));
+    // TGPLH:=LoadLibrary(libpath);
+    Result:=TGPLH<>0;
+    if Result then begin
+       TGPuttyLibLoadError:='';
+       @tggetlibrarycontextsize:=GetProcedureAddress(TGPLH,'tggetlibrarycontextsize');
+       @tggetstructsizes:=GetProcedureAddress(TGPLH,'tggetstructsizes');
+       @tgputty_initcontext:=GetProcedureAddress(TGPLH,'tgputty_initcontext');
+       @tgputtysetappname:=GetProcedureAddress(TGPLH,'tgputtysetappname');
+       @tgputty_setverbose:=GetProcedureAddress(TGPLH,'tgputty_setverbose');
+       @tgputtyfree:=GetProcedureAddress(TGPLH,'tgputtyfree');
+       @tgputtygetversions:=GetProcedureAddress(TGPLH,'tgputtygetversions');
+       @tgputty_getconfigarrays:=GetProcedureAddress(TGPLH,'tgputty_getconfigarrays');
 
-     // run the whole psftp interactive commmand prompt
-     // after calling tgputtyinit
-     @tgputtyrunpsftp:=GetProcedureAddress(TGPLH,'tgputtyrunpsftp');
+       // run the whole psftp interactive commmand prompt
+       // after calling tgputtyinit
+       @tgputtyrunpsftp:=GetProcedureAddress(TGPLH,'tgputtyrunpsftp');
 
-     // run psftp command lines
-     @tgputtysftpcommand:=GetProcedureAddress(TGPLH,'tgputtysftpcommand');
+       // run psftp command lines
+       @tgputtysftpcommand:=GetProcedureAddress(TGPLH,'tgputtysftpcommand');
 
-     // individual SFTP commands
-     @tgputty_setkeyfile:=GetProcedureAddress(TGPLH,'tgputty_setkeyfile');
-     @tgsftp_connect:=GetProcedureAddress(TGPLH,'tgsftp_connect');
-     @tgsftp_close:=GetProcedureAddress(TGPLH,'tgsftp_close');
-     @tgsftp_cd:=GetProcedureAddress(TGPLH,'tgsftp_cd');
-     @tgsftp_ls:=GetProcedureAddress(TGPLH,'tgsftp_ls');
+       // individual SFTP commands
+       @tgputty_setkeyfile:=GetProcedureAddress(TGPLH,'tgputty_setkeyfile');
+       @tgsftp_connect:=GetProcedureAddress(TGPLH,'tgsftp_connect');
+       @tgsftp_close:=GetProcedureAddress(TGPLH,'tgsftp_close');
+       @tgsftp_cd:=GetProcedureAddress(TGPLH,'tgsftp_cd');
+       @tgsftp_ls:=GetProcedureAddress(TGPLH,'tgsftp_ls');
 
-     @tgsftp_rm:=GetProcedureAddress(TGPLH,'tgsftp_rm');
-     @tgsftp_rmdir:=GetProcedureAddress(TGPLH,'tgsftp_rmdir');
-     @tgsftp_mkdir:=GetProcedureAddress(TGPLH,'tgsftp_mkdir');
-     @tgsftp_mv:=GetProcedureAddress(TGPLH,'tgsftp_mv');
-     @tgsftp_mvex:=GetProcedureAddress(TGPLH,'tgsftp_mvex');
+       @tgsftp_rm:=GetProcedureAddress(TGPLH,'tgsftp_rm');
+       @tgsftp_rmdir:=GetProcedureAddress(TGPLH,'tgsftp_rmdir');
+       @tgsftp_mkdir:=GetProcedureAddress(TGPLH,'tgsftp_mkdir');
+       @tgsftp_mv:=GetProcedureAddress(TGPLH,'tgsftp_mv');
+       @tgsftp_mvex:=GetProcedureAddress(TGPLH,'tgsftp_mvex');
 
-     @tgsftp_putfile:=GetProcedureAddress(TGPLH,'tgsftp_putfile');
-     @tgsftp_getfile:=GetProcedureAddress(TGPLH,'tgsftp_getfile');
+       @tgsftp_putfile:=GetProcedureAddress(TGPLH,'tgsftp_putfile');
+       @tgsftp_getfile:=GetProcedureAddress(TGPLH,'tgsftp_getfile');
 
-     @tgsftp_getstat:=GetProcedureAddress(TGPLH,'tgsftp_getstat');
-     @tgsftp_setstat:=GetProcedureAddress(TGPLH,'tgsftp_setstat');
+       @tgsftp_getstat:=GetProcedureAddress(TGPLH,'tgsftp_getstat');
+       @tgsftp_setstat:=GetProcedureAddress(TGPLH,'tgsftp_setstat');
 
-     @tgputty_openfile:=GetProcedureAddress(TGPLH,'tgputty_openfile');
-     @tgputty_closefile:=GetProcedureAddress(TGPLH,'tgputty_closefile');
+       @tgputty_openfile:=GetProcedureAddress(TGPLH,'tgputty_openfile');
+       @tgputty_closefile:=GetProcedureAddress(TGPLH,'tgputty_closefile');
 
-     @tgputty_xfer_upload_init:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_init');
-     @tgputty_xfer_upload_ready:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_ready');
-     @tgputty_xfer_upload_data:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_data');
+       @tgputty_xfer_upload_init:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_init');
+       @tgputty_xfer_upload_ready:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_ready');
+       @tgputty_xfer_upload_data:=GetProcedureAddress(TGPLH,'tgputty_xfer_upload_data');
 
-     @tgputty_xfer_download_init:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_init');
-     @tgputty_xfer_download_preparequeue:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_preparequeue');
-     @tgputty_xfer_download_data:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_data');
+       @tgputty_xfer_download_init:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_init');
+       @tgputty_xfer_download_preparequeue:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_preparequeue');
+       @tgputty_xfer_download_data:=GetProcedureAddress(TGPLH,'tgputty_xfer_download_data');
 
-     @tgputty_xfer_set_error:=GetProcedureAddress(TGPLH,'tgputty_xfer_set_error');
-     @tgputty_xfer_ensuredone:=GetProcedureAddress(TGPLH,'tgputty_xfer_ensuredone');
-     @tgputty_xfer_done:=GetProcedureAddress(TGPLH,'tgputty_xfer_done');
-     @tgputty_xfer_cleanup:=GetProcedureAddress(TGPLH,'tgputty_xfer_cleanup');
+       @tgputty_xfer_set_error:=GetProcedureAddress(TGPLH,'tgputty_xfer_set_error');
+       @tgputty_xfer_ensuredone:=GetProcedureAddress(TGPLH,'tgputty_xfer_ensuredone');
+       @tgputty_xfer_done:=GetProcedureAddress(TGPLH,'tgputty_xfer_done');
+       @tgputty_xfer_cleanup:=GetProcedureAddress(TGPLH,'tgputty_xfer_cleanup');
 
-     @tgputty_sfree:=GetProcedureAddress(TGPLH,'tgputty_sfree');
+       @tgputty_sfree:=GetProcedureAddress(TGPLH,'tgputty_sfree');
 
-     @tgputty_conf_get_bool:=GetProcedureAddress(TGPLH,'tgputty_conf_get_bool');
-     @tgputty_conf_get_int:=GetProcedureAddress(TGPLH,'tgputty_conf_get_int');
-     @tgputty_conf_get_int_int:=GetProcedureAddress(TGPLH,'tgputty_conf_get_int_int');
-     // PAnsiChar result still owned by conf
-     @tgputty_conf_get_str:=GetProcedureAddress(TGPLH,'tgputty_conf_get_str');
-     @tgputty_conf_get_str_str:=GetProcedureAddress(TGPLH,'tgputty_conf_get_str_str');
+       @tgputty_conf_get_bool:=GetProcedureAddress(TGPLH,'tgputty_conf_get_bool');
+       @tgputty_conf_get_int:=GetProcedureAddress(TGPLH,'tgputty_conf_get_int');
+       @tgputty_conf_get_int_int:=GetProcedureAddress(TGPLH,'tgputty_conf_get_int_int');
+       // PAnsiChar result still owned by conf
+       @tgputty_conf_get_str:=GetProcedureAddress(TGPLH,'tgputty_conf_get_str');
+       @tgputty_conf_get_str_str:=GetProcedureAddress(TGPLH,'tgputty_conf_get_str_str');
 
-     @tgputty_conf_set_bool:=GetProcedureAddress(TGPLH,'tgputty_conf_set_bool');
-     @tgputty_conf_set_int:=GetProcedureAddress(TGPLH,'tgputty_conf_set_int');
-     @tgputty_conf_set_int_int:=GetProcedureAddress(TGPLH,'tgputty_conf_set_int_int');
-     @tgputty_conf_set_str:=GetProcedureAddress(TGPLH,'tgputty_conf_set_str');
-     @tgputty_conf_set_str_str:=GetProcedureAddress(TGPLH,'tgputty_conf_set_str_str');
+       @tgputty_conf_set_bool:=GetProcedureAddress(TGPLH,'tgputty_conf_set_bool');
+       @tgputty_conf_set_int:=GetProcedureAddress(TGPLH,'tgputty_conf_set_int');
+       @tgputty_conf_set_int_int:=GetProcedureAddress(TGPLH,'tgputty_conf_set_int_int');
+       @tgputty_conf_set_str:=GetProcedureAddress(TGPLH,'tgputty_conf_set_str');
+       @tgputty_conf_set_str_str:=GetProcedureAddress(TGPLH,'tgputty_conf_set_str_str');
 
-     if Assigned(tggetstructsizes) then begin
-        CheckStructSizes;
-        Result:=true;
-        end
-     else
-        Result:=Assigned(tggetlibrarycontextsize); // older DLL, that's OK
+       if Assigned(tggetstructsizes) then begin
+          CheckStructSizes;
+          Result:=true;
+          end
+       else
+          Result:=Assigned(tggetlibrarycontextsize); // older DLL, that's OK
 
-     if Result then begin
-        if sizeof(TTGLibraryContext)<tggetlibrarycontextsize then
-           raise Exception.Create('Invalid '+tgputtydll+': uses incorrect TTGLibraryContext record size');
-        end
-     else
-        TGPuttyLibLoadError:='Assigned(tggetlibrarycontextsize)='+IntToStr(ord(Assigned(tggetlibrarycontextsize)));
-     end
-  else begin
-     TGPuttyLibLoadError:=dlerror;
-     if TGPuttyLibLoadError='' then
-        TGPuttyLibLoadError:='dlopen failed, errno='+IntToStr(errno);
-     end;
-  {$endif}
+       if Result then begin
+          if sizeof(TTGLibraryContext)<tggetlibrarycontextsize then
+             raise Exception.Create('Invalid '+tgputtydll+': uses incorrect TTGLibraryContext record size');
+          end
+       else
+          TGPuttyLibLoadError:='Assigned(tggetlibrarycontextsize)='+IntToStr(ord(Assigned(tggetlibrarycontextsize)));
+       end
+    else begin
+       TGPuttyLibLoadError:=dlerror;
+       if TGPuttyLibLoadError='' then
+          TGPuttyLibLoadError:='dlopen failed, errno='+IntToStr(errno);
+       end;
+    {$endif}
+    except
+      on E:Exception do begin
+         Result:=false;
+         TGPuttyLibLoadError:=E.Message;
+         end;
+    end;
   end;
 
 {
