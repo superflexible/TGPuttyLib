@@ -278,17 +278,19 @@ bool init_ucs(struct unicode_data *ucsdata, char *linecharset,
 
 void init_ucs_generic(Conf *conf, struct unicode_data *ucsdata)
 {
-    init_ucs(ucsdata, conf_get_str(conf, CONF_line_codepage),
-             conf_get_bool(conf, CONF_utf8_override),
-             CS_NONE, conf_get_int(conf, CONF_vtmode));
+#ifndef TGDLL
+	init_ucs(ucsdata, conf_get_str(conf, CONF_line_codepage),
+			 conf_get_bool(conf, CONF_utf8_override),
+			 CS_NONE, conf_get_int(conf, CONF_vtmode));
+#endif
 }
 
 #ifndef TGDLL
 const char *cp_name(int codepage)
 {
-    if (codepage == CS_NONE)
-        return "Use font encoding";
-    return charset_to_localenc(codepage);
+	if (codepage == CS_NONE)
+		return "Use font encoding";
+	return charset_to_localenc(codepage);
 }
 #endif
 

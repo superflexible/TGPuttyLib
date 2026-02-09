@@ -125,6 +125,8 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
 		null-seat.o null-plug.o pgssapi.o smemeq.o \
 		pinger.o portfwd.o cert-expr.o fd-socket.o \
+		conf_data.o dup_wc_to_mb.o dupwcs.o decode_utf8_to_wide_string.o encode_wide_string_as_utf8.o \
+		decode_utf8.o decode_utf8_to_wchar.o seat_nonfatal.o kex-hybrid.o mlkem.o logeventf.o \
 		null-mac.o proxy.o psftp.o default_description.o \
 		http.o psftpcommon.o null-opener.o peerinfo.o \
 		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
@@ -144,6 +146,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		pubkey-ppk.o pubkey-ssh1.o blake2.o blowfish.o \
 		chacha20-poly1305.o common.o base64_encode_atom.o \
 		crc32.o crc-attack-detector.o \
+		null-socket.o \
 		des.o diffie-hellman.o burnstr.o \
 		dsa.o telnet.o base64_decode_atom.o \
 		gssc.o hmac.o hash_simple.o mac_simple.o \
@@ -185,6 +188,8 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		http.o psftpcommon.o null-opener.o make_dir_and_check_ours.o \
 		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
 		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
+		conf_data.o dup_wc_to_mb.o dupwcs.o decode_utf8_to_wide_string.o encode_wide_string_as_utf8.o \
+		decode_utf8.o decode_utf8_to_wchar.o seat_nonfatal.o kex-hybrid.o mlkem.o logeventf.o \
 		bpp1.o censor1.o dupprintf.o host_strduptrim.o \
 		connection1.o smemclr.o backend_socket_log.o ntru.o \
 		connection1-client.o host_strrchr.o interactor.o \
@@ -196,6 +201,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		transport2.o userauth2-client.o key_components.o \
                 aes-select.o aes-sw.o aes-common.o \
                 aesgcm-select.o aesgcm-sw.o aesgcm-common.o \
+		null-socket.o \
                 argon2.o arcfour.o seat_dialog_text.o \
 		pubkey-ppk.o pubkey-ssh1.o blake2.o blowfish.o \
 		chacha20-poly1305.o common.o base64_encode_atom.o \
@@ -333,6 +339,8 @@ dsa.o: ../crypto/dsa.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/dsa.c
 null-opener.o: ../stubs/null-opener.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-opener.c
+null-socket.o: ../stubs/null-socket.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-socket.c
 zlib.o: ../ssh/zlib.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/zlib.c
 sha256-sw.o: ../crypto/sha256-sw.c
@@ -709,6 +717,28 @@ our_dialog.o: ../unix/utils/our_dialog.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/our_dialog.c
 pollwrap.o: ../unix/utils/pollwrap.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/pollwrap.c
+conf_data.o: ../utils/conf_data.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/conf_data.c 
+dup_wc_to_mb.o: ../utils/dup_wc_to_mb.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/dup_wc_to_mb.c 
+dupwcs.o: ../utils/dupwcs.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/dupwcs.c
+decode_utf8_to_wide_string.o: ../utils/decode_utf8_to_wide_string.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/decode_utf8_to_wide_string.c
+encode_wide_string_as_utf8.o: ../utils/encode_wide_string_as_utf8.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/encode_wide_string_as_utf8.c
+decode_utf8.o: ../utils/decode_utf8.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/decode_utf8.c
+decode_utf8_to_wchar.o: ../utils/decode_utf8_to_wchar.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/decode_utf8_to_wchar.c
+seat_nonfatal.o: ../utils/seat_nonfatal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/seat_nonfatal.c
+kex-hybrid.o: ../crypto/kex-hybrid.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/kex-hybrid.c
+mlkem.o: ../crypto/mlkem.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/mlkem.c
+logeventf.o: ../utils/logeventf.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/logeventf.c
 
 clean:
 	rm -f *.o cgtest fuzzterm osxlaunch plink pscp psftp psocks psusan puttygen testcrypt testsc testzlib uppity

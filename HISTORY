@@ -1,6 +1,12 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 30 - 10 Feb 2026
+
+TGPuttyLib has now been updated to PuTTY 0.83. It continues to be an important project for me 
+and many customers despite the rare updates. I will attempt to merge the next PuTTY release much faster.
+
+---------------------
 Build 25 - 03 Jan 2024
 
 TGPuttyLib has been updated to PuTTY 0.80. Build 25 also includes some additional improvements.
