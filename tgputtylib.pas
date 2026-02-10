@@ -10,7 +10,7 @@ interface
 
 // Uses tgputtylib.dll or libtgputty.so, especially for SFTP functionality
 
-// Pascal Units Written and Copyright 2019 by Tobias Giesen
+// Pascal Units Written and Copyright 2019-2025 by Tobias Giesen
 
 // License: same as putty, can be freely copied, modified and
 // used for both open source and closed source commercial projects
@@ -482,9 +482,9 @@ begin
      end
   end;
 begin
-  {$ifdef MSWINDOWS}
   Result:=true;
   try
+    {$ifdef MSWINDOWS}
     CheckStructSizes;
     {$else}
     if TGPLH>0 then begin
