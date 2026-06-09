@@ -7,7 +7,7 @@ It allows SFTP connections but also pure SSH connections.
 
 It allows developers to transfer files with the highest possible transfer rates (over 100MB/sec).
 
-TGPuttyLib is based on PuTTY Release 0.83. Ready-to-use classes are currently available for C++, Delphi and Free Pascal.
+TGPuttyLib is based on PuTTY Release 0.84. Ready-to-use classes are currently available for C++, Delphi and Free Pascal.
 
 The library is now available for Windows, macOS and Linux.
 
