@@ -1,7 +1,9 @@
 # TGPuttyLib
 A shared library / DLL with Delphi and C++ bindings based on PuTTY, for Windows, macOS, and Linux.
 
-The new TGPuttyLib SFTP Library is a DLL/.so/.dylib conversion of the psftp program from the well-known PuTTY suite by Simon Tatham.
+The new TGPuttyLib SSH/SFTP Library is a DLL/.so/.dylib conversion of the psftp program from the well-known PuTTY suite by Simon Tatham.
+
+It allows SFTP connections but also pure SSH connections.
 
 It allows developers to transfer files with the highest possible transfer rates (over 100MB/sec).
 
@@ -23,6 +25,8 @@ DIRECTORIES AND FILES
 tgputtylib.pas         -   Delphi Unit interfacing with the DLL
 
 tgputtysftp.pas        -   Delphi SFTP Client Class (recommended, but uses 8-bit strings)
+
+tgputtyssh.pas         -   Delphi SSH Client Class
 
 tgputtysftpclient.pas  -   Delphi SFTP Client Component (not needed, see note at the end of this document)
 
