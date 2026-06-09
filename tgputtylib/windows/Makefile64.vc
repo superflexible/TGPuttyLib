@@ -114,9 +114,9 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
 		$(BUILDDIR)memory.obj $(BUILDDIR)validate_manual_hostkey.obj $(BUILDDIR)prompts.obj $(BUILDDIR)null-lp.obj \
 		$(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)dup_wc_to_mb.obj $(BUILDDIR)dupwcs.obj $(BUILDDIR)mpint.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)host_strchr_internal.obj \
 		$(BUILDDIR)null-seat.obj $(BUILDDIR)null-socket.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)pgssapi.obj $(BUILDDIR)smemeq.obj $(BUILDDIR)interprocess_mutex.obj \
-		$(BUILDDIR)pinger.obj $(BUILDDIR)portfwd.obj $(BUILDDIR)cert-expr.obj $(BUILDDIR)registry.obj \
+		$(BUILDDIR)pinger.obj $(BUILDDIR)portfwd.obj $(BUILDDIR)cert-expr.obj $(BUILDDIR)registry.obj $(BUILDDIR)subprocess_waiter.obj \
 		$(BUILDDIR)null-mac.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)default_description.obj $(BUILDDIR)decode_utf8_to_wide_string.obj $(BUILDDIR)encode_wide_string_as_utf8.obj \
-                $(BUILDDIR)decode_utf8.obj $(BUILDDIR)decode_utf8_to_wchar.obj \
+                $(BUILDDIR)decode_utf8.obj $(BUILDDIR)decode_utf8_to_wchar.obj $(BUILDDIR)newmain.obj $(BUILDDIR)format_connection_setup_command.obj \
 		$(BUILDDIR)http.obj $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj $(BUILDDIR)null-opener.obj \
 		$(BUILDDIR)settings.obj $(BUILDDIR)sftp.obj $(BUILDDIR)string_length_for_printf.obj $(BUILDDIR)host_ca_new_free.obj \
 		$(BUILDDIR)sftpcommon.obj $(BUILDDIR)ssh.obj $(BUILDDIR)dupstr.obj $(BUILDDIR)encode_utf8.obj \
@@ -169,7 +169,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
  $(BUILDDIR)network.obj $(BUILDDIR)be_list.obj $(BUILDDIR)callback.obj $(BUILDDIR)strbuf.obj $(BUILDDIR)antispoof.obj
  $(BUILDDIR)cmdline.obj $(BUILDDIR)clicons.obj $(BUILDDIR)console.obj comdlg32.lib $(BUILDDIR)conf.obj $(BUILDDIR)conf_data.obj
  $(BUILDDIR)cproxy.obj $(BUILDDIR)local.obj $(BUILDDIR)ecc-arithmetic.obj $(BUILDDIR)ecc-ssh.obj $(BUILDDIR)errsock.obj
- gdi32.lib imm32.lib $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj $(BUILDDIR)ssh2_pick_fingerprint.obj
+ gdi32.lib imm32.lib $(BUILDDIR)logging.obj $(BUILDDIR)mainchan.obj $(BUILDDIR)ssh2_pick_fingerprint.obj $(BUILDDIR)newmain.obj 
  $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)validate_manual_hostkey.obj $(BUILDDIR)dupstr.obj $(BUILDDIR)wordwrap.obj
  $(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)dupwcs.obj $(BUILDDIR)dup_wc_to_mb.obj $(BUILDDIR)mpint.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)dupcat.obj $(BUILDDIR)null-lp.obj
  ole32.lib $(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj $(BUILDDIR)dupprintf.obj $(BUILDDIR)cert-expr.obj
@@ -185,8 +185,8 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
  $(BUILDDIR)kex2-client.obj $(BUILDDIR)transient-hostkey-cache.obj $(BUILDDIR)host_strrchr.obj $(BUILDDIR)null-key.obj
  $(BUILDDIR)transport2.obj $(BUILDDIR)userauth2-client.obj $(BUILDDIR)pubkey-ppk.obj $(BUILDDIR)base64_encode_atom.obj
  $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-common.obj $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)pubkey-ssh1.obj
- $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj $(BUILDDIR)chacha20-poly1305.obj $(BUILDDIR)common.obj
- $(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)des.obj $(BUILDDIR)sk_free_peer_info.obj
+ $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj $(BUILDDIR)chacha20-poly1305.obj $(BUILDDIR)common.obj $(BUILDDIR)format_connection_setup_command.obj
+ $(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)des.obj $(BUILDDIR)sk_free_peer_info.obj $(BUILDDIR)subprocess_waiter.obj
  $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)dsa.obj $(BUILDDIR)default_description.obj $(BUILDDIR)decode_utf8_to_wide_string.obj
  $(BUILDDIR)encode_wide_string_as_utf8.obj $(BUILDDIR)host_strcspn.obj $(BUILDDIR)decode_utf8.obj $(BUILDDIR)decode_utf8_to_wchar.obj
  $(BUILDDIR)gssc.obj $(BUILDDIR)hmac.obj $(BUILDDIR)kex-hybrid.obj $(BUILDDIR)mac.obj $(BUILDDIR)platform_get_x_display.obj $(BUILDDIR)sessprep.obj
@@ -297,6 +297,7 @@ $(BUILDDIR)cproxy.obj: ..\proxy\cproxy.c ..\putty.h ..\ssh.h ..\network.h \
 		..\windows\platform.h \
 		..\charset\charset.h
 $(BUILDDIR)local.obj: ..\proxy\local.c
+$(BUILDDIR)newmain.obj: ..\proxy\newmain.c
 $(BUILDDIR)dialog.obj: ..\dialog.c ..\putty.h ..\dialog.h ..\defs.h \
 		..\network.h ..\misc.h ..\marshal.h \
 		..\ssh\signal-list.h ..\windows\platform.h \

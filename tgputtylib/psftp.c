@@ -13,6 +13,7 @@
 #include "storage.h"
 #include "ssh.h"
 #include "ssh/sftp.h"
+#include "ssh/channel.h" // TG: raw-SSH on-demand channels (Milestone 2)
 #include "version.h" // TG
 
 const int cSetUploadBufSizeConfNum=-1001;
@@ -136,7 +137,7 @@ static const SeatVtable psftp_seat_vt = {
     .prompt_descriptions = console_prompt_descriptions,
     .is_utf8 = nullseat_is_never_utf8,
     .echoedit_update = nullseat_echoedit_update,
-    .get_x_display = nullseat_get_x_display,
+    .get_display = nullseat_get_display,
     .get_windowid = nullseat_get_windowid,
     .get_window_pixel_size = nullseat_get_window_pixel_size,
     .stripctrl_new = console_stripctrl_new,
@@ -2934,6 +2935,13 @@ static size_t psftp_output(Seat *seat, SeatOutputType type, const void *data, si
      */
     if (type==SEAT_OUTPUT_STDERR)
     {
+       // TG: in raw SSH mode capture stderr into a buffer the host can
+       // read (rsync sends diagnostics there) instead of the local stderr.
+       if (curlibctx->ssh_capture_stderr)
+       {
+          bufchain_add(&curlibctx->ssh_stderr_data, data, len);
+          return 0;
+       }
        if (!stderr_bs || !thread_vars_initialized) // TG
           init_thread_vars(); // TG
        put_data(stderr_bs, data, len);
@@ -2946,6 +2954,14 @@ static size_t psftp_output(Seat *seat, SeatOutputType type, const void *data, si
 
 static bool psftp_eof(Seat *seat)
 {
+    /*
+     * TG: in raw SSH mode the remote command (e.g. rsync) legitimately
+     * closes its output when it finishes, so peer EOF is normal and must
+     * not be treated as fatal.
+     */
+    if (curlibctx->ssh_raw_mode)
+        return false;
+
     /*
      * We expect to be the party deciding when to close the
      * connection, so if we see EOF before we sent it ourselves, we
@@ -3064,6 +3080,8 @@ static void usage(void)
            " standard error\n");
     printf("  -proxycmd command\n");
     printf("            use 'command' as local proxy\n");
+    printf("  -preconnectcommand command\n");
+    printf("            run 'command' before making network connection\n");
     printf("  -sshlog file\n");
     printf("  -sshrawlog file\n");
     printf("            log protocol details to a file\n");
@@ -3260,6 +3278,38 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
                  "exec sftp-server");
     conf_set_bool(conf, CONF_ssh_subsys2, false);
 
+    /*
+     * TG: raw SSH mode. Instead of running the SFTP subsystem, run a
+     * plain command (e.g. "rsync --server ...") with no subsystem and
+     * no fallback. ssh_no_channel suppresses the main channel entirely
+     * so the connection comes up bare and channels are opened on demand
+     * (Milestone 2). nopty stays on - rsync wants a clean binary stream.
+     */
+    if (curlibctx->ssh_raw_mode) {
+        conf_set_str(conf, CONF_remote_cmd,
+                     curlibctx->ssh_exec_command ?
+                     curlibctx->ssh_exec_command : "");
+        conf_set_bool(conf, CONF_ssh_subsys, false);
+        conf_set_str(conf, CONF_remote_cmd2, "");
+        conf_set_bool(conf, CONF_ssh_subsys2, false);
+        conf_set_bool(conf, CONF_nopty, true);
+        conf_set_bool(conf, CONF_ssh_no_shell, curlibctx->ssh_no_channel);
+
+        /*
+         * In persistent (multi-channel) mode we must NOT use SSH "simple"
+         * mode. psftp enables CONF_ssh_simple above for the single-channel
+         * SFTP case, but in simple mode PuTTY throttles the WHOLE connection
+         * as soon as any one channel holds a single unread byte (see
+         * ssh2_connection_process_queue: "if we're buffering anything at all
+         * and we're in simple mode, throttle the whole channel"). With more
+         * than one channel that deadlocks: channel A's unread output stops
+         * the socket being read, so channel B's open-confirmation never
+         * arrives. Single-channel exec mode keeps simple mode for throughput.
+         */
+        if (curlibctx->ssh_no_channel)
+            conf_set_bool(conf, CONF_ssh_simple, false);
+    }
+
 	CP("psftp_c13");
 	if (psftp_logctx==NULL) // TG - might connect again after disconnecting
 	{
@@ -3304,7 +3354,14 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 	   curlibctx->connectiontimeoutticks=60000; // TG
 
 	CP("psftp_c18");
-	while (!backend_sendok(backend))
+	// TG: in no-channel (persistent raw SSH) mode there is no main channel,
+	// so backend_sendok never goes true. Wait for the connection layer to
+	// finish coming up instead, then channels are opened on demand.
+	#define TGSSH_CONNECTION_READY \
+	    (curlibctx->ssh_no_channel ? \
+	         tgssh_conn_layer_started(tgssh_get_connection_layer(backend)) : \
+	         backend_sendok(backend))
+	while (!TGSSH_CONNECTION_READY)
 	{
 		CP("psftp_c20");
 		if (curlibctx->aborted) // TG
@@ -3349,6 +3406,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 			return 1;
 		}
 	}
+	#undef TGSSH_CONNECTION_READY
 	CP("psftp_c31");
 	if (verbose && realhost != NULL)
 		printf("Connected to %s\n", realhost);
@@ -4046,6 +4104,693 @@ EXPORT void tgsftp_close(TTGLibraryContext *libctx) // TG 2019
   sftp_cmd_close(NULL);
 }
 
+/* ====================================================================
+ * TG: raw SSH support - Milestone 1
+ *
+ * A single SSH connection that execs one arbitrary command (typically
+ * "rsync --server ...") and exposes its stdin/stdout/stderr as a raw
+ * byte stream. This reuses the whole psftp connection machinery
+ * (auth, host-key verification, the event loop) but skips the SFTP
+ * subsystem and SFTP protocol init.
+ *
+ * Data path:
+ *   tgssh_send  -> backend_send (the command's stdin)
+ *   stdout      -> curlibctx->received_data (drained by tgssh_recv)
+ *   stderr      -> curlibctx->ssh_stderr_data (drained by tgssh_recv)
+ * ==================================================================== */
+
+/*
+ * Connect and exec a command. Returns 0 on success, non-zero on failure.
+ * Mirrors tgsftp_connect but sets raw mode (see psftp_connect) and does
+ * NOT run do_sftp_init().
+ */
+EXPORT int tgssh_connect(const char *ahost, const char *auser, const int aport,
+                         const char *apassword, const char *acommand,
+                         TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  CP("tgssh_connect");
+
+#ifndef _WINDOWS
+  if (!thread_vars_initialized || !curlibctx->fds)
+     init_thread_vars(); // Unix has no DLL_THREAD_ATTACH
+#endif
+
+  curlibctx->ssh_raw_mode = true;
+  curlibctx->ssh_capture_stderr = true;
+  curlibctx->ssh_no_channel = false;
+  sent_eof = false; // is expanded to libctx->sent_eof by macro
+  if (curlibctx->ssh_exec_command)
+     sfree(curlibctx->ssh_exec_command);
+  curlibctx->ssh_exec_command = dupstr(acommand ? acommand : "");
+
+  printf("SSH connecting with %s, port %d, as user %s.\n", ahost, aport, auser);
+
+  libctx->caller_supplied_password = dupstr(apassword);
+
+  char *ourhost = dupstr(ahost);
+  char *ouruser = dupstr(auser);
+
+  int result = psftp_connect(ourhost, ouruser, aport);
+  printf("psftp_connect (raw SSH) result is %d\n", result);
+
+  if (ourhost) sfree(ourhost);
+  if (ouruser) sfree(ouruser);
+
+  if (libctx->caller_supplied_password != NULL) {
+     smemclr(libctx->caller_supplied_password,
+             strlen(libctx->caller_supplied_password));
+     sfree(libctx->caller_supplied_password);
+     libctx->caller_supplied_password = NULL;
+  }
+
+  if (result != 0)
+     do_sftp_cleanup();
+
+  return result;
+}
+
+/*
+ * Send data to the remote command's stdin. Returns the number of bytes
+ * accepted (== len) or -1 if not connected.
+ */
+EXPORT int tgssh_send(const void *buf, const int len, TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  if (!backend)
+     return -1;
+  if (len > 0)
+     backend_send(backend, (const char *)buf, (size_t)len);
+  return len;
+}
+
+/*
+ * How many bytes of stdin are still buffered locally (not yet handed to
+ * the network). Lets the host throttle large uploads.
+ */
+EXPORT int tgssh_sendbuffer(TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  if (!backend)
+     return 0;
+  return (int)backend_sendbuffer(backend);
+}
+
+/*
+ * Wait until stdout or stderr data is available, or the remote command
+ * exits, or timeoutms elapses, or the operation is aborted. Returns true
+ * if data is available OR the command has exited (caller should then call
+ * tgssh_recv to drain, and tgssh_get_exit_status / tgssh_is_connected to
+ * detect EOF). Returns false on timeout or abort.
+ *
+ * Pass timeoutms < 0 to wait indefinitely (subject to abort).
+ */
+EXPORT bool tgssh_can_recv(const int timeoutms, TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  if (!backend)
+     return false;
+
+  uint64_t starttick = TGGetTickCount64();
+  while (bufchain_size(&received_data) == 0 && // is expanded to libctx->received_data by macro
+         bufchain_size(&curlibctx->ssh_stderr_data) == 0)
+  {
+     if (curlibctx->aborted)
+        return false;
+
+     // command exited and no data left to read: report ready so the
+     // caller's recv returns 0 (EOF) and it can check the exit status.
+     if (backend_exitcode(backend) >= 0)
+        return true;
+
+     if (ssh_sftp_loop_iteration() < 0)
+        return true; // connection error: surface as ready -> EOF on recv
+
+     if (timeoutms >= 0) {
+        uint64_t now = TGGetTickCount64();
+        if ((int64_t)((now - starttick) * 1000 / TICKSPERSEC) >= timeoutms)
+           return false;
+     }
+  }
+  return true;
+}
+
+/*
+ * Non-blocking drain of buffered stdout and stderr. On entry *stdoutlen
+ * and *stderrlen hold the buffer capacities; on return they hold the
+ * number of bytes actually copied. Either buffer pointer may be NULL
+ * (with the corresponding length pointer NULL too) if not wanted.
+ * Returns the total number of bytes copied. Call tgssh_can_recv first to
+ * block until data is ready.
+ */
+EXPORT int tgssh_recv(void *stdoutbuf, int *stdoutlen,
+                      void *stderrbuf, int *stderrlen,
+                      TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  int total = 0;
+
+  if (stdoutbuf && stdoutlen && *stdoutlen > 0) {
+     size_t got = bufchain_fetch_consume_up_to(
+        &received_data, stdoutbuf, (size_t)*stdoutlen); // is expanded to libctx->received_data by macro
+     *stdoutlen = (int)got;
+     total += (int)got;
+  } else if (stdoutlen) {
+     *stdoutlen = 0;
+  }
+
+  if (stderrbuf && stderrlen && *stderrlen > 0) {
+     size_t got = bufchain_fetch_consume_up_to(
+        &curlibctx->ssh_stderr_data, stderrbuf, (size_t)*stderrlen);
+     *stderrlen = (int)got;
+     total += (int)got;
+  } else if (stderrlen) {
+     *stderrlen = 0;
+  }
+
+  return total;
+}
+
+/*
+ * Send EOF on the command's stdin (half-close). The remote command sees
+ * end-of-input but the connection stays up so stdout/stderr can still be
+ * drained.
+ */
+EXPORT void tgssh_send_eof(TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  if (backend && backend_connected(backend) && !sent_eof) {
+     backend_special(backend, SS_EOF, 0);
+     sent_eof = true;
+  }
+}
+
+/*
+ * Remote command exit status, or a negative value if it has not exited
+ * yet (still running).
+ */
+EXPORT int tgssh_get_exit_status(TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  if (!backend)
+     return -1;
+  return backend_exitcode(backend);
+}
+
+/* True while the SSH connection / command is still live. */
+EXPORT bool tgssh_is_connected(TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  return backend && backend_connected(backend);
+}
+
+/* Tear down the raw SSH connection and free associated state. */
+EXPORT void tgssh_close(TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  CP("tgssh_close");
+
+  if (backend) {
+     if (!sent_eof && backend_connected(backend)) {
+        backend_special(backend, SS_EOF, 0);
+        sent_eof = true;
+     }
+     backend_free(backend);
+     backend = NULL;
+  }
+
+  bufchain_clear(&received_data); // is expanded to libctx->received_data by macro
+  bufchain_clear(&curlibctx->ssh_stderr_data);
+
+  if (psftp_logctx) {
+     log_free(psftp_logctx);
+     psftp_logctx = NULL;
+  }
+
+  if (curlibctx->ssh_exec_command) {
+     sfree(curlibctx->ssh_exec_command);
+     curlibctx->ssh_exec_command = NULL;
+  }
+
+  curlibctx->ssh_raw_mode = false;
+  curlibctx->ssh_capture_stderr = false;
+  curlibctx->ssh_no_channel = false;
+}
+
+/* ====================================================================
+ * TG: raw SSH support - Milestone 2
+ *
+ * A persistent SSH connection (no main channel) over which the host can
+ * open and close session channels on demand, one per rsync command,
+ * while the underlying SSH/auth connection is kept alive. This is the
+ * moral equivalent of SBSimpleSSH's OpenPersistent / OpenCommandTunnel /
+ * CloseCommandTunnel.
+ *
+ * Connect with tgssh_connect_persistent (sets CONF_ssh_no_shell, which
+ * both suppresses the main channel AND puts the connection layer into
+ * "persistent" mode so it never terminates when channel count hits 0),
+ * then tgssh_open_channel for each command. Each channel buffers its own
+ * stdout and stderr; the host drains them with tgssh_channel_recv.
+ * ==================================================================== */
+
+typedef struct tgssh_channel {
+    SshChannel *sc;            // the connection layer's end (NULL once gone)
+    Channel chan;              // our end (vtable below)
+    TTGLibraryContext *libctx;
+    bufchain stdout_data;      // captured stdout
+    bufchain stderr_data;      // captured stderr
+    char *exec_cmd;            // command to exec on open confirmation
+    bool req_exec;             // waiting for the exec request reply
+    bool ready;                // exec started OK - channel usable
+    bool open_failed;          // server refused the channel / exec
+    bool eof_sent;             // we sent EOF on our stdin
+    bool got_remote_eof;       // remote sent EOF on its stdout
+    bool closed;               // freefunc ran - SshChannel is gone
+    int exitstatus;            // remote command exit status, <0 until known
+} tgssh_channel;
+
+static void tgsshchan_free(Channel *chan)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    // Do NOT free the struct here: the host owns it and frees it in
+    // tgssh_channel_close. The connection layer drops its pointer to
+    // &ch->chan after this returns, so it is safe for the struct to
+    // outlive the SshChannel.
+    ch->closed = true;
+    ch->sc = NULL;
+}
+
+static void tgsshchan_open_confirmation(Channel *chan)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    /*
+     * Deliberately do NOT call sshfwd_hint_channel_is_simple here. The
+     * "simple" hint (and connection-wide CONF_ssh_simple) makes PuTTY
+     * throttle the entire connection whenever any channel holds unread
+     * data, which deadlocks multi-channel use. Persistent mode runs with
+     * simple mode off (see psftp_connect).
+     */
+    printf("Raw SSH channel open confirmed; sending exec request: %s\n",
+           ch->exec_cmd ? ch->exec_cmd : "");
+    ch->req_exec = true;
+    sshfwd_start_command(ch->sc, true, ch->exec_cmd ? ch->exec_cmd : "");
+}
+
+static void tgsshchan_open_failure(Channel *chan, const char *errtext)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    ch->open_failed = true;
+    if (errtext)
+        printf("tgssh channel open failed: %s\n", errtext);
+}
+
+static size_t tgsshchan_send(Channel *chan, bool is_stderr,
+                             const void *data, size_t len)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    if (is_stderr)
+        bufchain_add(&ch->stderr_data, data, len);
+    else
+        bufchain_add(&ch->stdout_data, data, len);
+    // report current backlog so the connection layer can flow-control.
+    return bufchain_size(&ch->stdout_data) + bufchain_size(&ch->stderr_data);
+}
+
+static void tgsshchan_send_eof(Channel *chan)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    ch->got_remote_eof = true;
+}
+
+static void tgsshchan_set_input_wanted(Channel *chan, bool wanted)
+{
+    // We always accept incoming data into our buffers; nothing to do.
+}
+
+static char *tgsshchan_log_close_msg(Channel *chan)
+{
+    return dupstr("tgssh session channel closed");
+}
+
+static bool tgsshchan_rcvd_exit_status(Channel *chan, int status)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    ch->exitstatus = status;
+    return true;
+}
+
+static bool tgsshchan_rcvd_exit_signal(Channel *chan, ptrlen signame,
+                                       bool core_dumped, ptrlen msg)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    ch->exitstatus = 128; // generic "killed by signal"
+    return true;
+}
+
+static bool tgsshchan_rcvd_exit_signal_numeric(Channel *chan, int signum,
+                                               bool core_dumped, ptrlen msg)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    ch->exitstatus = 128 + signum;
+    return true;
+}
+
+static void tgsshchan_request_response(Channel *chan, bool success)
+{
+    tgssh_channel *ch = container_of(chan, tgssh_channel, chan);
+    if (ch->req_exec) {
+        ch->req_exec = false;
+        if (success) {
+            ch->ready = true;
+            printf("Raw SSH channel ready (exec started)\n");
+        } else {
+            ch->open_failed = true;
+            printf("Raw SSH channel exec request was refused by server\n");
+            if (ch->sc)
+                sshfwd_initiate_close(ch->sc, "exec request refused");
+        }
+    }
+}
+
+static const ChannelVtable tgsshchan_channelvt = {
+    .freefunc = tgsshchan_free,
+    .open_confirmation = tgsshchan_open_confirmation,
+    .open_failed = tgsshchan_open_failure,
+    .send = tgsshchan_send,
+    .send_eof = tgsshchan_send_eof,
+    .set_input_wanted = tgsshchan_set_input_wanted,
+    .log_close_msg = tgsshchan_log_close_msg,
+    .want_close = chan_default_want_close,
+    .rcvd_exit_status = tgsshchan_rcvd_exit_status,
+    .rcvd_exit_signal = tgsshchan_rcvd_exit_signal,
+    .rcvd_exit_signal_numeric = tgsshchan_rcvd_exit_signal_numeric,
+    .run_shell = chan_no_run_shell,
+    .run_command = chan_no_run_command,
+    .run_subsystem = chan_no_run_subsystem,
+    .enable_x11_forwarding = chan_no_enable_x11_forwarding,
+    .enable_agent_forwarding = chan_no_enable_agent_forwarding,
+    .allocate_pty = chan_no_allocate_pty,
+    .set_env = chan_no_set_env,
+    .send_break = chan_no_send_break,
+    .send_signal = chan_no_send_signal,
+    .change_window_size = chan_no_change_window_size,
+    .request_response = tgsshchan_request_response,
+};
+
+/* One pump of the event loop with the shared abort handling. Returns
+ * false if the caller's wait should stop (abort / connection error). */
+static bool tgssh_pump_once(void)
+{
+    if (curlibctx->aborted)
+        return false;
+    if (!backend || backend_exitcode(backend) >= 0)
+        return false;
+    if (ssh_sftp_loop_iteration() < 0)
+        return false;
+    return true;
+}
+
+/*
+ * Connect a persistent raw SSH connection with NO session channel. Auth
+ * runs but nothing is exec'd; channels are opened later with
+ * tgssh_open_channel. Returns 0 on success.
+ */
+EXPORT int tgssh_connect_persistent(const char *ahost, const char *auser,
+                                    const int aport, const char *apassword,
+                                    TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  CP("tgssh_connect_persistent");
+
+#ifndef _WINDOWS
+  if (!thread_vars_initialized || !curlibctx->fds)
+     init_thread_vars();
+#endif
+
+  curlibctx->ssh_raw_mode = true;
+  curlibctx->ssh_capture_stderr = true;  // not used by channels, but harmless
+  curlibctx->ssh_no_channel = true;
+  sent_eof = false; // is expanded to libctx->sent_eof by macro
+  if (curlibctx->ssh_exec_command)
+     sfree(curlibctx->ssh_exec_command);
+  curlibctx->ssh_exec_command = dupstr("");
+
+  printf("SSH (persistent) connecting with %s, port %d, as user %s.\n",
+         ahost, aport, auser);
+
+  libctx->caller_supplied_password = dupstr(apassword);
+
+  char *ourhost = dupstr(ahost);
+  char *ouruser = dupstr(auser);
+
+  int result = psftp_connect(ourhost, ouruser, aport);
+  printf("psftp_connect (persistent raw SSH) result is %d\n", result);
+
+  if (ourhost) sfree(ourhost);
+  if (ouruser) sfree(ouruser);
+
+  if (libctx->caller_supplied_password != NULL) {
+     smemclr(libctx->caller_supplied_password,
+             strlen(libctx->caller_supplied_password));
+     sfree(libctx->caller_supplied_password);
+     libctx->caller_supplied_password = NULL;
+  }
+
+  if (result != 0)
+     do_sftp_cleanup();
+
+  return result;
+}
+
+/*
+ * Open a new session channel on the persistent connection and exec the
+ * given command on it. Returns an opaque channel handle, or NULL on
+ * failure. The connection stays up afterwards regardless.
+ */
+EXPORT void *tgssh_open_channel(const char *acommand,
+                                TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  CP("tgssh_open_channel");
+
+  if (!backend) {
+     printf("tgssh_open_channel: not connected\n");
+     return NULL;
+  }
+
+  ConnectionLayer *cl = tgssh_get_connection_layer(backend);
+  if (!cl) {
+     printf("tgssh_open_channel: no connection layer\n");
+     return NULL;
+  }
+
+  tgssh_channel *ch = snew(tgssh_channel);
+  memset(ch, 0, sizeof(*ch));
+  ch->libctx = libctx;
+  ch->exitstatus = -1;
+  ch->exec_cmd = dupstr(acommand ? acommand : "");
+  ch->chan.vt = &tgsshchan_channelvt;
+  ch->chan.initial_fixed_window_size = 0;
+  bufchain_init(&ch->stdout_data);
+  bufchain_init(&ch->stderr_data);
+
+  printf("tgssh_open_channel: opening session channel for: %s\n",
+         ch->exec_cmd);
+  ch->sc = ssh_session_open(cl, &ch->chan);
+
+  uint64_t starttick = TGGetTickCount64();
+  if (curlibctx->connectiontimeoutticks < 1000)
+     curlibctx->connectiontimeoutticks = 60000;
+
+  while (!ch->ready && !ch->closed && !ch->open_failed) {
+     if (!tgssh_pump_once())
+        break;
+     uint64_t maxtick = starttick +
+        (curlibctx->connectiontimeoutticks / 1000 * TICKSPERSEC);
+     if (TGGetTickCount64() > maxtick) {
+        printf("tgssh_open_channel: timeout waiting for channel\n");
+        break;
+     }
+  }
+
+  if (ch->ready)
+     return ch;
+
+  // Failure: make sure the SshChannel is torn down, then free our struct.
+  if (ch->sc && !ch->closed)
+     sshfwd_initiate_close(ch->sc, NULL);
+  starttick = TGGetTickCount64();
+  while (!ch->closed) {
+     if (!tgssh_pump_once())
+        break;
+     uint64_t maxtick = starttick + (5 * TICKSPERSEC);
+     if (TGGetTickCount64() > maxtick)
+        break;
+  }
+
+  bufchain_clear(&ch->stdout_data);
+  bufchain_clear(&ch->stderr_data);
+  if (ch->exec_cmd)
+     sfree(ch->exec_cmd);
+  sfree(ch);
+  return NULL;
+}
+
+/* Send data to a channel's stdin. Returns bytes accepted, or -1. */
+EXPORT int tgssh_channel_send(void *handle, const void *buf, const int len,
+                              TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  if (!ch || !ch->sc || ch->closed)
+     return -1;
+  if (len > 0)
+     sshfwd_write(ch->sc, buf, (size_t)len);
+  return len;
+}
+
+/*
+ * Wait until the channel has stdout/stderr data, or has closed/exited,
+ * or timeoutms elapses (timeoutms < 0 = wait indefinitely). Returns true
+ * if data is available or the channel has finished (EOF); false on
+ * timeout or abort.
+ */
+EXPORT bool tgssh_channel_can_recv(void *handle, const int timeoutms,
+                                   TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  if (!ch)
+     return false;
+
+  uint64_t starttick = TGGetTickCount64();
+  while (bufchain_size(&ch->stdout_data) == 0 &&
+         bufchain_size(&ch->stderr_data) == 0)
+  {
+     if (ch->closed || ch->got_remote_eof)
+        return true; // EOF: recv will return 0
+     if (!tgssh_pump_once())
+        return true; // aborted / connection gone -> surface as EOF
+     if (timeoutms >= 0) {
+        uint64_t now = TGGetTickCount64();
+        if ((int64_t)((now - starttick) * 1000 / TICKSPERSEC) >= timeoutms)
+           return false;
+     }
+  }
+  return true;
+}
+
+/*
+ * Non-blocking drain of a channel's buffered stdout/stderr. Semantics
+ * match tgssh_recv. Returns total bytes copied.
+ */
+EXPORT int tgssh_channel_recv(void *handle,
+                              void *stdoutbuf, int *stdoutlen,
+                              void *stderrbuf, int *stderrlen,
+                              TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  int total = 0;
+
+  if (!ch) {
+     if (stdoutlen) *stdoutlen = 0;
+     if (stderrlen) *stderrlen = 0;
+     return 0;
+  }
+
+  if (stdoutbuf && stdoutlen && *stdoutlen > 0) {
+     size_t got = bufchain_fetch_consume_up_to(
+        &ch->stdout_data, stdoutbuf, (size_t)*stdoutlen);
+     *stdoutlen = (int)got;
+     total += (int)got;
+  } else if (stdoutlen) {
+     *stdoutlen = 0;
+  }
+
+  if (stderrbuf && stderrlen && *stderrlen > 0) {
+     size_t got = bufchain_fetch_consume_up_to(
+        &ch->stderr_data, stderrbuf, (size_t)*stderrlen);
+     *stderrlen = (int)got;
+     total += (int)got;
+  } else if (stderrlen) {
+     *stderrlen = 0;
+  }
+
+  // Reopen the channel window now that we've consumed data.
+  if (total > 0 && ch->sc && !ch->closed)
+     sshfwd_unthrottle(ch->sc,
+        bufchain_size(&ch->stdout_data) + bufchain_size(&ch->stderr_data));
+
+  return total;
+}
+
+/* Half-close: send EOF on the channel's stdin. */
+EXPORT void tgssh_channel_send_eof(void *handle, TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  if (ch && ch->sc && !ch->closed && !ch->eof_sent) {
+     sshfwd_write_eof(ch->sc);
+     ch->eof_sent = true;
+  }
+}
+
+/* Remote command exit status for this channel, or < 0 if not known yet. */
+EXPORT int tgssh_channel_exit_status(void *handle, TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  if (!ch)
+     return -1;
+  return ch->exitstatus;
+}
+
+/* True while the channel is open and usable. */
+EXPORT bool tgssh_channel_is_open(void *handle, TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  return ch && ch->sc && !ch->closed;
+}
+
+/*
+ * Close a channel and free its handle. The persistent SSH connection
+ * stays up for the next tgssh_open_channel. After this call the handle
+ * is invalid.
+ */
+EXPORT void tgssh_channel_close(void *handle, TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  if (!ch)
+     return;
+  CP("tgssh_channel_close");
+
+  if (ch->sc && !ch->closed) {
+     if (!ch->eof_sent) {
+        sshfwd_write_eof(ch->sc);
+        ch->eof_sent = true;
+     }
+     sshfwd_initiate_close(ch->sc, NULL);
+
+     uint64_t starttick = TGGetTickCount64();
+     while (!ch->closed) {
+        if (!tgssh_pump_once())
+           break;
+        uint64_t maxtick = starttick + (5 * TICKSPERSEC);
+        if (TGGetTickCount64() > maxtick)
+           break;
+     }
+  }
+
+  bufchain_clear(&ch->stdout_data);
+  bufchain_clear(&ch->stderr_data);
+  if (ch->exec_cmd)
+     sfree(ch->exec_cmd);
+  sfree(ch);
+}
+
 EXPORT void tgputty_setverbose(const char averbose) // TG 2019
 {
   verbose = (averbose & 1) == 1;
@@ -4436,9 +5181,11 @@ static SeatPromptResult tg_get_userpass_input(Seat *seat, prompts_t *p) // TG 20
 #undef fflush
 #undef fwrite
 
-#define printbufsize 300
-THREADVAR char printbuf[printbufsize];
-THREADVAR size_t printbufpos;
+#define printbufsize TGPRINTBUFSIZE
+// TG: per-context now (moved into libctx) instead of THREADVAR, so two
+// contexts driven from one thread can't run their log lines together.
+#define printbuf (curlibctx->printbuf)
+#define printbufpos (curlibctx->printbufpos)
 
 char *printnow(const char *msg,bool *needfree)
 {

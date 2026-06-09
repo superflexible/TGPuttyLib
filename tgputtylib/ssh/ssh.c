@@ -153,6 +153,13 @@ LogContext *ssh_get_logctx(Ssh *ssh)
     return ssh->logctx;
 }
 
+/* TG: expose the connection layer for raw-SSH on-demand channels. */
+ConnectionLayer *tgssh_get_connection_layer(Backend *be)
+{
+    Ssh *ssh = container_of(be, Ssh, backend);
+    return ssh->cl;
+}
+
 static void ssh_connect_bpp(Ssh *ssh)
 {
     ssh->bpp->ssh = ssh;
@@ -836,9 +843,9 @@ static char *connect_to_host(
         }
         ssh->fullhostname = dupstr(*realhost);   /* save in case of GSSAPI */
 
-        ssh->s = new_connection(addr, *realhost, port,
-                                false, true, nodelay, keepalive,
-                                &ssh->plug, ssh->conf, &ssh->interactor);
+        ssh->s = new_main_connection(
+            addr, *realhost, port, false, true, nodelay, keepalive,
+            &ssh->plug, ssh->conf, &ssh->interactor, ssh->logctx);
         if ((err = sk_socket_error(ssh->s)) != NULL) {
             char *toret = dupstr(err);
             sk_close(ssh->s);

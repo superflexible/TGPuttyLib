@@ -28,7 +28,13 @@ struct ssh_channel;
  *    of the connection), so we set this high as well.
  *
  *  - OUR_V2_WINSIZE is the default window size we present on SSH-2
- *    channels.
+ *    channels. It is both the initial window and the increment by which
+ *    the window auto-grows (connection2.c) when the link could use more.
+ *    TG: raised from the stock PuTTY value of 16384 to 262144 (256 KB) so
+ *    that non-"simple" channels - i.e. the raw-SSH/rsync session channels
+ *    used in persistent (multi-channel) mode - reach a high-bandwidth-delay
+ *    window quickly instead of ramping 16 KB at a time. SFTP and single-
+ *    channel raw mode use "simple" mode (OUR_V2_BIGWIN) and are unaffected.
  *
  *  - OUR_V2_BIGWIN is the window size we advertise for the only
  *    channel in a simple connection.  It must be <= INT_MAX.
@@ -46,7 +52,7 @@ struct ssh_channel;
 
 #define SSH1_BUFFER_LIMIT 32768
 #define SSH_MAX_BACKLOG 32768
-#define OUR_V2_WINSIZE 16384
+#define OUR_V2_WINSIZE 262144 /* TG: was 16384; see comment above */
 #define OUR_V2_BIGWIN 0x7fffffff
 #define OUR_V2_MAXPKT 0x4000UL
 #define OUR_V2_PACKETLIMIT 0x9000UL
@@ -409,6 +415,12 @@ Socket *platform_make_agent_socket(Plug *plug, const char *dirprefix,
                                    char **error, char **name);
 
 LogContext *ssh_get_logctx(Ssh *ssh);
+
+/* TG: raw-SSH (rsync) support - reach the connection layer from the
+ * backend handle so the library can open session channels on demand,
+ * and query whether that connection layer is up and running. */
+ConnectionLayer *tgssh_get_connection_layer(Backend *be);
+bool tgssh_conn_layer_started(ConnectionLayer *cl);
 
 /* Communications back to ssh.c from connection layers */
 void ssh_throttle_conn(Ssh *ssh, int adjust);

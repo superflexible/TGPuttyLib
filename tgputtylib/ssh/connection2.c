@@ -286,6 +286,23 @@ PacketProtocolLayer *ssh2_connection_new(
     return &s->ppl;
 }
 
+/*
+ * TG: readiness query for the raw-SSH persistent (ssh_no_shell) mode.
+ * Returns true once the SSH-2 connection layer has finished setup and is
+ * ready to open session channels. Without a main channel, backend_sendok
+ * never goes true (only mainchan_ready sets want_user_input), so the
+ * library waits on this instead. Safe to call on any ConnectionLayer:
+ * returns false for anything that isn't the SSH-2 connection layer.
+ */
+bool tgssh_conn_layer_started(ConnectionLayer *cl)
+{
+    if (!cl || cl->vt != &ssh2_connlayer_vtable)
+        return false;
+    struct ssh2_connection_state *s =
+        container_of(cl, struct ssh2_connection_state, cl);
+    return s->started;
+}
+
 static void ssh2_connection_free(PacketProtocolLayer *ppl)
 {
     struct ssh2_connection_state *s =

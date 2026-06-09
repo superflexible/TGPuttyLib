@@ -231,6 +231,9 @@ type TUnsignedLong={$ifdef MSWINDOWS}
      PSFTPFileHandle=^TSFTPFileHandle;
      TSFTPTransfer=Pointer;
 
+     // opaque handle for a raw SSH session channel (Milestone 2)
+     TSSHChannel=Pointer;
+
      PTGLibraryContext=^TTGLibraryContext;
      TTGLibraryContext=record
        structsize:Integer;
@@ -278,7 +281,14 @@ type TUnsignedLong={$ifdef MSWINDOWS}
        usememorycallbacks: Boolean;
 {$endif}
 
-       reserved:array[0..600] of Byte;
+       // NOTE: this 'reserved' block stands in for all the library-private
+       // C fields that follow the published part of TTGLibraryContext in
+       // putty.h (backend, conf, bufchains, tree234 pointers, the raw-SSH
+       // ssh_* fields, and the per-context printbuf[TGPRINTBUFSIZE]+printbufpos
+       // added for rsync support). The Pascal record only needs to be at least
+       // as large as the C struct (checked at load time), so this is sized
+       // generously to cover those additions.
+       reserved:array[0..1099] of Byte;
 
        procedure Init;
        end;
@@ -314,6 +324,39 @@ function tgsftp_connect(const aHost,aUser:PAnsiChar;
                         const aPort:Integer;
                         const aPassword:PAnsiChar;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgsftp_close(const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+// raw SSH (rsync) functions - Milestone 1: one exec channel per connection
+function tgssh_connect(const aHost,aUser:PAnsiChar;
+                       const aPort:Integer;
+                       const aPassword,aCommand:PAnsiChar;
+                       const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_send(const buf:Pointer;const len:Integer;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_sendbuffer(const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_can_recv(const timeoutms:Integer;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_recv(const stdoutbuf:Pointer;const stdoutlen:PInteger;
+                    const stderrbuf:Pointer;const stderrlen:PInteger;
+                    const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgssh_send_eof(const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_get_exit_status(const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_is_connected(const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgssh_close(const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+// raw SSH (rsync) functions - Milestone 2: persistent connection, channel per command
+function tgssh_connect_persistent(const aHost,aUser:PAnsiChar;
+                       const aPort:Integer;
+                       const aPassword:PAnsiChar;
+                       const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_open_channel(const aCommand:PAnsiChar;const libctx:PTGLibraryContext):TSSHChannel; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_channel_send(const handle:TSSHChannel;const buf:Pointer;const len:Integer;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_channel_can_recv(const handle:TSSHChannel;const timeoutms:Integer;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_channel_recv(const handle:TSSHChannel;
+                    const stdoutbuf:Pointer;const stdoutlen:PInteger;
+                    const stderrbuf:Pointer;const stderrlen:PInteger;
+                    const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgssh_channel_send_eof(const handle:TSSHChannel;const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_channel_exit_status(const handle:TSSHChannel;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_channel_is_open(const handle:TSSHChannel;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+procedure tgssh_channel_close(const handle:TSSHChannel;const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 
 function tgsftp_cd(const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgsftp_ls(const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
@@ -391,6 +434,39 @@ var
                         const aPort:Integer;
                         const aPassword:PAnsiChar;const libctx:PTGLibraryContext):Integer; cdecl;
   tgsftp_close: procedure (const libctx:PTGLibraryContext); cdecl;
+
+  // raw SSH (rsync) functions - Milestone 1: one exec channel per connection
+  tgssh_connect: function (const aHost,aUser:PAnsiChar;
+                       const aPort:Integer;
+                       const aPassword,aCommand:PAnsiChar;
+                       const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_send: function (const buf:Pointer;const len:Integer;const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_sendbuffer: function (const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_can_recv: function (const timeoutms:Integer;const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgssh_recv: function (const stdoutbuf:Pointer;const stdoutlen:PInteger;
+                    const stderrbuf:Pointer;const stderrlen:PInteger;
+                    const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_send_eof: procedure (const libctx:PTGLibraryContext); cdecl;
+  tgssh_get_exit_status: function (const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_is_connected: function (const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgssh_close: procedure (const libctx:PTGLibraryContext); cdecl;
+
+  // raw SSH (rsync) functions - Milestone 2: persistent connection, channel per command
+  tgssh_connect_persistent: function (const aHost,aUser:PAnsiChar;
+                       const aPort:Integer;
+                       const aPassword:PAnsiChar;
+                       const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_open_channel: function (const aCommand:PAnsiChar;const libctx:PTGLibraryContext):TSSHChannel; cdecl;
+  tgssh_channel_send: function (const handle:TSSHChannel;const buf:Pointer;const len:Integer;const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_channel_can_recv: function (const handle:TSSHChannel;const timeoutms:Integer;const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgssh_channel_recv: function (const handle:TSSHChannel;
+                    const stdoutbuf:Pointer;const stdoutlen:PInteger;
+                    const stderrbuf:Pointer;const stderrlen:PInteger;
+                    const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_channel_send_eof: procedure (const handle:TSSHChannel;const libctx:PTGLibraryContext); cdecl;
+  tgssh_channel_exit_status: function (const handle:TSSHChannel;const libctx:PTGLibraryContext):Integer; cdecl;
+  tgssh_channel_is_open: function (const handle:TSSHChannel;const libctx:PTGLibraryContext):Boolean; cdecl;
+  tgssh_channel_close: procedure (const handle:TSSHChannel;const libctx:PTGLibraryContext); cdecl;
 
   tgsftp_cd: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
   tgsftp_ls: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
@@ -522,6 +598,28 @@ begin
        @tgputty_setkeyfile:=GetProcedureAddress(TGPLH,'tgputty_setkeyfile');
        @tgsftp_connect:=GetProcedureAddress(TGPLH,'tgsftp_connect');
        @tgsftp_close:=GetProcedureAddress(TGPLH,'tgsftp_close');
+
+       // raw SSH (rsync) functions - Milestone 1
+       @tgssh_connect:=GetProcedureAddress(TGPLH,'tgssh_connect');
+       @tgssh_send:=GetProcedureAddress(TGPLH,'tgssh_send');
+       @tgssh_sendbuffer:=GetProcedureAddress(TGPLH,'tgssh_sendbuffer');
+       @tgssh_can_recv:=GetProcedureAddress(TGPLH,'tgssh_can_recv');
+       @tgssh_recv:=GetProcedureAddress(TGPLH,'tgssh_recv');
+       @tgssh_send_eof:=GetProcedureAddress(TGPLH,'tgssh_send_eof');
+       @tgssh_get_exit_status:=GetProcedureAddress(TGPLH,'tgssh_get_exit_status');
+       @tgssh_is_connected:=GetProcedureAddress(TGPLH,'tgssh_is_connected');
+       @tgssh_close:=GetProcedureAddress(TGPLH,'tgssh_close');
+
+       // raw SSH (rsync) functions - Milestone 2
+       @tgssh_connect_persistent:=GetProcedureAddress(TGPLH,'tgssh_connect_persistent');
+       @tgssh_open_channel:=GetProcedureAddress(TGPLH,'tgssh_open_channel');
+       @tgssh_channel_send:=GetProcedureAddress(TGPLH,'tgssh_channel_send');
+       @tgssh_channel_can_recv:=GetProcedureAddress(TGPLH,'tgssh_channel_can_recv');
+       @tgssh_channel_recv:=GetProcedureAddress(TGPLH,'tgssh_channel_recv');
+       @tgssh_channel_send_eof:=GetProcedureAddress(TGPLH,'tgssh_channel_send_eof');
+       @tgssh_channel_exit_status:=GetProcedureAddress(TGPLH,'tgssh_channel_exit_status');
+       @tgssh_channel_is_open:=GetProcedureAddress(TGPLH,'tgssh_channel_is_open');
+       @tgssh_channel_close:=GetProcedureAddress(TGPLH,'tgssh_channel_close');
        @tgsftp_cd:=GetProcedureAddress(TGPLH,'tgsftp_cd');
        @tgsftp_ls:=GetProcedureAddress(TGPLH,'tgsftp_ls');
 

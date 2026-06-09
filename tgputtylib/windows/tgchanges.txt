@@ -1,0 +1,157 @@
+PuTTY Changes in windows folder
+
+--------
+MAKEFILE
+--------
+change CFLAGS: /O2  /DTGDLL
+CFLAGSRELEASE same as CFLAGS
+
+added 
+LFLAGSDLL
+LDLAGSDLLRELEASE
+
+renamed psftp.exe rule to tgputtylib.dll
+
+changed linker command line to create a DLL
+
+added putty.h dependency to many/all source files
+
+
+--------
+winucs.c
+--------
+references to CONF_line_codepage and CONF_vtmode removed, replaced with:
+ ucsdata->line_codepage = decode_codepage("");
+vtmode = VT_UNICODE; 
+
+
+----------
+winstuff.h
+----------
+removed declarations via #ifndef TGDLL:
+GLOBAL HWND hwnd;       /* the main terminal window */
+GLOBAL HWND logbox;
+GLOBAL Terminal *term;
+GLOBAL LogContext *logctx;
+GLOBAL Conf *conf;
+
+changed GLOBAL to extern:
+extern DWORD osMajorVersion, osMinorVersion, osPlatformId
+
+
+----------
+winstore.c
+----------
+removed declarations via #ifndef TGDLL:
+static const char *const reg_jumplist_key = PUTTY_REG_POS "\\Jumplist";
+static const char *const reg_jumplist_value = "Recent sessions";
+
+changed function settings_w *open_settings_w to do nothing:
+#ifdef TGDLL
+    return NULL;
+#else
+
+removed functions via #ifndef TGDLL:
+settings_r *open_settings_r(const char *sessionname)
+settings_e *enum_settings_start(void)
+and all jumplist related function, such as
+static int transform_jumplist_registry
+char *get_jumplist_registry_entries
+etc.
+
+
+
+---------
+winsftp.c
+---------
+**** moved global variables to the context: ****
+#ifdef TGDLL
+#define sftp_ssh_socket (curlibctx->sftp_ssh_socket)
+#define netevent (curlibctx->netevent)
+#else
+xxxxxx
+
+bug fixes in do_eventsel_loop
+
+Aufruf: cleanup_exit(1,true);
+
+removed:
+int main(int argc, char *argv[])
+
+
+----------
+winnet.c
+----------
+global to context:
+#ifdef TGDLL
+#define sktree (curlibctx->sktree)
+#else
+static tree234 *sktree;
+#endif
+
+
+added:
+static bool sk_globals_initialized=false; // TG
+
+void sk_init(void)
+{
+  if (!sk_globals_initialized) // TG
+  {
+
+
+void sk_cleanup(const bool cleanupglobalstoo) // TG
+
+
+added gethostbyname error number
+
+----------
+winmiscs.c:
+----------
+TG: ERROR NOT THREAD SAFE
+
+
+-----------
+winmisc.c:
+-----------
+fixed static variables:
+in load_system32_dll
+(static char *sysdir)
+
+added critical section to
+win_strerror
+
+
+-----------
+winhandl.c
+-----------
+moved to context:
+static tree234 *handles_by_evtomain;
+
+
+-----------
+wincons.c
+-----------
+added
+#include "psftp.h" // TG for curlibctx
+
+void cleanup_exit(int code,const bool cleanupglobalstoo) // TG
+calling
+	sk_cleanup(cleanupglobalstoo); // TG
+and
+    NORMALCODE(exit(code);) // TG
+
+also in modalfatalbox:
+    NORMALCODE(cleanup_exit(1);) // TG
+
+and console_connection_fatal:
+	NORMALCODE(cleanup_exit(1);) // TG
+
+added to int console_verify_ssh_host_key(...):
+the calls to 
+curlibctx->verify_host_key_callback
+and
+curlibctx->get_input_callback
+
+
+two more occurrences of
+NORMALCODE(cleanup_exit(1);) // TG
