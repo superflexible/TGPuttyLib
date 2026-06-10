@@ -133,7 +133,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		pinger.o portfwd.o cert-expr.o fd-socket.o \
 		conf_data.o dup_wc_to_mb.o dupwcs.o decode_utf8_to_wide_string.o encode_wide_string_as_utf8.o \
 		decode_utf8.o decode_utf8_to_wchar.o seat_nonfatal.o kex-hybrid.o mlkem.o logeventf.o \
-		null-mac.o proxy.o psftp.o pscp.o newmain.o format_connection_setup_command.o subprocess_waiter.o default_description.o \
+		null-mac.o proxy.o psftp.o pscp.o newmain.o format_connection_setup_command.o subprocess_waiter.o signal.o default_description.o \
 		http.o psftpcommon.o null-opener.o peerinfo.o \
 		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
 		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
@@ -190,7 +190,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
 		null-seat.o null-plug.o pgssapi.o smemeq.o peerinfo.o \
 		pinger.o portfwd.o cert-expr.o make_dir_path.o \
-		null-mac.o proxy.o psftp.o pscp.o newmain.o format_connection_setup_command.o subprocess_waiter.o default_description.o \
+		null-mac.o proxy.o psftp.o pscp.o newmain.o format_connection_setup_command.o subprocess_waiter.o signal.o default_description.o \
 		http.o psftpcommon.o null-opener.o make_dir_and_check_ours.o \
 		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
 		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
@@ -275,6 +275,8 @@ format_connection_setup_command.o: ../utils/format_connection_setup_command.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/format_connection_setup_command.c
 subprocess_waiter.o: ../unix/utils/subprocess_waiter.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/subprocess_waiter.c
+signal.o: ../unix/utils/signal.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/signal.c
 sshrand.o: ../sshrand.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshrand.c
 sha1-ni.o: ../crypto/sha1-ni.c
