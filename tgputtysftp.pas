@@ -195,10 +195,11 @@ type TGPuttySFTPException=class(Exception);
 
 implementation
 
-// Edwin Yip: XE4 (CompilerVersion=25.0) doesn't have GetTickCount64 defined in the `Windows` unit, don't know about other higher versions...
-{$IF CompilerVersion < 26.0}
+{$ifndef FPC}
+{$if CompilerVersion < 26.0}
 function GetTickCount64: UInt64; stdcall; external kernel32 name 'GetTickCount64';
-{$IFEND}
+{$ifend}
+{$endif}
 
 var GPuttyConfigIndex:tStringList;
     GPuttyConfigCS:TCriticalSection;
