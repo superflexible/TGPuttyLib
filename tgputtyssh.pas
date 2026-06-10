@@ -39,7 +39,7 @@ uses {$ifdef SFFS}
      Classes, SysUtils, SyncObjs,
      tgputtylib;
 
-const MinimumLibraryBuildNum=8;
+const MinimumLibraryBuildNum=32; // raw SSH channels + scp exports (tgscp_*) require build 32
 
       cMaxConfCount=1000;
 
@@ -52,6 +52,7 @@ type TGPuttySSHException=class(Exception);
      TSSHOnMessage=procedure(const Msg:AnsiString;const isstderr:Boolean) of object;
      TSSHOnCheckpoint=procedure(const Msg:AnsiString;const kind:Byte) of object;
      TSSHOnGetInput=function(var cancel:Boolean):AnsiString of object;
+     TSSHOnProgress=function(const bytescopied:Int64;const isupload:Boolean):Boolean of object;
      TSSHOnVerifyHostKey=function(const host:PAnsiChar;const port:Integer;
                                   const fingerprint:PAnsiChar;
                                   const verificationstatus:Integer;
@@ -118,6 +119,13 @@ type TGPuttySSHException=class(Exception);
          FOnCheckpoint: TSSHOnCheckpoint;
          FOnGetInput: TSSHOnGetInput;
          FOnVerifyHostKey: TSSHOnVerifyHostKey;
+         FOnProgress: TSSHOnProgress;
+
+         { Streams for the scp functions; bound for the duration of one
+           ScpDownloadStream / ScpUploadStream call, accessed by the
+           write_to_stream / read_from_stream callbacks. }
+         FUploadStream,
+         FDownloadStream:TStream;
 
          function GetWorkDir: AnsiString;
          procedure SetVerbose(const Value: Boolean);
@@ -196,6 +204,25 @@ type TGPuttySSHException=class(Exception);
          { True while the SSH connection / command is live. }
          function IsConnected:Boolean;
 
+         { scp file transfer over a channel of the persistent connection,
+           using PuTTY's pscp protocol engine inside the DLL. Requires
+           ConnectPersistent. The remote paths are passed UNESCAPED - the
+           library does the shell quoting. Progress/abort via OnProgress
+           (return false to abort) and the Aborted property. Raises
+           TGPuttySSHException on failure (message includes LastMessages,
+           which carries the remote scp error text).
+
+           Download: the file lands in AStream; ASize gets the file size,
+           AMTimeUnix the remote mtime from scp's T record (0 if none).
+
+           Upload: AStream from position 0, size = AStream.Size (scp needs
+           it up front). AMTimeUnix 0 = don't send a timestamp.
+           APermissions e.g. $1A4 (octal 0644); -1 = default. }
+         procedure ScpDownloadStream(const ARemotePath:AnsiString;const AStream:TStream;
+                                     out ASize:UInt64;out AMTimeUnix:UInt64);
+         procedure ScpUploadStream(const ARemoteDir,AFileName:AnsiString;const AStream:TStream;
+                                   const AMTimeUnix:UInt64;const APermissions:Integer);
+
          procedure SetBooleanConfigValue(const OptionName:AnsiString;const OptionValue:Boolean);
          procedure SetIntegerConfigValue(const OptionName:AnsiString;const OptionValue:Integer);
          procedure SetIntegerConfigValueWithSubkey(const OptionName:AnsiString;const OptionSubKey,OptionValue:Integer);
@@ -229,6 +256,7 @@ type TGPuttySSHException=class(Exception);
          property OnCheckpoint:TSSHOnCheckpoint read FOnCheckpoint write FOnCheckpoint;
          property OnGetInput:TSSHOnGetInput read FOnGetInput write FOnGetInput;
          property OnVerifyHostKey:TSSHOnVerifyHostKey read FOnVerifyHostKey write FOnVerifyHostKey;
+         property OnProgress:TSSHOnProgress read FOnProgress write FOnProgress;
        end;
 
 implementation
@@ -338,6 +366,56 @@ begin
      Result:=false;
   end;
 
+function ssh_read_from_stream(const offset:UInt64;const buffer:Pointer;const bufsize:Integer;const libctx:PTGLibraryContext):Integer; cdecl;
+var SSH:TTGPuttySSH;
+begin
+  { scp upload data source. Exceptions must not cross the DLL boundary -
+    report 0 bytes instead; the library aborts the transfer cleanly. }
+  SSH:=TTGPuttySSH(libctx.Tag);
+  try
+    if Assigned(SSH.FUploadStream) then begin
+       SSH.FUploadStream.Position:=offset;
+       Result:=SSH.FUploadStream.Read(buffer^,bufsize);
+       end
+    else
+       Result:=0;
+    except
+      Result:=0;
+    end;
+  end;
+
+function ssh_write_to_stream(const offset:UInt64;const buffer:Pointer;const bufsize:Integer;const libctx:PTGLibraryContext):Integer; cdecl;
+var SSH:TTGPuttySSH;
+begin
+  { scp download data sink. Same no-exceptions rule as above. }
+  SSH:=TTGPuttySSH(libctx.Tag);
+  try
+    if Assigned(SSH.FDownloadStream) then begin
+       SSH.FDownloadStream.Position:=offset;
+       SSH.FDownloadStream.WriteBuffer(buffer^,bufsize);
+       Result:=bufsize;
+       end
+    else
+       Result:=0;
+    except
+      Result:=0;
+    end;
+  end;
+
+function ssh_progress_callback(const bytescopied:Int64;const isupload:Boolean;const libctx:PTGLibraryContext):Boolean; cdecl;
+var SSH:TTGPuttySSH;
+begin
+  SSH:=TTGPuttySSH(libctx.Tag);
+  try
+    if Assigned(SSH.OnProgress) then
+       Result:=SSH.OnProgress(bytescopied,isupload)
+    else
+       Result:=true;
+    except
+      Result:=false; // treat a failing handler as an abort request
+    end;
+  end;
+
 { TTGPuttySSHChannel }
 
 constructor TTGPuttySSHChannel.Create(const ACtx: PTGLibraryContext; const AHandle: TSSHChannel);
@@ -445,6 +523,9 @@ begin
   Fcontext.get_input_callback:=ssh_get_input_callback;
   Fcontext.raise_exception_callback:=ssh_raise_exception_callback;
   Fcontext.verify_host_key_callback:=ssh_verify_host_key_callback;
+  Fcontext.read_from_stream:=ssh_read_from_stream;   // scp upload source
+  Fcontext.write_to_stream:=ssh_write_to_stream;     // scp download sink
+  Fcontext.progress_callback:=ssh_progress_callback;
 
   if tgputty_initcontext(ord(verbose),@Fcontext)<>0 then
      raise TGPuttySSHException.Create('tgputty_initcontext failed - incorrect tgputtylib version?');
@@ -604,6 +685,44 @@ begin
 function TTGPuttySSH.IsConnected: Boolean;
 begin
   Result:=FConnected and tgssh_is_connected(@Fcontext);
+  end;
+
+procedure TTGPuttySSH.ScpDownloadStream(const ARemotePath:AnsiString;const AStream:TStream;
+                                        out ASize:UInt64;out AMTimeUnix:UInt64);
+var res,perms:Integer;
+begin
+  if not FConnected then
+     raise TGPuttySSHException.Create('ScpDownloadStream: not connected');
+  ASize:=0;
+  AMTimeUnix:=0;
+  perms:=0;
+  FLastMessages:='';
+  FDownloadStream:=AStream;
+  try
+    res:=tgscp_download(PAnsiChar(ARemotePath),@ASize,@AMTimeUnix,@perms,@Fcontext);
+    finally
+      FDownloadStream:=nil;
+    end;
+  if res<>0 then
+     raise TGPuttySSHException.Create(MakeSSHErrorMsg('tgscp_download ('+IntToStr(res)+')'));
+  end;
+
+procedure TTGPuttySSH.ScpUploadStream(const ARemoteDir,AFileName:AnsiString;const AStream:TStream;
+                                      const AMTimeUnix:UInt64;const APermissions:Integer);
+var res:Integer;
+begin
+  if not FConnected then
+     raise TGPuttySSHException.Create('ScpUploadStream: not connected');
+  FLastMessages:='';
+  FUploadStream:=AStream;
+  try
+    res:=tgscp_upload(PAnsiChar(ARemoteDir),PAnsiChar(AFileName),
+                      UInt64(AStream.Size),AMTimeUnix,APermissions,@Fcontext);
+    finally
+      FUploadStream:=nil;
+    end;
+  if res<>0 then
+     raise TGPuttySSHException.Create(MakeSSHErrorMsg('tgscp_upload ('+IntToStr(res)+')'));
   end;
 
 function TTGPuttySSH.GetWorkDir: AnsiString;

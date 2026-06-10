@@ -2884,6 +2884,33 @@ typedef struct
 
 extern THREADVAR TTGLibraryContext *curlibctx;
 
+uint64_t TGGetTickCount64(void); // TG: defined in psftp.c
+
+// TG: raw-SSH channel functions, defined (and exported) in psftp.c.
+// Declared here so other DLL units (pscp.c's scp engine) can run their
+// protocols over a channel of the same persistent connection.
+// The declarations must carry the same dllexport/visibility attribute as
+// the definitions (psftp.c's EXPORT macro), otherwise MSVC raises C2375
+// "redefinition; different linkage".
+#if defined(_MSC_VER)
+    #define TGEXPORT __declspec(dllexport)
+#elif defined(__GNUC__)
+    #define TGEXPORT __attribute__((visibility("default")))
+#else
+    #define TGEXPORT
+#endif
+
+TGEXPORT void *tgssh_open_channel(const char *acommand, TTGLibraryContext *libctx);
+TGEXPORT int tgssh_channel_send(void *handle, const void *buf, const int len, TTGLibraryContext *libctx);
+TGEXPORT int tgssh_channel_sendbuffer(void *handle, TTGLibraryContext *libctx);
+TGEXPORT bool tgssh_channel_can_recv(void *handle, const int timeoutms, TTGLibraryContext *libctx);
+TGEXPORT int tgssh_channel_recv(void *handle, void *stdoutbuf, int *stdoutlen,
+                                void *stderrbuf, int *stderrlen, TTGLibraryContext *libctx);
+TGEXPORT void tgssh_channel_send_eof(void *handle, TTGLibraryContext *libctx);
+TGEXPORT int tgssh_channel_exit_status(void *handle, TTGLibraryContext *libctx);
+TGEXPORT bool tgssh_channel_is_open(void *handle, TTGLibraryContext *libctx);
+TGEXPORT void tgssh_channel_close(void *handle, TTGLibraryContext *libctx);
+
 #define printf(...) tgdll_printfree(dupprintf(__VA_ARGS__))
 #define fprintf(fp,...) tgdll_fprintfree(fp,dupprintf(__VA_ARGS__))
 #define fflush tgdll_fflush

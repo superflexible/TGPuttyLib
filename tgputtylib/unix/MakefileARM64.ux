@@ -99,6 +99,11 @@ CC = $(TOOLPATH)cc
 CFLAGS = -arch arm64 -O2 -fPIC -Wall -Wno-comment -Wno-unused-function -Wno-unused-const-variable -DTGDLL -std=gnu99 -Wvla -g -I.././ -I../charset/ \
          -I../unix/ -I../ssh/ -I../terminal/ -D _FILE_OFFSET_BITS=64
 ULDFLAGS = $(LDFLAGS)
+# TG: this makefile targets Apple Silicon macOS (see -arch arm64 above).
+# Apple's ld64 does not understand the GNU-ld flag -Wl,--no-undefined and
+# doesn't need it: it already FAILS on undefined symbols by default, so
+# missing source files are detected at link time here anyway.
+NOUNDEF =
 INSTALL=install
 INSTALL_PROGRAM=$(INSTALL)
 INSTALL_DATA=$(INSTALL)
@@ -125,7 +130,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
 		null-seat.o null-plug.o pgssapi.o smemeq.o \
 		pinger.o portfwd.o cert-expr.o \
-		null-mac.o proxy.o psftp.o default_description.o \
+		null-mac.o proxy.o psftp.o pscp.o newmain.o format_connection_setup_command.o subprocess_waiter.o default_description.o \
 		http.o psftpcommon.o null-opener.o \
 		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
 		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
@@ -136,7 +141,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		bpp-bare.o censor2.o ctrlparse.o make_spr_sw_abort_static.o \
 		connection2.o socks4.o socks5.o make_spr_sw_abort_errno.o \
 		connection2-client.o seat_connection_fatal.o host_strcspn.o \
-		kex2-client.o transient-hostkey-cache.o out_of_memory.o \
+		kex2-client.o kex-hybrid.o mlkem.o transient-hostkey-cache.o out_of_memory.o \
 		transport2.o userauth2-client.o key_components.o \
                 aes-select.o aes-sw.o aes-common.o make_dir_path.o \
                 aesgcm-select.o aesgcm-sw.o aesgcm-common.o \
@@ -181,7 +186,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		dup_mb_to_wc.o mpint.o ptrlen.o host_strchr_internal.o \
 		null-seat.o null-plug.o pgssapi.o smemeq.o \
 		pinger.o portfwd.o cert-expr.o make_dir_path.o \
-		null-mac.o proxy.o psftp.o default_description.o \
+		null-mac.o proxy.o psftp.o pscp.o newmain.o format_connection_setup_command.o subprocess_waiter.o default_description.o \
 		http.o psftpcommon.o null-opener.o make_dir_and_check_ours.o \
 		settings.o sftp.o string_length_for_printf.o host_ca_new_free.o \
 		sftpcommon.o ssh.o dupstr.o encode_utf8.o \
@@ -192,7 +197,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		bpp-bare.o censor2.o ctrlparse.o make_spr_sw_abort_static.o \
 		connection2.o socks4.o socks5.o make_spr_sw_abort_errno.o \
 		connection2-client.o seat_connection_fatal.o host_strcspn.o \
-		kex2-client.o transient-hostkey-cache.o out_of_memory.o \
+		kex2-client.o kex-hybrid.o mlkem.o transient-hostkey-cache.o out_of_memory.o \
 		transport2.o userauth2-client.o key_components.o \
                 aes-select.o aes-sw.o aes-common.o \
                 aesgcm-select.o aesgcm-sw.o aesgcm-common.o \
@@ -225,7 +230,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		sftpu.o sharingu.o nullstrcmp.o \
 		storage.o ltime.o open_for_write_would_lose_data.o \
 		unicode.o \
-                xdmauth.o $(ULDFLAGS) 
+                xdmauth.o $(ULDFLAGS) $(NOUNDEF) -ldl -lm
 
 sshpubk.o: ../sshpubk.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshpubk.c
@@ -255,6 +260,14 @@ pinger.o: ../pinger.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pinger.c
 psftp.o: ../psftp.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../psftp.c
+pscp.o: ../pscp.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../pscp.c
+newmain.o: ../proxy/newmain.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../proxy/newmain.c
+format_connection_setup_command.o: ../utils/format_connection_setup_command.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../utils/format_connection_setup_command.c
+subprocess_waiter.o: ../unix/utils/subprocess_waiter.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../unix/utils/subprocess_waiter.c
 sshrand.o: ../sshrand.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../sshrand.c
 sha1-ni.o: ../crypto/sha1-ni.c
@@ -265,6 +278,10 @@ aesgcm-ref-poly.o: ../crypto/aesgcm-ref-poly.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/aesgcm-ref-poly.c
 ntru.o: ../crypto/ntru.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/ntru.c
+kex-hybrid.o: ../crypto/kex-hybrid.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/kex-hybrid.c
+mlkem.o: ../crypto/mlkem.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/mlkem.c
 crc32.o: ../crypto/crc32.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/crc32.c
 blake2.o: ../crypto/blake2.c

@@ -357,6 +357,19 @@ procedure tgssh_channel_send_eof(const handle:TSSHChannel;const libctx:PTGLibrar
 function tgssh_channel_exit_status(const handle:TSSHChannel;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgssh_channel_is_open(const handle:TSSHChannel;const libctx:PTGLibraryContext):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgssh_channel_close(const handle:TSSHChannel;const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgssh_channel_sendbuffer(const handle:TSSHChannel;const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+
+// scp over a channel of the persistent connection (PuTTY's pscp engine).
+// Paths are passed UNESCAPED - the C side does the shell quoting.
+// Data flows through the libctx read_from_stream / write_to_stream
+// callbacks (sequential offsets from 0); progress/abort via
+// progress_callback and libctx.aborted. Returns 0 on success.
+function tgscp_download(const remotepath:PAnsiChar;
+                        const size,mtime:PUInt64;const permissions:PInteger;
+                        const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
+function tgscp_upload(const remotedir,filename:PAnsiChar;
+                      const size,mtime:UInt64;const permissions:Integer;
+                      const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 
 function tgsftp_cd(const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgsftp_ls(const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
@@ -467,6 +480,15 @@ var
   tgssh_channel_exit_status: function (const handle:TSSHChannel;const libctx:PTGLibraryContext):Integer; cdecl;
   tgssh_channel_is_open: function (const handle:TSSHChannel;const libctx:PTGLibraryContext):Boolean; cdecl;
   tgssh_channel_close: procedure (const handle:TSSHChannel;const libctx:PTGLibraryContext); cdecl;
+  tgssh_channel_sendbuffer: function (const handle:TSSHChannel;const libctx:PTGLibraryContext):Integer; cdecl;
+
+  // scp over a channel of the persistent connection (PuTTY's pscp engine)
+  tgscp_download: function (const remotepath:PAnsiChar;
+                        const size,mtime:PUInt64;const permissions:PInteger;
+                        const libctx:PTGLibraryContext):Integer; cdecl;
+  tgscp_upload: function (const remotedir,filename:PAnsiChar;
+                      const size,mtime:UInt64;const permissions:Integer;
+                      const libctx:PTGLibraryContext):Integer; cdecl;
 
   tgsftp_cd: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
   tgsftp_ls: function (const adir:PAnsiChar; const libctx:PTGLibraryContext):Integer; cdecl;
@@ -620,6 +642,11 @@ begin
        @tgssh_channel_exit_status:=GetProcedureAddress(TGPLH,'tgssh_channel_exit_status');
        @tgssh_channel_is_open:=GetProcedureAddress(TGPLH,'tgssh_channel_is_open');
        @tgssh_channel_close:=GetProcedureAddress(TGPLH,'tgssh_channel_close');
+       @tgssh_channel_sendbuffer:=GetProcedureAddress(TGPLH,'tgssh_channel_sendbuffer');
+
+       // scp over a channel of the persistent connection
+       @tgscp_download:=GetProcedureAddress(TGPLH,'tgscp_download');
+       @tgscp_upload:=GetProcedureAddress(TGPLH,'tgscp_upload');
        @tgsftp_cd:=GetProcedureAddress(TGPLH,'tgsftp_cd');
        @tgsftp_ls:=GetProcedureAddress(TGPLH,'tgsftp_ls');
 

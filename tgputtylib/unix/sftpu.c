@@ -497,10 +497,17 @@ static void ssh_sftp_pw_check(void *vctx, pollwrapper *pw)
 static bool ssh_sftp_mainloop_continue(void *vctx, bool found_any_fd,
                                        bool ran_any_callback)
 {
-    struct ssh_sftp_mainloop_ctx *ctx = (struct ssh_sftp_mainloop_ctx *)vctx;
-    if (ctx->toret != 0 || found_any_fd || ran_any_callback)
-        return false;                  /* finish the loop */
-    return true;
+    /* TG: always finish after a single pass, exactly like the Windows
+     * implementation (winsftp_cliloop_post: "always run only one loop
+     * iteration"). The stock version kept looping inside cli_main_loop
+     * while nothing happened, so the callers of ssh_sftp_loop_iteration
+     * (psftp_connect's connect-timeout loop, sftp_recvdata's
+     * abort/timeout checks) never regained control on a quiet
+     * connection - making connectiontimeoutticks and the aborted flag
+     * ineffective during connection attempts to unreachable hosts.
+     * Both callers simply call ssh_sftp_loop_iteration again, so
+     * returning more often is safe and matches Windows behaviour. */
+    return false;
 }
 static int ssh_sftp_do_select(bool include_stdin, bool no_fds_ok)
 {

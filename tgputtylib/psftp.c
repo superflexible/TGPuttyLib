@@ -1366,7 +1366,14 @@ int sftp_cmd_close(struct sftp_command *cmd)
         return 0;
     }
 
-    if (backend_connected(backend)) {
+    /* TG: backend_connected only means the Socket object exists - it is
+     * also true while a TCP connect is still in progress or after the
+     * server died. The polite EOF exchange below then blocks in
+     * sftp_recvdata until the OS abandons the connection (~21 s on
+     * Windows for an unreachable address) or timeoutticks expires.
+     * backend_sendok is true only once the session is genuinely up, so
+     * gate on it and otherwise go straight to the hard cleanup. */
+    if (backend_connected(backend) && backend_sendok(backend)) {
         char ch;
         backend_special(backend, SS_EOF, 0);
         sent_eof = true;
@@ -2791,7 +2798,13 @@ static void do_sftp_cleanup(void)
 	if (backend) // TG
 	{
 		CP("sftpclean1");
-		if (!sent_eof && backend_connected(backend)) // TG
+		// TG: only do the polite EOF exchange when the session is truly up
+		// (backend_sendok). After a FAILED connect, backend_connected is
+		// still true (the socket object exists) and sftp_recvdata would
+		// block until the OS abandons the TCP connect - ~21 s on Windows -
+		// which made a 10 s connection timeout take 20-21 s in total.
+		// backend_free below closes the half-open socket immediately.
+		if (!sent_eof && backend_connected(backend) && backend_sendok(backend)) // TG
 		{
 		   char ch;
            CP("sftpclean2");
@@ -4650,6 +4663,22 @@ EXPORT int tgssh_channel_send(void *handle, const void *buf, const int len,
 }
 
 /*
+ * Bytes buffered locally for this channel, not yet passed to the network
+ * (i.e. waiting for the remote window to open). Lets callers throttle
+ * large uploads: send a chunk, then pump the event loop while this stays
+ * above their high-water mark. A zero-length sshfwd_write is the
+ * documented way to query the buffer level without adding data.
+ */
+EXPORT int tgssh_channel_sendbuffer(void *handle, TTGLibraryContext *libctx) // TG
+{
+  curlibctx = libctx;
+  tgssh_channel *ch = (tgssh_channel *)handle;
+  if (!ch || !ch->sc || ch->closed)
+     return 0;
+  return (int)sshfwd_write(ch->sc, "", 0);
+}
+
+/*
  * Wait until the channel has stdout/stderr data, or has closed/exited,
  * or timeoutms elapses (timeoutms < 0 = wait indefinitely). Returns true
  * if data is available or the channel has finished (EOF); false on
@@ -4976,7 +5005,9 @@ EXPORT void tgputtygetversions(double *puttyrelease,int *tgputtylibbuild) // TG 
 EXPORT void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
 {
   curlibctx=libctx;
-  if (backend && backend_connected(backend))
+  // TG: same backend_sendok gate as sftp_cmd_close/do_sftp_cleanup - never
+  // block waiting for an EOF reply on a session that never came up.
+  if (backend && backend_connected(backend) && backend_sendok(backend))
   {
       char ch;
       backend_special(backend, SS_EOF, 0);

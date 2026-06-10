@@ -1,6 +1,37 @@
+/*
+ * tgputtylib.rc - version information resource for the TGPuttyLib DLL.
+ *
+ * Modeled on PuTTY's per-tool .rc files (e.g. psftp.rc): pull in
+ * rcstuff.h, set the app name/description, then include the shared
+ * VERSIONINFO template version.rc2 (which reads the version numbers
+ * from ../version.h: TEXTVER and BINARY_VERSION, whose last component
+ * is TGDLLBUILDNUM).
+ */
+
 #include "rcstuff.h"
 
 #define APPNAME "tgputtylib"
-#define APPDESC "SFTP client DLL by Tobias Giesen"
+#define APPDESC "TGPuttyLib - SFTP, SSH and SCP library based on PuTTY"
+
+/*
+ * Safety net: rcstuff.h only includes <winresrc.h> when HAVE_WINRESRC_H
+ * is defined (the cmake builds define it; the nmake build passes it via
+ * RCFLAGS). If neither happened, VS_VERSION_INFO would stay undefined
+ * and rc.exe would silently emit a NAMED resource called
+ * "VS_VERSION_INFO" instead of the numeric resource ID 1 - and Explorer
+ * and the version APIs only ever look for ID 1, so the version tab
+ * would simply be empty. That is exactly how the version info silently
+ * disappeared in the past. These fallbacks make the resource correct
+ * regardless of which headers were available.
+ */
+#ifndef VS_VERSION_INFO
+#define VS_VERSION_INFO 1
+#endif
+#ifndef VFT_DLL
+#define VFT_DLL 2
+#endif
+
+/* Tell version.rc2 that this binary is a library, not an application. */
+#define TGLIB_FILETYPE_DLL
 
 #include "version.rc2"

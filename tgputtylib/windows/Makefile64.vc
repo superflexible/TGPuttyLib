@@ -98,7 +98,10 @@ CFLAGS = /nologo /W3 /wd4018 /wd4146 /we4090 /we4028 /O2 /Zi -I..\./ -I..\charse
 LFLAGS = /incremental:no /dynamicbase /nxcompat
 LFLAGSDLL = /incremental:no /dynamicbase:no /nxcompat:no /DEBUG:FULL /ignore:4099 /ignore:4204
 LFLAGSDLLRELEASE = /incremental:no /dynamicbase:no /nxcompat:no
-RCFLAGS = -I..\./ -I..\charset/ -I..\windows/ -I..\unix/ -DWIN32 -D_WIN32 -DWINVER=0x0400
+# TG: HAVE_WINRESRC_H makes rcstuff.h include <winresrc.h>, so that
+# VS_VERSION_INFO expands to resource ID 1. Without it, rc.exe silently
+# emits a NAMED version resource that Windows never finds (no version tab).
+RCFLAGS = -I..\./ -I..\charset/ -I..\windows/ -I..\unix/ -DWIN32 -D_WIN32 -DWINVER=0x0400 -DHAVE_WINRESRC_H=1
 
 CFLAGS = $(CFLAGS) /DHAS_GSSAPI
 
@@ -115,7 +118,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
 		$(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)dup_wc_to_mb.obj $(BUILDDIR)dupwcs.obj $(BUILDDIR)mpint.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)host_strchr_internal.obj \
 		$(BUILDDIR)null-seat.obj $(BUILDDIR)null-socket.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)pgssapi.obj $(BUILDDIR)smemeq.obj $(BUILDDIR)interprocess_mutex.obj \
 		$(BUILDDIR)pinger.obj $(BUILDDIR)portfwd.obj $(BUILDDIR)cert-expr.obj $(BUILDDIR)registry.obj $(BUILDDIR)subprocess_waiter.obj \
-		$(BUILDDIR)null-mac.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)default_description.obj $(BUILDDIR)decode_utf8_to_wide_string.obj $(BUILDDIR)encode_wide_string_as_utf8.obj \
+		$(BUILDDIR)null-mac.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)pscp.obj $(BUILDDIR)default_description.obj $(BUILDDIR)decode_utf8_to_wide_string.obj $(BUILDDIR)encode_wide_string_as_utf8.obj \
                 $(BUILDDIR)decode_utf8.obj $(BUILDDIR)decode_utf8_to_wchar.obj $(BUILDDIR)newmain.obj $(BUILDDIR)format_connection_setup_command.obj \
 		$(BUILDDIR)http.obj $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj $(BUILDDIR)null-opener.obj \
 		$(BUILDDIR)settings.obj $(BUILDDIR)sftp.obj $(BUILDDIR)string_length_for_printf.obj $(BUILDDIR)host_ca_new_free.obj \
@@ -173,7 +176,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
  $(BUILDDIR)marshal.obj $(BUILDDIR)memory.obj $(BUILDDIR)validate_manual_hostkey.obj $(BUILDDIR)dupstr.obj $(BUILDDIR)wordwrap.obj
  $(BUILDDIR)dup_mb_to_wc.obj $(BUILDDIR)dupwcs.obj $(BUILDDIR)dup_wc_to_mb.obj $(BUILDDIR)mpint.obj $(BUILDDIR)null-plug.obj $(BUILDDIR)dupcat.obj $(BUILDDIR)null-lp.obj
  ole32.lib $(BUILDDIR)pgssapi.obj $(BUILDDIR)pinger.obj $(BUILDDIR)dupprintf.obj $(BUILDDIR)cert-expr.obj
- $(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)prompts.obj
+ $(BUILDDIR)portfwd.obj $(BUILDDIR)proxy.obj $(BUILDDIR)psftp.obj $(BUILDDIR)pscp.obj $(BUILDDIR)ptrlen.obj $(BUILDDIR)prompts.obj
  $(BUILDDIR)tgputtylib.res $(BUILDDIR)psftpcommon.obj $(BUILDDIR)settings.obj $(BUILDDIR)tempseat.obj $(BUILDDIR)ntru.obj
  $(BUILDDIR)sftp.obj $(BUILDDIR)sftpcommon.obj shell32.lib $(BUILDDIR)smemeq.obj $(BUILDDIR)fgetline.obj
  $(BUILDDIR)ssh.obj $(BUILDDIR)bpp1.obj $(BUILDDIR)censor1.obj $(BUILDDIR)string_length_for_printf.obj

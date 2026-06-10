@@ -31,8 +31,12 @@ FILEFLAGS	0x0L
 		| VS_FF_PRIVATEBUILD
 #endif
 FILEOS		VOS__WINDOWS32
+#ifdef TGLIB_FILETYPE_DLL
+FILETYPE	VFT_DLL /* TG: tgputtylib is a library, not an application */
+#else
 FILETYPE	VFT_APP
-FILESUBTYPE	0x0L /* n/a for VFT_APP */
+#endif
+FILESUBTYPE	0x0L /* n/a */
 BEGIN
     /* (On Win98SE and Win2K, we can see most of this on the Version tab
      * in the file properties in Explorer.) */

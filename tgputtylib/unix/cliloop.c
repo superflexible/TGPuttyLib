@@ -59,8 +59,18 @@ void cli_main_loop(cliloop_pw_setup_t pw_setup,
                     ticks = next - now;
 
                 bool overflow = false;
-                if (ticks > INT_MAX) {
-                    ticks = INT_MAX;
+                /* TG: never sleep for more than one second, mirroring the
+                 * 2019 fix in windows/cliloop.c. During a connection
+                 * attempt to an unreachable host, the only pending timer
+                 * can be tens of seconds away (e.g. the noise-collection
+                 * timer), and a full-length poll here starves the callers'
+                 * abort/timeout checks (psftp_connect, sftp_recvdata):
+                 * connectiontimeoutticks=10s could take 30-75s to trigger.
+                 * Capping the poll also makes curlibctx->aborted reactive
+                 * within a second. (Counts as 'overflow' so the timer
+                 * bookkeeping below doesn't assume we reached 'next'.) */
+                if (ticks > 1000) {
+                    ticks = 1000;
                     overflow = true;
                 }
 
@@ -71,7 +81,12 @@ void cli_main_loop(cliloop_pw_setup_t pw_setup,
                     now = GETTICKCOUNT();
             } while (ret < 0 && errno == EINTR);
         } else {
-            ret = pollwrap_poll_endless(pw);
+            /* TG: was pollwrap_poll_endless - with no timers pending that
+             * could block forever, never returning control to the loops
+             * that check for aborts and timeouts. Wake at least once per
+             * second instead. */
+            ret = pollwrap_poll_timeout(pw, 1000);
+            now = GETTICKCOUNT();
         }
 
         if (ret < 0 && errno == EINTR)
