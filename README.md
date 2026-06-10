@@ -3,7 +3,7 @@ A shared library / DLL with Delphi and C++ bindings based on PuTTY, for Windows,
 
 The new TGPuttyLib SSH/SFTP Library is a DLL/.so/.dylib conversion of the psftp program from the well-known PuTTY suite by Simon Tatham.
 
-It allows SFTP connections but also pure SSH connections.
+It allows SFTP connections but also pure SSH connections and SCP file transfers (SSH/SCP demos in the SSHDemo subfolder).
 
 It allows developers to transfer files with the highest possible transfer rates (over 100MB/sec).
 

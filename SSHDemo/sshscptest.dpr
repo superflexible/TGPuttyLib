@@ -146,6 +146,7 @@ begin
 end;
 
 { Deterministic pseudo-random data covering all byte values. }
+{$Q-,R-}
 procedure FillTestData(const MS: TMemoryStream; const Size: Integer);
 var
   i    : Integer;
@@ -330,6 +331,8 @@ begin
     WriteLn('=========== OVERALL: PASS ===========')
   else begin
     WriteLn('=========== OVERALL: FAIL ===========');
+    ReadLn;
     Halt(1);
   end;
+  ReadLn;
 end.

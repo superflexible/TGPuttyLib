@@ -1,6 +1,15 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 32 - 10 June 2026
+
+TGPuttyLib has been updated to PuTTY 0.84.
+
+SSH Shell and SCP features have been added and bugs have been fixed.
+
+New demos can be found in the SSHDemo subfolder.
+
+---------------------
 Build 30 - 10 Feb 2026
 
 TGPuttyLib has now been updated to PuTTY 0.83. It continues to be an important project for me 
