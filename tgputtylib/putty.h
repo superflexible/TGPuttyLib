@@ -2884,6 +2884,57 @@ typedef struct
 
 extern THREADVAR TTGLibraryContext *curlibctx;
 
+/* TG 2026: nested-entry protection for curlibctx.
+
+   Every EXPORT entry point must leave curlibctx as it found it.
+   Without this, a nested DLL call for a DIFFERENT context on the
+   same thread (e.g. host application code reached via the
+   printmessage / verify / progress callbacks - or indirectly via a
+   message loop - calling into another connection) would leave
+   curlibctx pointing at the wrong context when the outer call
+   resumes. Mid-kex that corrupts the outer connection's transcript
+   state and surfaces as intermittent "Signature from server's host
+   key is invalid" failures; elsewhere it can corrupt arbitrary
+   per-connection state.
+
+   Usage pattern in every EXPORT function that touches curlibctx:
+
+       EXPORT int tgxxx_foo(..., TTGLibraryContext *libctx)
+       {
+         LIBCTX_SAVE;            <- first line of the body
+         curlibctx = libctx;     (or via a helper, e.g. tgscp_begin)
+         ...
+         LIBCTX_RETURN(value);   <- instead of: return value;
+       }
+
+   LIBCTX_SAVE declares the saved-context local, so it must come
+   before any statement (C89-compatible placement). LIBCTX_RETURN /
+   LIBCTX_RETURN_VOID restore and return; LIBCTX_RESTORE() is for
+   the fall-off-the-end exit of void functions. Restoring when the
+   function never changed curlibctx is a harmless no-op write.
+
+   WARNING: LIBCTX_RETURN restores curlibctx BEFORE evaluating its
+   argument (at a top-level call that restores it to NULL). The
+   argument must therefore not touch curlibctx - not directly, not
+   via the context #define macros (backend, conf, sent_eof,
+   received_data, ...), and not by calling any function that uses
+   curlibctx internally (fxp_*, xfer_*, sshfwd_*, and - under
+   CALLBACK_MALLOC/DEBUG_MALLOC - anything that allocates or frees).
+   Evaluate such expressions into a local variable first:
+       bool ok = backend && backend_connected(backend);
+       LIBCTX_RETURN(ok);
+   Getting this wrong reads through a NULL curlibctx, e.g. the
+   EXC_BAD_ACCESS at offset 0xb0 (= offsetof backend) seen in
+   tgssh_is_connected on macOS/arm64. */
+#define LIBCTX_SAVE \
+    TTGLibraryContext *tg_prev_libctx = curlibctx
+#define LIBCTX_RESTORE() \
+    (curlibctx = tg_prev_libctx)
+#define LIBCTX_RETURN(val) \
+    do { LIBCTX_RESTORE(); return (val); } while (0)
+#define LIBCTX_RETURN_VOID \
+    do { LIBCTX_RESTORE(); return; } while (0)
+
 uint64_t TGGetTickCount64(void); // TG: defined in psftp.c
 
 // TG: raw-SSH channel functions, defined (and exported) in psftp.c.

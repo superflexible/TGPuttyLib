@@ -435,6 +435,10 @@ static StripCtrlChars *string_scc;
     for (char *varname = (char *)(input); varname; varname = NULL)
 #endif
 
+#ifdef TGDLL /* TG: the DLL links psftp.c's sftp_wait_for_reply - declare it */
+struct sftp_packet *sftp_wait_for_reply(struct sftp_request *req);
+#endif
+
 #ifndef TGDLL /* TG: psftp.c provides sftp_wait_for_reply in the DLL */
 /*
  * Wait for the reply to a single SFTP request. Parallels the same
@@ -2665,6 +2669,8 @@ EXPORT int tgscp_download(const char *remotepath,
                           uint64_t *osize, uint64_t *omtime, int *operms,
                           TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
     char *quoted, *cmd;
     struct scp_sink_action act;
     int result = 0;
@@ -2677,7 +2683,7 @@ EXPORT int tgscp_download(const char *remotepath,
     bool opened = tgscp_begin(cmd, libctx);
     sfree(cmd);
     if (!opened)
-        return TGSCP_ERR_NOTCONNECTED;
+        LIBCTX_RETURN(TGSCP_ERR_NOTCONNECTED);
 
     act.buf = strbuf_new();
 
@@ -2685,7 +2691,7 @@ EXPORT int tgscp_download(const char *remotepath,
         /* bump() fired somewhere in the engine */
         strbuf_free(act.buf);
         tgscp_end(libctx);
-        return TGSCP_ERR_PROTOCOL;
+        LIBCTX_RETURN(TGSCP_ERR_PROTOCOL);
     }
     tgscp_bumpjmp_valid = true;
 
@@ -2746,7 +2752,7 @@ EXPORT int tgscp_download(const char *remotepath,
     tgscp_end(libctx);
     if (result == 0 && errs)
         result = TGSCP_ERR_REMOTE;
-    return result;
+    LIBCTX_RETURN(result);
 }
 
 /*
@@ -2761,12 +2767,14 @@ EXPORT int tgscp_upload(const char *remotedir, const char *filename,
                         const int permissions,
                         TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
     char *quoted, *cmd;
     int result = 0;
     uint64_t sent = 0;
 
     if (strchr(filename, '\n') || strchr(filename, '/'))
-        return TGSCP_ERR_UNEXPECTED; /* scp C records cannot express these */
+        LIBCTX_RETURN(TGSCP_ERR_UNEXPECTED); /* scp C records cannot express these */
 
     quoted = tgscp_quote(remotedir);
     cmd = dupprintf("scp -t -d -q %s", quoted);
@@ -2774,13 +2782,13 @@ EXPORT int tgscp_upload(const char *remotedir, const char *filename,
     bool opened = tgscp_begin(cmd, libctx);
     sfree(cmd);
     if (!opened)
-        return TGSCP_ERR_NOTCONNECTED;
+        LIBCTX_RETURN(TGSCP_ERR_NOTCONNECTED);
 
     uploading = true;
 
     if (setjmp(tgscp_bumpjmp)) {
         tgscp_end(libctx);
-        return TGSCP_ERR_PROTOCOL;
+        LIBCTX_RETURN(TGSCP_ERR_PROTOCOL);
     }
     tgscp_bumpjmp_valid = true;
 
@@ -2839,7 +2847,7 @@ EXPORT int tgscp_upload(const char *remotedir, const char *filename,
     tgscp_end(libctx);
     if (result == 0 && errs)
         result = TGSCP_ERR_REMOTE;
-    return result;
+    LIBCTX_RETURN(result);
 }
 #endif /* TGDLL */
 

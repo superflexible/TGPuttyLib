@@ -3682,6 +3682,8 @@ bool cmdline_loaded_session(void) // TG
 
 EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
     curlibctx=libctx;
     ContextCounter++;
     ThreadContextCounter++;
@@ -3698,7 +3700,7 @@ EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
        printf("Incorrect TGLibraryContext struct size");
        if (curlibctx->raise_exception_callback)
           curlibctx->raise_exception_callback("Incorrect TGLibraryContext struct size",__FILE__,__LINE__,curlibctx);
-       return -101;
+       LIBCTX_RETURN(-101);
     }
 
 	libctx->mode = 0;
@@ -3731,7 +3733,7 @@ EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
 
     backend = NULL;
 
-    return 0;
+    LIBCTX_RETURN(0);
 }
 
 
@@ -3838,14 +3840,25 @@ EXPORT int tgputty_initwithcmdline(int argc, char *argv[], TTGLibraryContext *li
 
 EXPORT int tgputtyrunpsftp(TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
+#ifdef _WINDOWS
+  /* Windows Filename: first member is wpath (UTF-16), so the host's
+     UTF-8 batchfile must be widened for the file APIs */
   wchar_t *wfn = dup_mb_to_wc(CP_UTF8,libctx->batchfile);
   Filename fn= { wfn };
   int result=do_sftp(libctx->mode, libctx->modeflags, &fn);
 
   sfree(wfn);
+#else
+  /* unix Filename is a single char* in the system encoding (UTF-8 on
+     macOS), which is what the host passes - use it directly */
+  Filename fn= { libctx->batchfile };
+  int result=do_sftp(libctx->mode, libctx->modeflags, &fn);
+#endif
 
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT void tgputtysetappname(const char *newappname,const char *appversion) // TG 2019
@@ -3863,6 +3876,8 @@ EXPORT void tgputtysetappname(const char *newappname,const char *appversion) // 
 
 EXPORT int tgputtysftpcommand(const char *line, TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   // make a copy of the command line string
   // because sftp_getcmd modifies it and we
@@ -3876,16 +3891,18 @@ EXPORT int tgputtysftpcommand(const char *line, TTGLibraryContext *libctx) // TG
   // linebuf is freed by sftp_getcmd
 
   if (!cmd)
-	 return 2;
+	 LIBCTX_RETURN(2);
   int ret = cmd->obey(cmd);
 
   free_sftp_command(&cmd);
-  return ret;
+  LIBCTX_RETURN(ret);
 }
 
 EXPORT int tgsftp_connect(const char *ahost,const char *auser,const int aport,const char *apassword,
 										 TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   CP("tgsftp_connect");
 
@@ -3945,12 +3962,14 @@ EXPORT int tgsftp_connect(const char *ahost,const char *auser,const int aport,co
 
   printf("tgsftp_connect final result is %d\n",result);
   CP("sftpcn49X");
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 
 EXPORT int tgsftp_cd(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
   cmd->words = NULL;
@@ -3965,29 +3984,35 @@ EXPORT int tgsftp_cd(const char *adir,TTGLibraryContext *libctx) // TG 2019
 
   free_sftp_command(&cmd);
 
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT int tgsftp_rm(const char *afile,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   char *therealname = canonify(afile);
   int result=sftp_action_rm(NULL,therealname);
   free(therealname);
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT int tgsftp_rmdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   char *therealname = canonify(adir);
   int result=sftp_action_rmdir(NULL,therealname);
   free(therealname);
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT int tgsftp_ls(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
   cmd->words = NULL;
@@ -4004,11 +4029,13 @@ EXPORT int tgsftp_ls(const char *adir,TTGLibraryContext *libctx) // TG 2019
 
   int result=sftp_cmd_ls(cmd);
   free_sftp_command(&cmd);
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT int tgsftp_mkdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
   cmd->words = NULL;
@@ -4021,12 +4048,14 @@ EXPORT int tgsftp_mkdir(const char *adir,TTGLibraryContext *libctx) // TG 2019
 
   int result=sftp_cmd_mkdir(cmd);
   free_sftp_command(&cmd);
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 
 EXPORT int tgsftp_mv(const char *afrom,const char *ato,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
   cmd->words = NULL;
@@ -4040,11 +4069,13 @@ EXPORT int tgsftp_mv(const char *afrom,const char *ato,TTGLibraryContext *libctx
 
   int result=sftp_cmd_mv(cmd);
   free_sftp_command(&cmd);
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT int tgsftp_mvex(const char *afrom,const char *ato,const int moveflags,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   struct sftp_command *cmd = snew(struct sftp_command);
   cmd->words = NULL;
@@ -4058,33 +4089,39 @@ EXPORT int tgsftp_mvex(const char *afrom,const char *ato,const int moveflags,TTG
 
   int result=sftp_cmd_mvex(cmd,moveflags);
   free_sftp_command(&cmd);
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT int tgsftp_getstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   char *fname = canonify(afrom);
 
   int res=get_stat(fname,attrs);
 
   free(fname);
-  return res;
+  LIBCTX_RETURN(res);
 }
 
 EXPORT int tgsftp_setstat(const char *afrom,struct fxp_attrs *attrs,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   char *fname = canonify(afrom);
 
   int res=set_stat(fname,attrs);
 
   free(fname);
-  return res;
+  LIBCTX_RETURN(res);
 }
 
 EXPORT int tgsftp_putfile(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   char *fromfile=dupstr(afromfile);
   char *outfname = canonify(atofile);
@@ -4094,11 +4131,13 @@ EXPORT int tgsftp_putfile(const char *afromfile,const char *atofile,const bool a
   sfree(outfname);
   sfree(fromfile);
 
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT int tgsftp_getfile(const char *afromfile,const char *atofile,const bool anappend,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   char *tofile=dupstr(atofile);
   char *infname = canonify(afromfile);
@@ -4108,13 +4147,16 @@ EXPORT int tgsftp_getfile(const char *afromfile,const char *atofile,const bool a
   sfree(infname);
   sfree(tofile);
 
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 EXPORT void tgsftp_close(TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   sftp_cmd_close(NULL);
+  LIBCTX_RESTORE();
 }
 
 /* ====================================================================
@@ -4141,6 +4183,8 @@ EXPORT int tgssh_connect(const char *ahost, const char *auser, const int aport,
                          const char *apassword, const char *acommand,
                          TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   CP("tgssh_connect");
 
@@ -4180,7 +4224,7 @@ EXPORT int tgssh_connect(const char *ahost, const char *auser, const int aport,
   if (result != 0)
      do_sftp_cleanup();
 
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 /*
@@ -4189,12 +4233,14 @@ EXPORT int tgssh_connect(const char *ahost, const char *auser, const int aport,
  */
 EXPORT int tgssh_send(const void *buf, const int len, TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   if (!backend)
-     return -1;
+     LIBCTX_RETURN(-1);
   if (len > 0)
      backend_send(backend, (const char *)buf, (size_t)len);
-  return len;
+  LIBCTX_RETURN(len);
 }
 
 /*
@@ -4203,10 +4249,14 @@ EXPORT int tgssh_send(const void *buf, const int len, TTGLibraryContext *libctx)
  */
 EXPORT int tgssh_sendbuffer(TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   if (!backend)
-     return 0;
-  return (int)backend_sendbuffer(backend);
+     LIBCTX_RETURN(0);
+  int buffered = (int)backend_sendbuffer(backend);
+  LIBCTX_RETURN(buffered);
+  LIBCTX_RESTORE();
 }
 
 /*
@@ -4220,32 +4270,34 @@ EXPORT int tgssh_sendbuffer(TTGLibraryContext *libctx) // TG
  */
 EXPORT bool tgssh_can_recv(const int timeoutms, TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   if (!backend)
-     return false;
+     LIBCTX_RETURN(false);
 
   uint64_t starttick = TGGetTickCount64();
   while (bufchain_size(&received_data) == 0 && // is expanded to libctx->received_data by macro
          bufchain_size(&curlibctx->ssh_stderr_data) == 0)
   {
      if (curlibctx->aborted)
-        return false;
+        LIBCTX_RETURN(false);
 
      // command exited and no data left to read: report ready so the
      // caller's recv returns 0 (EOF) and it can check the exit status.
      if (backend_exitcode(backend) >= 0)
-        return true;
+        LIBCTX_RETURN(true);
 
      if (ssh_sftp_loop_iteration() < 0)
-        return true; // connection error: surface as ready -> EOF on recv
+        LIBCTX_RETURN(true); // connection error: surface as ready -> EOF on recv
 
      if (timeoutms >= 0) {
         uint64_t now = TGGetTickCount64();
         if ((int64_t)((now - starttick) * 1000 / TICKSPERSEC) >= timeoutms)
-           return false;
+           LIBCTX_RETURN(false);
      }
   }
-  return true;
+  LIBCTX_RETURN(true);
 }
 
 /*
@@ -4260,6 +4312,8 @@ EXPORT int tgssh_recv(void *stdoutbuf, int *stdoutlen,
                       void *stderrbuf, int *stderrlen,
                       TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   int total = 0;
 
@@ -4281,7 +4335,7 @@ EXPORT int tgssh_recv(void *stdoutbuf, int *stdoutlen,
      *stderrlen = 0;
   }
 
-  return total;
+  LIBCTX_RETURN(total);
 }
 
 /*
@@ -4291,11 +4345,14 @@ EXPORT int tgssh_recv(void *stdoutbuf, int *stdoutlen,
  */
 EXPORT void tgssh_send_eof(TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   if (backend && backend_connected(backend) && !sent_eof) {
      backend_special(backend, SS_EOF, 0);
      sent_eof = true;
   }
+  LIBCTX_RESTORE();
 }
 
 /*
@@ -4304,22 +4361,32 @@ EXPORT void tgssh_send_eof(TTGLibraryContext *libctx) // TG
  */
 EXPORT int tgssh_get_exit_status(TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   if (!backend)
-     return -1;
-  return backend_exitcode(backend);
+     LIBCTX_RETURN(-1);
+  int exitcode = backend_exitcode(backend);
+  LIBCTX_RETURN(exitcode);
+  LIBCTX_RESTORE();
 }
 
 /* True while the SSH connection / command is still live. */
 EXPORT bool tgssh_is_connected(TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
-  return backend && backend_connected(backend);
+  bool connected = backend && backend_connected(backend);
+  LIBCTX_RETURN(connected);
+  LIBCTX_RESTORE();
 }
 
 /* Tear down the raw SSH connection and free associated state. */
 EXPORT void tgssh_close(TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   CP("tgssh_close");
 
@@ -4348,6 +4415,7 @@ EXPORT void tgssh_close(TTGLibraryContext *libctx) // TG
   curlibctx->ssh_raw_mode = false;
   curlibctx->ssh_capture_stderr = false;
   curlibctx->ssh_no_channel = false;
+  LIBCTX_RESTORE();
 }
 
 /* ====================================================================
@@ -4532,6 +4600,8 @@ EXPORT int tgssh_connect_persistent(const char *ahost, const char *auser,
                                     const int aport, const char *apassword,
                                     TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   CP("tgssh_connect_persistent");
 
@@ -4572,7 +4642,7 @@ EXPORT int tgssh_connect_persistent(const char *ahost, const char *auser,
   if (result != 0)
      do_sftp_cleanup();
 
-  return result;
+  LIBCTX_RETURN(result);
 }
 
 /*
@@ -4583,18 +4653,20 @@ EXPORT int tgssh_connect_persistent(const char *ahost, const char *auser,
 EXPORT void *tgssh_open_channel(const char *acommand,
                                 TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   CP("tgssh_open_channel");
 
   if (!backend) {
      printf("tgssh_open_channel: not connected\n");
-     return NULL;
+     LIBCTX_RETURN(NULL);
   }
 
   ConnectionLayer *cl = tgssh_get_connection_layer(backend);
   if (!cl) {
      printf("tgssh_open_channel: no connection layer\n");
-     return NULL;
+     LIBCTX_RETURN(NULL);
   }
 
   tgssh_channel *ch = snew(tgssh_channel);
@@ -4627,7 +4699,7 @@ EXPORT void *tgssh_open_channel(const char *acommand,
   }
 
   if (ch->ready)
-     return ch;
+     LIBCTX_RETURN(ch);
 
   // Failure: make sure the SshChannel is torn down, then free our struct.
   if (ch->sc && !ch->closed)
@@ -4646,20 +4718,22 @@ EXPORT void *tgssh_open_channel(const char *acommand,
   if (ch->exec_cmd)
      sfree(ch->exec_cmd);
   sfree(ch);
-  return NULL;
+  LIBCTX_RETURN(NULL);
 }
 
 /* Send data to a channel's stdin. Returns bytes accepted, or -1. */
 EXPORT int tgssh_channel_send(void *handle, const void *buf, const int len,
                               TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
   if (!ch || !ch->sc || ch->closed)
-     return -1;
+     LIBCTX_RETURN(-1);
   if (len > 0)
      sshfwd_write(ch->sc, buf, (size_t)len);
-  return len;
+  LIBCTX_RETURN(len);
 }
 
 /*
@@ -4671,11 +4745,15 @@ EXPORT int tgssh_channel_send(void *handle, const void *buf, const int len,
  */
 EXPORT int tgssh_channel_sendbuffer(void *handle, TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
   if (!ch || !ch->sc || ch->closed)
-     return 0;
-  return (int)sshfwd_write(ch->sc, "", 0);
+     LIBCTX_RETURN(0);
+  int buffered = (int)sshfwd_write(ch->sc, "", 0);
+  LIBCTX_RETURN(buffered);
+  LIBCTX_RESTORE();
 }
 
 /*
@@ -4687,26 +4765,28 @@ EXPORT int tgssh_channel_sendbuffer(void *handle, TTGLibraryContext *libctx) // 
 EXPORT bool tgssh_channel_can_recv(void *handle, const int timeoutms,
                                    TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
   if (!ch)
-     return false;
+     LIBCTX_RETURN(false);
 
   uint64_t starttick = TGGetTickCount64();
   while (bufchain_size(&ch->stdout_data) == 0 &&
          bufchain_size(&ch->stderr_data) == 0)
   {
      if (ch->closed || ch->got_remote_eof)
-        return true; // EOF: recv will return 0
+        LIBCTX_RETURN(true); // EOF: recv will return 0
      if (!tgssh_pump_once())
-        return true; // aborted / connection gone -> surface as EOF
+        LIBCTX_RETURN(true); // aborted / connection gone -> surface as EOF
      if (timeoutms >= 0) {
         uint64_t now = TGGetTickCount64();
         if ((int64_t)((now - starttick) * 1000 / TICKSPERSEC) >= timeoutms)
-           return false;
+           LIBCTX_RETURN(false);
      }
   }
-  return true;
+  LIBCTX_RETURN(true);
 }
 
 /*
@@ -4718,6 +4798,8 @@ EXPORT int tgssh_channel_recv(void *handle,
                               void *stderrbuf, int *stderrlen,
                               TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
   int total = 0;
@@ -4725,7 +4807,7 @@ EXPORT int tgssh_channel_recv(void *handle,
   if (!ch) {
      if (stdoutlen) *stdoutlen = 0;
      if (stderrlen) *stderrlen = 0;
-     return 0;
+     LIBCTX_RETURN(0);
   }
 
   if (stdoutbuf && stdoutlen && *stdoutlen > 0) {
@@ -4751,36 +4833,43 @@ EXPORT int tgssh_channel_recv(void *handle,
      sshfwd_unthrottle(ch->sc,
         bufchain_size(&ch->stdout_data) + bufchain_size(&ch->stderr_data));
 
-  return total;
+  LIBCTX_RETURN(total);
 }
 
 /* Half-close: send EOF on the channel's stdin. */
 EXPORT void tgssh_channel_send_eof(void *handle, TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
   if (ch && ch->sc && !ch->closed && !ch->eof_sent) {
      sshfwd_write_eof(ch->sc);
      ch->eof_sent = true;
   }
+  LIBCTX_RESTORE();
 }
 
 /* Remote command exit status for this channel, or < 0 if not known yet. */
 EXPORT int tgssh_channel_exit_status(void *handle, TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
   if (!ch)
-     return -1;
-  return ch->exitstatus;
+     LIBCTX_RETURN(-1);
+  LIBCTX_RETURN(ch->exitstatus);
 }
 
 /* True while the channel is open and usable. */
 EXPORT bool tgssh_channel_is_open(void *handle, TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
-  return ch && ch->sc && !ch->closed;
+  LIBCTX_RETURN(ch && ch->sc && !ch->closed);
 }
 
 /*
@@ -4790,10 +4879,12 @@ EXPORT bool tgssh_channel_is_open(void *handle, TTGLibraryContext *libctx) // TG
  */
 EXPORT void tgssh_channel_close(void *handle, TTGLibraryContext *libctx) // TG
 {
+  LIBCTX_SAVE;
+
   curlibctx = libctx;
   tgssh_channel *ch = (tgssh_channel *)handle;
   if (!ch)
-     return;
+     LIBCTX_RETURN_VOID;
   CP("tgssh_channel_close");
 
   if (ch->sc && !ch->closed) {
@@ -4818,6 +4909,7 @@ EXPORT void tgssh_channel_close(void *handle, TTGLibraryContext *libctx) // TG
   if (ch->exec_cmd)
      sfree(ch->exec_cmd);
   sfree(ch);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_setverbose(const char averbose) // TG 2019
@@ -4829,10 +4921,13 @@ EXPORT void tgputty_setverbose(const char averbose) // TG 2019
 
 EXPORT void tgputty_setkeyfile(const char *apathname,TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   Filename *fn = filename_from_str(apathname);
   conf_set_filename(conf, CONF_keyfile, fn);
   filename_free(fn);
+  LIBCTX_RESTORE();
 }
 
 EXPORT struct fxp_handle *tgputty_openfile(const char *apathname,
@@ -4840,17 +4935,23 @@ EXPORT struct fxp_handle *tgputty_openfile(const char *apathname,
                                                           const struct fxp_attrs *attrs,
                                                           TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
 #ifdef DEBUG_UPLOAD
    printf("Opening file %s\n",apathname);
 #endif
    struct sftp_request *req = fxp_open_send(apathname,anopenflags,attrs);
    struct sftp_packet *pktin = sftp_wait_for_reply(req);
-   return fxp_open_recv(pktin, req);
+   struct fxp_handle *openedfh = fxp_open_recv(pktin, req);
+   LIBCTX_RETURN(openedfh);
+  LIBCTX_RESTORE();
 }
 
 EXPORT int tgputty_closefile(struct fxp_handle **fh,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
    assert(fh != NULL);
    assert((*fh) != NULL);
@@ -4860,29 +4961,41 @@ EXPORT int tgputty_closefile(struct fxp_handle **fh,TTGLibraryContext *libctx)
    struct sftp_request *req = fxp_close_send(*fh);
    (*fh) = NULL; // prevent AV when close is called another time by host program
    struct sftp_packet *pktin = sftp_wait_for_reply(req);
-   return fxp_close_recv(pktin, req);
+   bool closedok = fxp_close_recv(pktin, req);
+   LIBCTX_RETURN(closedok);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void *tgputty_xfer_upload_init(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
 #ifdef DEBUG_UPLOAD
   printf("calling xfer_upload_init with offset %" PRIu64 "\n",offset);
 #endif
-  return xfer_upload_init(fh,offset);
+  struct fxp_xfer *xfer = xfer_upload_init(fh,offset);
+  LIBCTX_RETURN(xfer);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void *tgputty_xfer_download_init(struct fxp_handle *fh, uint64_t offset,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
 #ifdef DEBUG_DOWNLOAD
   printf("calling xfer_download_init with offset %" PRIu64 "\n",offset);
 #endif
-  return xfer_download_init(fh,offset);
+  struct fxp_xfer *xfer = xfer_download_init(fh,offset);
+  LIBCTX_RETURN(xfer);
+  LIBCTX_RESTORE();
 }
 
 EXPORT bool tgputty_xfer_download_preparequeue(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   xfer_download_queue(xfer);
   struct sftp_packet *pktin = sftp_recv();
@@ -4894,20 +5007,26 @@ EXPORT bool tgputty_xfer_download_preparequeue(struct fxp_xfer *xfer,TTGLibraryC
 	 printf("error while reading: %s\n", fxp_error());
 	 if (retd == INT_MIN)        /* pktin not even freed */
 		sfree(pktin);
-	 return false;
+	 LIBCTX_RETURN(false);
   }
 
-  return true;
+  LIBCTX_RETURN(true);
 }
 
 EXPORT bool tgputty_xfer_upload_ready(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
-  return xfer_upload_ready(xfer);
+  bool ready = xfer_upload_ready(xfer);
+  LIBCTX_RETURN(ready);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_xfer_upload_data(struct fxp_xfer *xfer, char *buffer, int len, uint64_t anoffset,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   //printf("calling xfer_set_offset, anoffset is %" PRIu64 "\n",anoffset);
   xfer_set_offset(xfer,anoffset);
@@ -4915,25 +5034,35 @@ EXPORT void tgputty_xfer_upload_data(struct fxp_xfer *xfer, char *buffer, int le
   printf("calling xfer_upload_data, len is %d\n",len);
 #endif
   xfer_upload_data(xfer,buffer,len);
+  LIBCTX_RESTORE();
 }
 
 EXPORT bool tgputty_xfer_download_data(struct fxp_xfer *xfer, void **buffer, int *len, TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
 #ifdef DEBUG_DOWNLOAD
   printf("calling xfer_download_data\n");
 #endif
-  return xfer_download_data(xfer,buffer,len);
+  bool gotdata = xfer_download_data(xfer,buffer,len);
+  LIBCTX_RETURN(gotdata);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_xfer_set_error(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   xfer_set_error(xfer);
+  LIBCTX_RESTORE();
 }
 
 EXPORT bool tgputty_xfer_ensuredone(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   bool err=false;
   // code taken from sftp_put_file
@@ -4970,28 +5099,38 @@ EXPORT bool tgputty_xfer_ensuredone(struct fxp_xfer *xfer,TTGLibraryContext *lib
   else
      printf("xfer_done=true\n");
 #endif
-  return !err;
+  LIBCTX_RETURN(!err);
 }
 
 EXPORT bool tgputty_xfer_done(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
-  return xfer_done(xfer);
+  bool done = xfer_done(xfer);
+  LIBCTX_RETURN(done);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_xfer_cleanup(struct fxp_xfer *xfer,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
 #ifdef DEBUG_UPLOAD
   printf("calling xfer_cleanup\n");
 #endif
   xfer_cleanup(xfer);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_sfree(void *p,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   sfree(p);
+  LIBCTX_RESTORE();
 }
 
 
@@ -5004,6 +5143,8 @@ EXPORT void tgputtygetversions(double *puttyrelease,int *tgputtylibbuild) // TG 
 
 EXPORT void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
 {
+  LIBCTX_SAVE;
+
   curlibctx=libctx;
   // TG: same backend_sendok gate as sftp_cmd_close/do_sftp_cleanup - never
   // block waiting for an EOF reply on a session that never came up.
@@ -5064,7 +5205,7 @@ EXPORT void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
   ContextCounter--;
   ThreadContextCounter--;
   curlibctx=NULL;
-  return;
+  LIBCTX_RETURN_VOID;
 }
 
 int *Gconfigtypes=NULL;
@@ -5095,42 +5236,67 @@ EXPORT bool tgputty_getconfigarrays(const void **types,const void **subtypes,con
 
 EXPORT bool tgputty_conf_get_bool(int key,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
-   return conf_get_bool(conf,key);
+   bool val = conf_get_bool(conf,key);
+   LIBCTX_RETURN(val);
+  LIBCTX_RESTORE();
 }
 
 EXPORT int tgputty_conf_get_int(int key,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
-   return conf_get_int(conf,key);
+   int val = conf_get_int(conf,key);
+   LIBCTX_RETURN(val);
+  LIBCTX_RESTORE();
 }
 
 EXPORT int tgputty_conf_get_int_int(int key, int subkey,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
-   return conf_get_int_int(conf,key,subkey);
+   int val = conf_get_int_int(conf,key,subkey);
+   LIBCTX_RETURN(val);
+  LIBCTX_RESTORE();
 }
 
 EXPORT char *tgputty_conf_get_str(int key,TTGLibraryContext *libctx)   /* result still owned by conf */
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
-   return conf_get_str(conf,key);
+   char *val = conf_get_str(conf,key);
+   LIBCTX_RETURN(val);
+  LIBCTX_RESTORE();
 }
 
 EXPORT char *tgputty_conf_get_str_str(int key, const char *subkey,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
-   return conf_get_str_str(conf,key,subkey);
+   char *val = conf_get_str_str(conf,key,subkey);
+   LIBCTX_RETURN(val);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_conf_set_bool(int key, bool value,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
    conf_set_bool(conf,key,value);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_conf_set_int(int key, int value,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    if (key==cSetUploadBufSizeConfNum)
    {
       GUploadBufSize=value;
@@ -5140,24 +5306,34 @@ EXPORT void tgputty_conf_set_int(int key, int value,TTGLibraryContext *libctx)
 	 curlibctx=libctx;
 	 conf_set_int(conf,key,value);
    }
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_conf_set_int_int(int key, int subkey, int value,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
    conf_set_int_int(conf,key,subkey,value);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_conf_set_str(int key, const char *value,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
    conf_set_str(conf,key,value);
+  LIBCTX_RESTORE();
 }
 
 EXPORT void tgputty_conf_set_str_str(int key,const char *subkey, const char *value,TTGLibraryContext *libctx)
 {
+  LIBCTX_SAVE;
+
    curlibctx=libctx;
    conf_set_str_str(conf,key,subkey,value);
+  LIBCTX_RESTORE();
 }
 
 
