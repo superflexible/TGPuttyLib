@@ -54,6 +54,22 @@ const
 
       cDefaultTimeoutTicks=60000;
 
+      // categories returned by tgputty_getconnecterror / TGPuttyGetConnectError,
+      // same numbers as TGCONNERR_* in putty.h
+      TGCONNERR_NONE           = 0;  // no error recorded (or connect succeeded)
+      TGCONNERR_OTHER          = 1;  // anything not covered below
+      TGCONNERR_HOSTLOOKUP     = 2;  // host name could not be resolved
+      TGCONNERR_NETWORK        = 3;  // TCP connect failed, refused, reset, unreachable, proxy error
+      TGCONNERR_CLOSEDBYSERVER = 4;  // server closed the connection or sent a disconnect message
+      TGCONNERR_PROTOCOL       = 5;  // SSH protocol error, no common algorithm, security warning refused
+      TGCONNERR_HOSTKEY        = 6;  // host key rejected (by the verify callback or the user)
+      TGCONNERR_AUTH           = 7;  // authentication failed or was cancelled
+      TGCONNERR_TIMEOUT        = 8;  // connection timeout (connectiontimeoutticks) elapsed
+      TGCONNERR_ABORTED        = 9;  // aborted by the program (aborted flag)
+      TGCONNERR_SFTP           = 10; // connected, but the SFTP subsystem could not be started
+
+      cConnectErrorMinBuild=35; // first tgputtylib build with tgputty_getconnecterror
+
 {$ifdef USEMEMORYCALLBACKS}
       UseMemoryAllocationCallbacks=false;
       DebugMemory=false;
@@ -309,6 +325,8 @@ procedure tgputtysetappname(const newappname,appversion:PAnsiChar); cdecl; exter
 procedure tgputty_setverbose(const averbose:Byte); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtyfree(const libctx:PTGLibraryContext); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 procedure tgputtygetversions(puttyrelease:PDouble; tgputtylibbuild:PInteger); cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif}; // TG 2019
+// why the last connect failed; the result is owned by the context, never nil (build 35+)
+function tgputty_getconnecterror(category:PInteger; const libctx:PTGLibraryContext):PAnsiChar; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 function tgputty_getconfigarrays(types,subtypes,names:Pointer;count:PInteger):Boolean; cdecl; external tgputtydll {$ifdef HASDELAYED}delayed{$endif};
 
 // run the whole psftp interactive commmand prompt
@@ -432,6 +450,8 @@ var
   tgputty_setverbose: procedure (const averbose:Byte); cdecl;
   tgputtyfree: procedure (const libctx:PTGLibraryContext); cdecl;
   tgputtygetversions: procedure (puttyrelease:PDouble; tgputtylibbuild:PInteger); cdecl; // TG 2019
+  // why the last connect failed; the result is owned by the context, never nil (build 35+, else nil)
+  tgputty_getconnecterror: function (category:PInteger; const libctx:PTGLibraryContext):PAnsiChar; cdecl;
   tgputty_getconfigarrays: function (types,subtypes,names:Pointer;count:PInteger):Boolean; cdecl;
 
   // run the whole psftp interactive commmand prompt
@@ -545,6 +565,10 @@ var
 
 function TGPuttyLibAvailable:Boolean;
 
+// Why the last connect on libctx failed, '' if it did not fail or if the
+// library is older than cConnectErrorMinBuild. Category gets TGCONNERR_*.
+function TGPuttyGetConnectError(const libctx:PTGLibraryContext; out Category:Integer):AnsiString;
+
 var TGPuttyLibLoadError:string;
 
 implementation
@@ -554,6 +578,27 @@ uses dynlibs,dl;
 
 var TGPLH:TLibHandle;
 {$endif}
+
+function TGPuttyGetConnectError(const libctx:PTGLibraryContext; out Category:Integer):AnsiString;
+{$ifdef MSWINDOWS}
+var puttyversion:Double;
+    build:Integer;
+{$endif}
+begin
+  Result:='';
+  Category:=TGCONNERR_NONE;
+  {$ifdef MSWINDOWS}
+  // static import: an older DLL may not have the export, so ask first
+  build:=0;
+  tgputtygetversions(@puttyversion,@build);
+  if build<cConnectErrorMinBuild then
+     Exit;
+  {$else}
+  if not Assigned(tgputty_getconnecterror) then
+     Exit;
+  {$endif}
+  Result:=tgputty_getconnecterror(@Category,libctx);
+  end;
 
 function TGPuttyLibAvailable:Boolean;
 var libpath:string;
@@ -607,6 +652,7 @@ begin
        @tgputty_setverbose:=GetProcedureAddress(TGPLH,'tgputty_setverbose');
        @tgputtyfree:=GetProcedureAddress(TGPLH,'tgputtyfree');
        @tgputtygetversions:=GetProcedureAddress(TGPLH,'tgputtygetversions');
+       @tgputty_getconnecterror:=GetProcedureAddress(TGPLH,'tgputty_getconnecterror'); // nil before build 35
        @tgputty_getconfigarrays:=GetProcedureAddress(TGPLH,'tgputty_getconfigarrays');
 
        // run the whole psftp interactive commmand prompt

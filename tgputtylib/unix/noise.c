@@ -3,6 +3,11 @@
  * generator.
  */
 
+/* TG: for RTLD_DEFAULT in <dlfcn.h>; -std=gnu99 does not define it. */
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -15,6 +20,57 @@
 #include "putty.h"
 #include "ssh.h"
 #include "storage.h"
+
+/*
+ * TG: getentropy(3) reaches the kernel CSPRNG without a file descriptor and
+ * without a child process. It is glibc 2.25+ and macOS 10.12+ only, so it is
+ * a bonus, never a requirement - read_dev_urandom() below is the floor, and
+ * /dev/urandom has been there since Mac OS X 10.0 and forever on Linux.
+ */
+#if defined(__APPLE__)
+#include <Availability.h>
+/*
+ * We still support macOS 10.10, and getentropy() is annotated
+ * __API_AVAILABLE(macos(10.12)). Referencing it below that deployment target
+ * either fails to compile (an SDK that old has no <sys/random.h>) or, on a
+ * modern SDK, makes clang weak-link it: the dylib then loads fine on Yosemite
+ * but the symbol resolves to NULL and the first call jumps to address 0.
+ * So key this off the deployment target, not off __APPLE__. It switches
+ * itself on if the minimum is ever raised to 10.12.
+ */
+#if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
+#include <sys/random.h>
+#define TG_HAVE_GETENTROPY 1
+#endif
+#elif defined(__linux__)
+/*
+ * On Linux, getentropy() is looked up at run time instead of linked, because
+ * linking it puts a GLIBC_2.25 version requirement into the library, and NAS
+ * devices with an older glibc then refuse to load it at all. dlsym finds it
+ * on glibc 2.25+ (and on musl); anywhere else the pointer stays NULL and
+ * read_dev_urandom() below takes over. The library links -ldl already.
+ */
+#include <dlfcn.h>
+#define TG_DYNAMIC_GETENTROPY 1
+
+typedef int (*tg_getentropy_fn)(void *buf, size_t len);
+
+/* Resolved once; racing threads all store the same value, so relaxed
+ * atomics are enough. (void *)1 marks "looked up, not found". */
+static void *tg_getentropy_ptr;
+
+static tg_getentropy_fn tg_getentropy(void)
+{
+    void *p = __atomic_load_n(&tg_getentropy_ptr, __ATOMIC_RELAXED);
+    if (!p) {
+        p = dlsym(RTLD_DEFAULT, "getentropy");
+        if (!p)
+            p = (void *)1;
+        __atomic_store_n(&tg_getentropy_ptr, p, __ATOMIC_RELAXED);
+    }
+    return p == (void *)1 ? NULL : (tg_getentropy_fn)p;
+}
+#endif
 
 static bool read_dev_urandom(char *buf, int len)
 {
@@ -40,11 +96,44 @@ static bool read_dev_urandom(char *buf, int len)
     return true;
 }
 
+/* TG: kernel CSPRNG, no child process and (with getentropy) no file
+ * descriptor either. */
+static bool read_kernel_random(char *buf, int len)
+{
+#ifdef TG_HAVE_GETENTROPY
+    /* getentropy() takes at most 256 bytes per call, far more than we ask
+     * for. It cannot fail on a booted system, but fall through if it does. */
+    if (len <= 256 && getentropy(buf, len) == 0)
+        return true;
+#endif
+#ifdef TG_DYNAMIC_GETENTROPY
+    tg_getentropy_fn ge = tg_getentropy();
+    if (ge && len <= 256 && ge(buf, len) == 0)
+        return true;
+#endif
+    return read_dev_urandom(buf, len);
+}
+
 /*
- * This function is called once, at PuTTY startup. It will do some
- * slightly silly things such as fetching an entire process listing
- * and scanning /tmp, load the saved random seed from disk, and
- * also read 32 bytes out of /dev/urandom.
+ * This function is called once per PRNG creation. It reads 32 bytes out of
+ * the kernel CSPRNG and loads the saved random seed from disk. Only if the
+ * kernel gives us nothing at all does it fall back to the silly things
+ * upstream does unconditionally - fetching an entire process listing and
+ * scanning /tmp.
+ *
+ * TG: that fallback is gated because we are a shared library, and upstream's
+ * version is wrong for us twice over. It is two fork()s plus two /bin/sh
+ * execs for EVERY connection - global_prng lives in curlibctx, so
+ * random_create() runs again for each context - and each exiting child
+ * raises SIGCHLD on an arbitrary thread of the HOST process, where it
+ * clobbers errno and, without SA_RESTART, can hand a spurious EINTR to
+ * whatever that thread was blocked in.
+ *
+ * Nothing is lost cryptographically: 32 bytes from the kernel CSPRNG is a
+ * full 256-bit seed, and the process listing is public, highly predictable
+ * data that upstream keeps only for systems with no /dev/urandom at all.
+ * That case still behaves exactly as before, including the exit(1) rather
+ * than continuing with an unseeded PRNG.
  */
 
 void noise_get_heavy(void (*func) (void *, int))
@@ -52,33 +141,37 @@ void noise_get_heavy(void (*func) (void *, int))
     char buf[512];
     FILE *fp;
     int ret;
-    bool got_dev_urandom = false;
+    bool got_kernel_random = false;
 
-    if (read_dev_urandom(buf, 32)) {
-        got_dev_urandom = true;
+    if (read_kernel_random(buf, 32)) {
+        got_kernel_random = true;
         func(buf, 32);
     }
 
-    fp = popen("ps -axu 2>/dev/null", "r");
-    if (fp) {
-        while ( (ret = fread(buf, 1, sizeof(buf), fp)) > 0)
-            func(buf, ret);
-        pclose(fp);
-    } else if (!got_dev_urandom) {
-        fprintf(stderr, "popen: %s\n"
-                "Unable to access fallback entropy source\n", strerror(errno));
-        exit(1);
-    }
+    if (!got_kernel_random) {
+        fp = popen("ps -axu 2>/dev/null", "r");
+        if (fp) {
+            while ( (ret = fread(buf, 1, sizeof(buf), fp)) > 0)
+                func(buf, ret);
+            pclose(fp);
+        } else {
+            fprintf(stderr, "popen: %s\n"
+                    "Unable to access fallback entropy source\n",
+                    strerror(errno));
+            exit(1);
+        }
 
-    fp = popen("ls -al /tmp 2>/dev/null", "r");
-    if (fp) {
-        while ( (ret = fread(buf, 1, sizeof(buf), fp)) > 0)
-            func(buf, ret);
-        pclose(fp);
-    } else if (!got_dev_urandom) {
-        fprintf(stderr, "popen: %s\n"
-                "Unable to access fallback entropy source\n", strerror(errno));
-        exit(1);
+        fp = popen("ls -al /tmp 2>/dev/null", "r");
+        if (fp) {
+            while ( (ret = fread(buf, 1, sizeof(buf), fp)) > 0)
+                func(buf, ret);
+            pclose(fp);
+        } else {
+            fprintf(stderr, "popen: %s\n"
+                    "Unable to access fallback entropy source\n",
+                    strerror(errno));
+            exit(1);
+        }
     }
 
     read_random_seed(func);

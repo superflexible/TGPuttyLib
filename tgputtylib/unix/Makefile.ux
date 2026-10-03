@@ -108,7 +108,11 @@ ULDFLAGS = $(LDFLAGS)
 ifeq ($(shell uname -s),Darwin)
 NOUNDEF =
 else
-NOUNDEF = -Wl,--no-undefined
+# TG: -static-libgcc because 32-bit ARM needs libgcc's __aeabi_* division
+# and float helpers, and a QNAP may have no libgcc_s.so.1. --as-needed drops
+# the libstdc++.so.6 that the NAS toolchain adds although nothing is used
+# from it (QNAP firmware ships no libstdc++).
+NOUNDEF = -Wl,--no-undefined -static-libgcc -Wl,--as-needed
 endif
 INSTALL=install
 INSTALL_PROGRAM=$(INSTALL)

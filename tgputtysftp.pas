@@ -60,6 +60,8 @@ type TGPuttySFTPException=class(Exception);
          FConnected:Boolean;
          FAttempts:Integer;
          FLastMessages:AnsiString;
+         FLastConnectError:AnsiString;
+         FLastConnectErrorCategory:Integer;
          FConfNames:PConfPAnsiCharArray;
          FConfTypes:PConfIntArray;
          FConfSubTypes:PConfIntArray;
@@ -170,6 +172,9 @@ type TGPuttySFTPException=class(Exception);
          property Checkpoints:Boolean read FCheckpoints write SetCheckpoints;
          property Keyfile:AnsiString write SetKeyfile;
          property LastMessages:AnsiString read FLastMessages write FLastMessages;
+         // why the last Connect failed, '' after a successful one (needs tgputtylib build 35+)
+         property LastConnectError:AnsiString read FLastConnectError;
+         property LastConnectErrorCategory:Integer read FLastConnectErrorCategory; // TGCONNERR_*
          property ErrorCode:Integer read GetErrorCode;
          property ErrorMessage:AnsiString read GetErrorMessage;
          property TimeoutTicks:Integer read GetTimeoutTicks write SetTimeoutTicks;
@@ -402,8 +407,13 @@ begin
   Fcontext.fxp_errtype:=cDummyClearedErrorCode; // "clear" error field
   res:=tgsftp_connect(PAnsiChar(FHostName),PAnsiChar(FUserName),FPort,PAnsiChar(FPassword),@Fcontext);
   FConnected:=res=0; // 0 = success
-  if not FConnected then
-     raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_connect'));
+  FLastConnectError:=TGPuttyGetConnectError(@Fcontext,FLastConnectErrorCategory);
+  if not FConnected then begin
+     if FLastConnectError<>'' then
+        raise TGPuttySFTPException.Create('tgsftp_connect: '+{$ifdef UNICODE}Utf8ToString{$endif}(FLastConnectError))
+     else
+        raise TGPuttySFTPException.Create(MakePSFTPErrorMsg('tgsftp_connect'));
+     end;
   end;
 
 constructor TTGPuttySFTP.Create(const verbose:Boolean);

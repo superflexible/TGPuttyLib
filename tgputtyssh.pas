@@ -109,6 +109,8 @@ type TGPuttySSHException=class(Exception);
          FConnected:Boolean;
          FAttempts:Integer;
          FLastMessages:AnsiString;
+         FLastConnectError:AnsiString;
+         FLastConnectErrorCategory:Integer;
          FConfNames:PConfPAnsiCharArray;
          FConfTypes:PConfIntArray;
          FConfSubTypes:PConfIntArray;
@@ -127,6 +129,7 @@ type TGPuttySSHException=class(Exception);
          FUploadStream,
          FDownloadStream:TStream;
 
+         procedure CheckConnectResult(const res:Integer;const where:string);
          function GetWorkDir: AnsiString;
          procedure SetVerbose(const Value: Boolean);
          procedure SetCheckpoints(const Value: Boolean);
@@ -242,6 +245,9 @@ type TGPuttySSHException=class(Exception);
          property Checkpoints:Boolean read FCheckpoints write SetCheckpoints;
          property Keyfile:AnsiString write SetKeyfile;
          property LastMessages:AnsiString read FLastMessages write FLastMessages;
+         // why the last Connect/ConnectPersistent failed, '' after a successful one (needs tgputtylib build 35+)
+         property LastConnectError:AnsiString read FLastConnectError;
+         property LastConnectErrorCategory:Integer read FLastConnectErrorCategory; // TGCONNERR_*
          property TimeoutTicks:Integer read GetTimeoutTicks write SetTimeoutTicks;
          property ConnectionTimeoutTicks:Integer read GetConnectionTimeoutTicks write SetConnectionTimeoutTicks;
          property Aborted:Boolean read GetAborted write SetAborted;
@@ -605,10 +611,8 @@ begin
   ResolvePassword;
   res:=tgssh_connect(PAnsiChar(FHostName),PAnsiChar(FUserName),FPort,
                      PAnsiChar(FTempPassword),PAnsiChar(ACommand),@Fcontext);
-  FConnected:=res=0; // 0 = success
   ClearTempPasswords;
-  if not FConnected then
-     raise TGPuttySSHException.Create(MakeSSHErrorMsg('tgssh_connect'));
+  CheckConnectResult(res,'tgssh_connect');
   end;
 
 procedure TTGPuttySSH.ConnectPersistent;
@@ -619,10 +623,20 @@ begin
   ResolvePassword;
   res:=tgssh_connect_persistent(PAnsiChar(FHostName),PAnsiChar(FUserName),FPort,
                                 PAnsiChar(FTempPassword),@Fcontext);
-  FConnected:=res=0; // 0 = success
   ClearTempPasswords;
-  if not FConnected then
-     raise TGPuttySSHException.Create(MakeSSHErrorMsg('tgssh_connect_persistent'));
+  CheckConnectResult(res,'tgssh_connect_persistent');
+  end;
+
+procedure TTGPuttySSH.CheckConnectResult(const res:Integer;const where:string);
+begin
+  FConnected:=res=0; // 0 = success
+  FLastConnectError:=TGPuttyGetConnectError(@Fcontext,FLastConnectErrorCategory);
+  if not FConnected then begin
+     if FLastConnectError<>'' then
+        raise TGPuttySSHException.Create(where+': '+{$ifdef UNICODE}Utf8ToString{$endif}(FLastConnectError))
+     else
+        raise TGPuttySSHException.Create(MakeSSHErrorMsg(where));
+     end;
   end;
 
 function TTGPuttySSH.OpenChannel(const ACommand: AnsiString): TTGPuttySSHChannel;

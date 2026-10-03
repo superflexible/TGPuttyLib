@@ -42,6 +42,8 @@ public:
 	int FPasswordAttempts;
 
 	std::string FLastMessages;
+	std::string FLastConnectError;
+	int FLastConnectErrorCategory;
 
 	char* GetHomeDir();
 	char* GetWorkDir();
@@ -59,6 +61,8 @@ public:
 	void SetKeyPassword(const std::string Value) { FKeyPassword = Value; }
 	const std::string GetLastMessages() { return FLastMessages; }
 	void SetLastMessages(const std::string Value) { FLastMessages = Value; }
+	const std::string GetLastConnectError() { return FLastConnectError; }
+	const int GetLastConnectErrorCategory() { return FLastConnectErrorCategory; }
 
 	TOnMessage GetOnMessage() { return FOnMessage; }
 	void SetOnMessage(TOnMessage AnOnMessage) { FOnMessage = AnOnMessage; }
@@ -127,6 +131,9 @@ public:
 	__declspec(property(get = GetVerbose, put = SetSetVerbose)) bool Verbose;
 	__declspec(property(put = SetKeyfile)) char* Keyfile;
 	__declspec(property(get = GetLastMessages, put = SetLastMessages)) std::string LastMessages;
+	// why the last Connect failed, empty after a successful one (needs tgputtylib build 35+)
+	__declspec(property(get = GetLastConnectError)) std::string LastConnectError;
+	__declspec(property(get = GetLastConnectErrorCategory)) int LastConnectErrorCategory; // TGCONNERR_*
 	__declspec(property(get = GetErrorCode)) int ErrorCode;
 	__declspec(property(get = GetErrorMessage)) const char* ErrorMessage;
 	__declspec(property(get = GetOnMessage, put = SetOnMessage)) TOnMessage OnMessage;

@@ -141,12 +141,14 @@ TTGPuttySFTP::TTGPuttySFTP(const bool verbose)
   double puttyversion;
   int tgputtylibbuild;
 
+  FLastConnectErrorCategory = TGCONNERR_NONE;
+
   if (!LoadTGPuttyLib())
      throw TTGPuttySFTPException("tgputtylib could not be loaded");
 
   tgputtygetversions(&puttyversion,&tgputtylibbuild);
   if (tgputtylibbuild<MinimumLibraryBuildNum)
-     throw TTGPuttySFTPException("tgputtylib is too old");
+	 throw TTGPuttySFTPException("tgputtylib is too old");
 
   FVerbose=verbose;
   FPort = 22;
@@ -256,8 +258,15 @@ void TTGPuttySFTP::Connect()
   ClearStatus();
   int res=tgsftp_connect(FHostName.c_str(),FUserName.c_str(),FPort,FPassword.c_str(),&Fcontext);
   FConnected=(res==0); // 0 = success
+  FLastConnectErrorCategory=TGCONNERR_NONE;
+  FLastConnectError=tgputty_getconnecterror ?
+     tgputty_getconnecterror(&FLastConnectErrorCategory,&Fcontext) : "";
   if (!FConnected)
+  {
+     if (!FLastConnectError.empty())
+        throw TTGPuttySFTPException(std::string("tgsftp_connect: ")+FLastConnectError);
      throw TTGPuttySFTPException(MakePSFTPErrorMsg("tgsftp_connect"));
+  }
 }
 
 void TTGPuttySFTP::Disconnect()

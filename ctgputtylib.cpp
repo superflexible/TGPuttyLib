@@ -71,6 +71,8 @@ void (*tgputty_xfer_cleanup)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
 
 void (*tgputtygetversions)(double *puttyrelease,int *tgputtylibbuild);
 
+const char *(*tgputty_getconnecterror)(int *category,TTGLibraryContext *libctx);
+
 void (*tgputtyfree)(TTGLibraryContext *libctx);
 
 
@@ -129,6 +131,7 @@ bool LoadTGPuttyLib()
   res &= GetProc("tgputty_xfer_cleanup",&tgputty_xfer_cleanup);
   res &= GetProc("tgputtygetversions",&tgputtygetversions);
   res &= GetProc("tgputtyfree",&tgputtyfree);
+  GetProc("tgputty_getconnecterror",&tgputty_getconnecterror); // optional, build 35+
 
   if (!res)
   {

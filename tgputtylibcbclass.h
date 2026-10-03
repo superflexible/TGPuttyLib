@@ -54,6 +54,8 @@ class TTGPuttySFTP
 	int FPasswordAttempts;
 
 	std::string FLastMessages;
+	std::string FLastConnectError;
+	int FLastConnectErrorCategory;
 
 	char *GetHomeDir();
 	char *GetWorkDir();
@@ -116,6 +118,9 @@ class TTGPuttySFTP
 	__property bool Verbose = {read=FVerbose, write=SetVerbose};
 	__property char *Keyfile = {write=SetKeyfile};
 	__property std::string LastMessages = {read=FLastMessages, write=FLastMessages};
+	// why the last Connect failed, empty after a successful one (needs tgputtylib build 35+)
+	__property std::string LastConnectError = {read=FLastConnectError};
+	__property int LastConnectErrorCategory = {read=FLastConnectErrorCategory}; // TGCONNERR_*
 	__property int ErrorCode = {read=GetErrorCode};
 	__property const char *ErrorMessage = {read=GetErrorMessage};
 

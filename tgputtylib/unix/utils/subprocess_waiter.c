@@ -10,6 +10,16 @@
 
 #include <unistd.h>
 #include <sys/wait.h>
+#include <limits.h>
+
+#ifndef PIPE_BUF
+#ifdef _POSIX_PIPE_BUF
+#define PIPE_BUF _POSIX_PIPE_BUF
+#else
+// TG 2026
+#define PIPE_BUF 512
+#endif
+#endif
 
 struct SubprocessWaiter {
     pid_t pid;

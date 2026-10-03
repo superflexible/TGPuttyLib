@@ -1,4 +1,4 @@
-PuTTY is copyright 1997-2022 Simon Tatham.
+PuTTY is copyright 1997-2025 Simon Tatham.
 
 The dynamic library modifications and Pascal code are copyright 2019-2022 Tobias Giesen.
 They are distributed under the same license as the original PuTTY, see below.
@@ -10,7 +10,8 @@ Delchev, Andreas Schultz, Jeroen Massar, Wez Furlong, Nicolas Barry,
 Justin Bradford, Ben Harris, Malcolm Smith, Ahmad Khalifa, Markus
 Kuhn, Colin Watson, Christopher Staite, Lorenz Diener, Christian
 Brabandt, Jeff Smith, Pavel Kryukov, Maxim Kuznetsov, Svyatoslav
-Kuzmich, Nico Williams, Viktor Dukhovni, and CORE SDI S.A.
+Kuzmich, Nico Williams, Viktor Dukhovni, Josh Dersch, Lars Brinkhoff,
+and CORE SDI S.A.
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation files

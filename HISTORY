@@ -1,6 +1,25 @@
 TGPuttyLib Release History
 ---------------------
 
+Build 35 - 26 September 2026
+
+Connection errors can now be read directly: the new function tgputty_getconnecterror returns
+the reason the last connect failed as a message plus a category number (TGCONNERR_*: host
+lookup, network, closed by server, protocol, host key, authentication, timeout, aborted, SFTP).
+The Pascal classes TTGPuttySFTP and TTGPuttySSH and the C++ classes offer it as the
+LastConnectError and LastConnectErrorCategory properties, and a failed Connect now raises an
+exception with that message instead of "Unknown Error" plus the whole log.
+
+When a second Connect is made with the same object, the password passed to connect is now
+used again. Previously the library went straight to the password callback.
+
+On Linux, getentropy is now looked up at runtime instead of being linked, so the library no
+longer needs glibc 2.25 and loads on older NAS devices again.
+
+The armhf Linux library is now genuinely hard-float, and 32-bit ARM builds no longer depend on
+libstdc++ or libgcc_s.
+
+---------------------
 Build 32 - 10 June 2026
 
 TGPuttyLib has been updated to PuTTY 0.84.

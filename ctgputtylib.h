@@ -3,6 +3,21 @@
 
 #define tgputtydll_filename "tgputtylib.dll"
 
+// categories returned by tgputty_getconnecterror, same numbers as in putty.h
+#ifndef TGCONNERR_NONE
+#define TGCONNERR_NONE           0  // no error recorded (or connect succeeded)
+#define TGCONNERR_OTHER          1  // anything not covered below
+#define TGCONNERR_HOSTLOOKUP     2  // host name could not be resolved
+#define TGCONNERR_NETWORK        3  // TCP connect failed, refused, reset, unreachable, proxy error
+#define TGCONNERR_CLOSEDBYSERVER 4  // server closed the connection or sent a disconnect message
+#define TGCONNERR_PROTOCOL       5  // SSH protocol error, no common algorithm, security warning refused
+#define TGCONNERR_HOSTKEY        6  // host key rejected (by the verify callback or the user)
+#define TGCONNERR_AUTH           7  // authentication failed or was cancelled
+#define TGCONNERR_TIMEOUT        8  // connection timeout (connectiontimeoutticks) elapsed
+#define TGCONNERR_ABORTED        9  // aborted by the program (aborted flag)
+#define TGCONNERR_SFTP          10  // connected, but the SFTP subsystem could not be started
+#endif
+
 #define SSH_FILEXFER_ATTR_SIZE                    0x00000001
 #define SSH_FILEXFER_ATTR_UIDGID                  0x00000002
 #define SSH_FILEXFER_ATTR_PERMISSIONS             0x00000004
@@ -172,6 +187,10 @@ extern bool (*tgputty_xfer_done)(struct fxp_xfer *xfer,TTGLibraryContext *libctx
 extern void (*tgputty_xfer_cleanup)(struct fxp_xfer *xfer,TTGLibraryContext *libctx);
 
 extern void (*tgputtygetversions)(double *puttyrelease,int *tgputtylibbuild);
+
+// why the last connect failed; never NULL, owned by the context.
+// Optional: stays NULL with a tgputtylib older than build 35.
+extern const char *(*tgputty_getconnecterror)(int *category,TTGLibraryContext *libctx);
 
 extern void (*tgputtyfree)(TTGLibraryContext *libctx);
 
