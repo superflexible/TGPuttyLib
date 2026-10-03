@@ -339,6 +339,14 @@ static void ssh_got_ssh_version(struct ssh_version_receiver *rcv,
     seat_update_specials_menu(ssh->seat);
     ssh->pinger = pinger_new(ssh->conf, &ssh->backend);
 
+    /* TG: if the server's EOF arrived together with its version string,
+     * ssh_closing() set it on the old BPP, and the new one starts with
+     * input_eof false. Without carrying it over, nothing ever reports the
+     * close: the connect loop runs out of sockets and fails with a generic
+     * "error during SSH connection setup" instead of "Remote side
+     * unexpectedly closed network connection". */
+    ssh->bpp->input_eof = old_bpp->input_eof;
+
     queue_idempotent_callback(&ssh->bpp->ic_in_raw);
     ssh_ppl_process_queue(ssh->base_layer);
 

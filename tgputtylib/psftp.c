@@ -90,7 +90,9 @@ uint64_t TGGetTickCount64() // TG
 }
 #else
 // TG: TGGetTickCount64 on Linux
-#ifdef __APPLE__
+// sys/time.h for gettimeofday: always used on Apple, and elsewhere when
+// tglibcver.h sets AVOID_CLOCK_GETTIME (GCC <= 5, and clang, which reports 4)
+#if defined(__APPLE__) || defined(AVOID_CLOCK_GETTIME)
 #include <sys/time.h>
 #endif
 
