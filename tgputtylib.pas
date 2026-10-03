@@ -588,7 +588,7 @@ begin
   Result:='';
   Category:=TGCONNERR_NONE;
   {$ifdef MSWINDOWS}
-  // static import: an older DLL may not have the export, so ask first
+  // delayed import: an older DLL does not have the export, so ask first
   build:=0;
   tgputtygetversions(@puttyversion,@build);
   if build<cConnectErrorMinBuild then

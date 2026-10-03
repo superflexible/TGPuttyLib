@@ -8,7 +8,8 @@ the reason the last connect failed as a message plus a category number (TGCONNER
 lookup, network, closed by server, protocol, host key, authentication, timeout, aborted, SFTP).
 The Pascal classes TTGPuttySFTP and TTGPuttySSH and the C++ classes offer it as the
 LastConnectError and LastConnectErrorCategory properties, and a failed Connect now raises an
-exception with that message instead of "Unknown Error" plus the whole log.
+exception with that message instead of "Unknown Error" plus the whole log. The log is still
+available in the LastMessages property.
 
 When a second Connect is made with the same object, the password passed to connect is now
 used again. Previously the library went straight to the password callback.

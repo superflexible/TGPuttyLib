@@ -62,7 +62,7 @@ public:
 	const std::string GetLastMessages() { return FLastMessages; }
 	void SetLastMessages(const std::string Value) { FLastMessages = Value; }
 	const std::string GetLastConnectError() { return FLastConnectError; }
-	const int GetLastConnectErrorCategory() { return FLastConnectErrorCategory; }
+	int GetLastConnectErrorCategory() { return FLastConnectErrorCategory; }
 
 	TOnMessage GetOnMessage() { return FOnMessage; }
 	void SetOnMessage(TOnMessage AnOnMessage) { FOnMessage = AnOnMessage; }
