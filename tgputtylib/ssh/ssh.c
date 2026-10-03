@@ -486,6 +486,7 @@ void ssh_remote_error(Ssh *ssh, const char *fmt, ...)
 
         /* Error messages sent by the remote don't count as clean exits */
         ssh->exitcode = 128;
+        tg_note_connect_error(TGCONNERR_CLOSEDBYSERVER, "%s", msg); // TG
 
         /* Close the socket immediately, since the server has already
          * closed its end (or is about to). */
@@ -508,6 +509,7 @@ void ssh_remote_eof(Ssh *ssh, const char *fmt, ...)
         /* EOF from the remote, if we were expecting it, does count as
          * a clean exit */
         ssh->exitcode = 0;
+        tg_note_connect_error(TGCONNERR_CLOSEDBYSERVER, "%s", msg); // TG
 
         /* Close the socket immediately, since the server has already
          * closed its end. */
@@ -532,6 +534,7 @@ void ssh_proto_error(Ssh *ssh, const char *fmt, ...)
             ssh_ppl_final_output(ssh->base_layer);
 
         ssh->exitcode = 128;
+        tg_note_connect_error(TGCONNERR_PROTOCOL, "%s", msg); // TG
 
         ssh_bpp_queue_disconnect(ssh->bpp, msg,
                                  SSH2_DISCONNECT_PROTOCOL_ERROR);
@@ -552,6 +555,7 @@ void ssh_sw_abort(Ssh *ssh, const char *fmt, ...)
             ssh_ppl_final_output(ssh->base_layer);
 
         ssh->exitcode = 128;
+        tg_note_connect_error(TGCONNERR_OTHER, "%s", msg); // TG: sharper categories are noted by the callers
 
         ssh_initiate_connection_close(ssh);
 
@@ -579,6 +583,7 @@ void ssh_user_close(Ssh *ssh, const char *fmt, ...)
          * session (if any). */
         if (ssh->exitcode < 0)
             ssh->exitcode = 0;
+        tg_note_connect_error(TGCONNERR_OTHER, "%s", msg); // TG: only while connecting
 
         ssh_initiate_connection_close(ssh);
 
@@ -634,6 +639,7 @@ static void ssh_closing(Plug *plug, PlugCloseType type, const char *error_msg)
     if (type == PLUGCLOSE_USER_ABORT) {
         ssh_user_close(ssh, "%s", error_msg);
     } else if (type != PLUGCLOSE_NORMAL) {
+        tg_note_connect_error(TGCONNERR_NETWORK, "%s", error_msg); // TG: socket or proxy error
         ssh_remote_error(ssh, "%s", error_msg);
     } else if (ssh->bpp) {
         ssh->bpp->input_eof = true;
@@ -838,6 +844,7 @@ static char *connect_to_host(
         addr = name_lookup(host, port, realhost, ssh->conf, addressfamily,
                            ssh->logctx, "SSH connection");
         if ((err = sk_addr_error(addr)) != NULL) {
+            tg_note_connect_error(TGCONNERR_HOSTLOOKUP, "%s", err); // TG
             sk_addr_free(addr);
             return dupstr(err);
         }
@@ -847,6 +854,7 @@ static char *connect_to_host(
             addr, *realhost, port, false, true, nodelay, keepalive,
             &ssh->plug, ssh->conf, &ssh->interactor, ssh->logctx);
         if ((err = sk_socket_error(ssh->s)) != NULL) {
+            tg_note_connect_error(TGCONNERR_NETWORK, "%s", err); // TG
             char *toret = dupstr(err);
             sk_close(ssh->s);
             ssh->s = NULL;

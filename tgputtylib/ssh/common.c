@@ -1290,6 +1290,22 @@ void ssh1_compute_session_id(
  */
 void ssh_spr_close(Ssh *ssh, SeatPromptResult spr, const char *context)
 {
+    /* TG: the context tells us which step was refused or cancelled */
+    int tgcat = TGCONNERR_PROTOCOL; /* cipher, kex, vulnerability warnings */
+    if (!strncmp(context, "host key", 8))
+        tgcat = TGCONNERR_HOSTKEY;
+    else if (strstr(context, "prompt") || strstr(context, "keyboard"))
+        tgcat = TGCONNERR_AUTH;
+    if (spr.kind == SPRK_USER_ABORT && tgcat == TGCONNERR_HOSTKEY) {
+        tg_note_connect_error(tgcat, "The server's host key was not accepted (%s)", context);
+    } else if (spr.kind == SPRK_USER_ABORT) {
+        tg_note_connect_error(tgcat, "User aborted at %s", context);
+    } else {
+        char *tgerr = spr_get_error_message(spr);
+        tg_note_connect_error(tgcat, "%s", tgerr);
+        sfree(tgerr);
+    }
+
     if (spr.kind == SPRK_USER_ABORT) {
         ssh_user_close(ssh, "User aborted at %s", context);
     } else {

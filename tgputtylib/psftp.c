@@ -42,6 +42,8 @@ bool checkpoints = false;
 
 static int psftp_connect(char *userhost, char *user, int portnumber);
 static int do_sftp_init(void);
+static void tg_connect_begin(void);
+static void tg_connect_end(int result);
 static void do_sftp_cleanup(void);
 #ifdef TGDLL
 static SeatPromptResult tg_get_userpass_input(Seat *seat, prompts_t *p); // TG 2019, for DLL use
@@ -2769,6 +2771,7 @@ static int do_sftp_init(void)
     if (!fxp_init()) {
         fprintf(stderr,
                 "Fatal: unable to initialise SFTP: %s\n", fxp_error());
+        tg_note_connect_error(TGCONNERR_SFTP, "Unable to start SFTP: %s", fxp_error()); // TG
         return 1;                      /* failure */
     }
 
@@ -3115,9 +3118,60 @@ static void version(void)
 /*
  * Connect to a host.
  */
+/*
+ * TG: connect error capture for tgputty_getconnecterror(). Everything that
+ * makes a connect fail passes through tg_note_connect_error: PuTTY's own
+ * fatal paths in ssh/ssh.c, a few more specific call sites that note a
+ * sharper category first, and the TG timeout/abort checks below. The first
+ * note wins; tg_connect_end() fills in a generic one if nothing was noted.
+ */
+void tg_note_connect_error(int category, const char *fmt, ...)
+{
+    if (!curlibctx || !curlibctx->tg_connecting || curlibctx->tg_connect_error)
+        return;
+    va_list ap;
+    va_start(ap, fmt);
+    curlibctx->tg_connect_error = dupvprintf(fmt, ap);
+    va_end(ap);
+    curlibctx->tg_connect_error_category = category;
+}
+
+static void tg_clear_connect_error(void)
+{
+    if (!curlibctx)
+        return;
+    if (curlibctx->tg_connect_error)
+        sfree(curlibctx->tg_connect_error);
+    curlibctx->tg_connect_error = NULL;
+    curlibctx->tg_connect_error_category = TGCONNERR_NONE;
+}
+
+static void tg_connect_begin(void)
+{
+    if (!curlibctx)
+        return;
+    tg_clear_connect_error();
+    curlibctx->tg_connecting = true;
+    // each connect brings a fresh caller_supplied_password; without this a
+    // second connect on the same context went straight to the callback
+    curlibctx->tried_caller_supplied_password_once = false;
+}
+
+static void tg_connect_end(int result)
+{
+    if (!curlibctx)
+        return;
+    if (result == 0)
+        tg_clear_connect_error(); // anything noted along the way was not fatal
+    else
+        tg_note_connect_error(TGCONNERR_OTHER, "Connection failed");
+    curlibctx->tg_connecting = false;
+}
+
 static int psftp_connect(char *userhost, char *user, int portnumber)
 {
 	CP("psftp_c1");
+	tg_connect_begin(); // TG
 	printf("psftp_connect connecting with %s, port %d, as user %s.\n",userhost,portnumber,user); // TG
 
 	char *host=NULL, *realhost=NULL; // TG 2021: fix crash when attempting to free invalid realhost
@@ -3345,6 +3399,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 	if (!be)
 	{
 	   fprintf(stderr, "ssh_init: SSH backend missing\n"); // TG
+	   tg_note_connect_error(TGCONNERR_OTHER, "SSH backend missing"); // TG
 	   return 1;
 	}
 	err = backend_init(be,
@@ -3356,6 +3411,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
     if (err != NULL) {
 		CP("psftp_c16");
         fprintf(stderr, "ssh_init: %s\n", err);
+        tg_note_connect_error(TGCONNERR_OTHER, "%s", err); // TG: connect_to_host notes a sharper category first
 		if (realhost != NULL) // TG
 		   sfree(realhost); // TG
         return 1;
@@ -3381,6 +3437,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 		{
 			CP("psftp_c21");
 			fprintf(stderr, "ssh_init: aborted by program\n"); // TG
+			tg_note_connect_error(TGCONNERR_ABORTED, "Aborted by program"); // TG
 			if (realhost != NULL)
 			   sfree(realhost);
 			CP("psftp_c22");
@@ -3395,6 +3452,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 			CP("psftp_c24");
 			int elapsedseconds = (int) ((TGGetTickCount64() - starttick) / TICKSPERSEC); // TG
 			fprintf(stderr, "ssh_init: timeout, no connection after %d seconds\n",elapsedseconds);
+			tg_note_connect_error(TGCONNERR_TIMEOUT, "Timeout, no connection after %d seconds", elapsedseconds); // TG
 			if (realhost != NULL)
 			   sfree(realhost);
 			return 1;
@@ -3413,6 +3471,7 @@ static int psftp_connect(char *userhost, char *user, int portnumber)
 		{
 			CP("psftp_c29");
 			fprintf(stderr, "ssh_init: error during SSH connection setup\n");
+			tg_note_connect_error(TGCONNERR_OTHER, "Error during SSH connection setup"); // TG
 			if (realhost != NULL) // TG
 			   sfree(realhost);
 			CP("psftp_c30");
@@ -3651,6 +3710,19 @@ EXPORT int tggetlibrarycontextsize() // TG 2019
   return sizeof x;
 }
 
+/*
+ * Why the last tgsftp_connect / tgssh_connect / tgssh_connect_persistent
+ * failed. Returns "" (never NULL) if it did not fail. The string is owned by
+ * the context and stays valid until the next connect or tgputtyfree.
+ * category receives one of the TGCONNERR_* values and may be NULL.
+ */
+EXPORT const char *tgputty_getconnecterror(int *category, TTGLibraryContext *libctx) // TG
+{
+    if (category)
+        *category = libctx->tg_connect_error_category;
+    return libctx->tg_connect_error ? libctx->tg_connect_error : "";
+}
+
 EXPORT void tggetstructsizes(int *Pulongsize,int *Pnamesize,int *Pattrsize,int *Pnamessize) // TG 2019
 {
     struct fxp_attrs attrs;
@@ -3706,6 +3778,9 @@ EXPORT int tgputty_initcontext(const char averbose,TTGLibraryContext *libctx)
 	libctx->mode = 0;
 	libctx->modeflags = 0;
 	libctx->batchfile = NULL;
+	libctx->tg_connect_error = NULL; // TG
+	libctx->tg_connect_error_category = TGCONNERR_NONE; // TG
+	libctx->tg_connecting = false; // TG
 #ifdef _WINDOWS
 	libctx->winselcli_event = INVALID_HANDLE_VALUE;
         libctx->ready_event = INVALID_HANDLE_VALUE;
@@ -3959,6 +4034,7 @@ EXPORT int tgsftp_connect(const char *ahost,const char *auser,const int aport,co
 	do_sftp_cleanup();
 	CP("sftpcn45");
   }
+  tg_connect_end(result); // TG: after do_sftp_init, which can still fail
 
   printf("tgsftp_connect final result is %d\n",result);
   CP("sftpcn49X");
@@ -4221,6 +4297,7 @@ EXPORT int tgssh_connect(const char *ahost, const char *auser, const int aport,
      libctx->caller_supplied_password = NULL;
   }
 
+  tg_connect_end(result); // TG
   if (result != 0)
      do_sftp_cleanup();
 
@@ -4639,6 +4716,7 @@ EXPORT int tgssh_connect_persistent(const char *ahost, const char *auser,
      libctx->caller_supplied_password = NULL;
   }
 
+  tg_connect_end(result); // TG
   if (result != 0)
      do_sftp_cleanup();
 
@@ -5200,6 +5278,8 @@ EXPORT void tgputtyfree(TTGLibraryContext *libctx) // TG 2019
      libctx->timer_contexts = NULL;
   }
 
+  tg_clear_connect_error(); // TG
+
   free_thread_vars();
 
   ContextCounter--;
@@ -5362,6 +5442,11 @@ static SeatPromptResult tg_get_userpass_input(Seat *seat, prompts_t *p) // TG 20
 
 			 if (cancel)
 			 {
+				// TG: the usual way a wrong password ends - the server
+				// refused the one passed to connect, and the callback
+				// declined to supply another
+				if (curlibctx->tried_caller_supplied_password_once && !pr->echo)
+				   tg_note_connect_error(TGCONNERR_AUTH, "Access denied: the server rejected the password");
 				spr.kind=SPRK_USER_ABORT;
 				return spr;
 			 }

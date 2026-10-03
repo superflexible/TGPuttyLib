@@ -1287,11 +1287,16 @@ static void ssh2_report_scan_kexinits_error(Ssh *ssh, ScanKexinitsResult skr)
         ssh_proto_error(ssh, "KEXINIT packet was incomplete");
         break;
       case SKR_UNKNOWN_ID:
+        tg_note_connect_error(TGCONNERR_PROTOCOL, "Selected %s \"%.*s\" does not correspond to "
+                              "any supported algorithm",
+                              skr.kind, PTRLEN_PRINTF(skr.desc)); // TG
         ssh_sw_abort(ssh, "Selected %s \"%.*s\" does not correspond to "
                      "any supported algorithm",
                      skr.kind, PTRLEN_PRINTF(skr.desc));
         break;
       case SKR_NO_AGREEMENT:
+        tg_note_connect_error(TGCONNERR_PROTOCOL, "Couldn't agree a %s (available: %.*s)",
+                              skr.kind, PTRLEN_PRINTF(skr.desc)); // TG
         ssh_sw_abort(ssh, "Couldn't agree a %s (available: %.*s)",
                      skr.kind, PTRLEN_PRINTF(skr.desc));
         break;

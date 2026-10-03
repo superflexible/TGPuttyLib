@@ -2,5 +2,5 @@
 #define RELEASE 0.84
 #define TEXTVER "Release 0.84"
 #define SSHVER "-Release-0.84"
-#define BINARY_VERSION 0,84,0,33
-#define TGDLLBUILDNUM 33
+#define BINARY_VERSION 0,84,0,35
+#define TGDLLBUILDNUM 35

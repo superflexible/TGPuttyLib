@@ -112,7 +112,11 @@ else
 # and float helpers, and a QNAP may have no libgcc_s.so.1. --as-needed drops
 # the libstdc++.so.6 that the NAS toolchain adds although nothing is used
 # from it (QNAP firmware ships no libstdc++).
-NOUNDEF = -Wl,--no-undefined -static-libgcc -Wl,--as-needed
+# max-page-size=0x10000 aligns the LOAD segments for kernels with pages up
+# to 64K (aarch64 RHEL-family, some ARM32 NAS kernels use 32K). Newer
+# binutils default ARM to 4K, and such a library fails to load there. See
+# code26/check-elf-page-alignment.py.
+NOUNDEF = -Wl,--no-undefined -static-libgcc -Wl,--as-needed -Wl,-z,max-page-size=0x10000
 endif
 INSTALL=install
 INSTALL_PROGRAM=$(INSTALL)

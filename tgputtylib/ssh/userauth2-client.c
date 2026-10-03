@@ -2028,6 +2028,9 @@ static void ssh2_userauth_process_queue(PacketProtocolLayer *ppl)
                     s->ppl.bpp,
                     "No supported authentication methods available",
                     SSH2_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE);
+                tg_note_connect_error(TGCONNERR_AUTH, "No supported authentication methods "
+                                      "available (server sent: %s)",
+                                      s->last_methods_string->s); // TG
                 ssh_sw_abort(s->ppl.ssh, "No supported authentication methods "
                              "available (server sent: %s)",
                              s->last_methods_string->s);
