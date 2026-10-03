@@ -104,6 +104,11 @@ ULDFLAGS = $(LDFLAGS)
 # doesn't need it: it already FAILS on undefined symbols by default, so
 # missing source files are detected at link time here anyway.
 NOUNDEF =
+# TG: 11.0 is the first macOS for Apple Silicon. Without this the minimum is
+# the build machine's macOS version (12.0 since build 33).
+MACOSMIN = -mmacosx-version-min=11.0
+CFLAGS += $(MACOSMIN)
+ULDFLAGS += $(MACOSMIN)
 INSTALL=install
 INSTALL_PROGRAM=$(INSTALL)
 INSTALL_DATA=$(INSTALL)

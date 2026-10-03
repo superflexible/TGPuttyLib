@@ -9,6 +9,7 @@
 #include "tree234.h"
 
 #include <unistd.h>
+#include <signal.h> /* TG: SIGCHLD; glibc's sys/wait.h includes it, FreeBSD's does not */
 #include <sys/wait.h>
 #include <limits.h>
 

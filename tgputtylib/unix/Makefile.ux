@@ -107,6 +107,12 @@ ULDFLAGS = $(LDFLAGS)
 # platforms and natively on Intel Macs.
 ifeq ($(shell uname -s),Darwin)
 NOUNDEF =
+# TG: without this the library inherits the build machine's macOS version as
+# its minimum (12.0 since build 33). 10.10 is what noise.c is written for:
+# below 10.12 it reads /dev/urandom instead of linking getentropy().
+MACOSMIN = -mmacosx-version-min=10.10
+CFLAGS += $(MACOSMIN)
+ULDFLAGS += $(MACOSMIN)
 else
 # TG: -static-libgcc because 32-bit ARM needs libgcc's __aeabi_* division
 # and float helpers, and a QNAP may have no libgcc_s.so.1. --as-needed drops
