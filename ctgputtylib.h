@@ -114,7 +114,10 @@ typedef struct
 #endif
 
   // STRICTLY LIBRARY PRIVATE FIELDS FOLLOW
-  char reservedbytes[600];
+  // Must cover the private part of the C struct in putty.h; the classes
+  // check sizeof against tggetlibrarycontextsize(). Same size as the
+  // reserved block in tgputtylib.pas.
+  char reservedbytes[1100];
 
 } TTGLibraryContext;
 

@@ -131,7 +131,8 @@ bool LoadTGPuttyLib()
   res &= GetProc("tgputty_xfer_cleanup",&tgputty_xfer_cleanup);
   res &= GetProc("tgputtygetversions",&tgputtygetversions);
   res &= GetProc("tgputtyfree",&tgputtyfree);
-  GetProc("tgputty_getconnecterror",&tgputty_getconnecterror); // optional, build 35+
+  // optional (build 35+), so no "Function missing" message when it is absent
+  *(FARPROC*)&tgputty_getconnecterror = GetProcAddress(hPuttyLib,"tgputty_getconnecterror");
 
   if (!res)
   {

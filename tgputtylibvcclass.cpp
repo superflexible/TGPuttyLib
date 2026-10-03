@@ -226,8 +226,9 @@ void TTGPuttySFTP::Connect()
 	int res = tgsftp_connect(FHostName.c_str(), FUserName.c_str(), FPort, FPassword.c_str(), &Fcontext);
 	FConnected = (res == 0); // 0 = success
 	FLastConnectErrorCategory = TGCONNERR_NONE;
-	FLastConnectError = tgputty_getconnecterror ?
-		tgputty_getconnecterror(&FLastConnectErrorCategory, &Fcontext) : "";
+	const char* connerr = tgputty_getconnecterror ?
+		tgputty_getconnecterror(&FLastConnectErrorCategory, &Fcontext) : NULL;
+	FLastConnectError = connerr ? connerr : "";
 	if (!FConnected)
 	{
 		if (!FLastConnectError.empty())
