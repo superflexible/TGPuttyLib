@@ -132,7 +132,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
 		$(BUILDDIR)connection2-client.obj $(BUILDDIR)seat_connection_fatal.obj $(BUILDDIR)host_strcspn.obj \
 		$(BUILDDIR)kex2-client.obj $(BUILDDIR)transient-hostkey-cache.obj $(BUILDDIR)out_of_memory.obj \
 		$(BUILDDIR)transport2.obj $(BUILDDIR)userauth2-client.obj $(BUILDDIR)key_components.obj \
-                $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-common.obj \
+                $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-common.obj $(BUILDDIR)nocompress.obj \
                 $(BUILDDIR)aesgcm-select.obj $(BUILDDIR)aesgcm-sw.obj $(BUILDDIR)aesgcm-common.obj \
                 $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)seat_dialog_text.obj $(BUILDDIR)seat_nonfatal.obj \
 		$(BUILDDIR)pubkey-ppk.obj $(BUILDDIR)pubkey-ssh1.obj $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj \
@@ -187,7 +187,7 @@ $(BUILDDIR)tgputtylib.dll: $(BUILDDIR)agentf.obj $(BUILDDIR)aqsync.obj $(BUILDDI
  $(BUILDDIR)connection2.obj $(BUILDDIR)connection2-client.obj $(BUILDDIR)smemclr.obj $(BUILDDIR)memxor.obj
  $(BUILDDIR)kex2-client.obj $(BUILDDIR)transient-hostkey-cache.obj $(BUILDDIR)host_strrchr.obj $(BUILDDIR)null-key.obj
  $(BUILDDIR)transport2.obj $(BUILDDIR)userauth2-client.obj $(BUILDDIR)pubkey-ppk.obj $(BUILDDIR)base64_encode_atom.obj
- $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-common.obj $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)pubkey-ssh1.obj
+ $(BUILDDIR)aes-sw.obj $(BUILDDIR)aes-select.obj $(BUILDDIR)aes-common.obj $(BUILDDIR)nocompress.obj $(BUILDDIR)argon2.obj $(BUILDDIR)arcfour.obj $(BUILDDIR)pubkey-ssh1.obj
  $(BUILDDIR)blake2.obj $(BUILDDIR)blowfish.obj $(BUILDDIR)chacha20-poly1305.obj $(BUILDDIR)common.obj $(BUILDDIR)format_connection_setup_command.obj
  $(BUILDDIR)crc32.obj $(BUILDDIR)crc-attack-detector.obj $(BUILDDIR)des.obj $(BUILDDIR)sk_free_peer_info.obj $(BUILDDIR)subprocess_waiter.obj
  $(BUILDDIR)diffie-hellman.obj $(BUILDDIR)dsa.obj $(BUILDDIR)default_description.obj $(BUILDDIR)decode_utf8_to_wide_string.obj
