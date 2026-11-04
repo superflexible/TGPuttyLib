@@ -182,7 +182,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		sha256-common.o sha512-common.o null-key.o \
 		sha1-common.o sha1-select.o sha1-sw.o sha3.o sharing.o \
                 sshutils.o get_username.o fontspec.o \
-		verstring.o zlib.o sessprep.o \
+		verstring.o zlib.o nocompress.o sessprep.o \
 		stripctrl.o timing.o conf_launchable.o \
 		tree234.o parse_blocksize.o percent_decode.o \
 		version.o wcwidth.o percent_encode.o \
@@ -241,7 +241,7 @@ libtgputty.so: agentf.o aqsync.o ssh2_pick_fingerprint.o \
 		sha256-common.o sha512-common.o null-key.o \
 		sha1-common.o sha1-select.o sha1-sw.o sha3.o sharing.o \
                 sshutils.o get_username.o\
-		verstring.o zlib.o sessprep.o \
+		verstring.o zlib.o nocompress.o sessprep.o \
 		stripctrl.o timing.o conf_launchable.o \
 		tree234.o parse_blocksize.o percent_decode.o \
 		version.o wcwidth.o percent_encode.o \
@@ -378,6 +378,8 @@ null-socket.o: ../stubs/null-socket.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../stubs/null-socket.c
 zlib.o: ../ssh/zlib.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/zlib.c
+nocompress.o: ../ssh/nocompress.c
+	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../ssh/nocompress.c
 sha256-sw.o: ../crypto/sha256-sw.c
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c ../crypto/sha256-sw.c
 null-seat.o: ../stubs/null-seat.c
